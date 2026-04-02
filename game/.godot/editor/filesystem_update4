@@ -14,3 +14,10 @@ res://src/globals/multiplayer_utils.gd
 res://addons/com.heroiclabs.nakama/socket/NakamaSocket.gd
 res://src/ui/death_menu.gd
 res://src/ui/pause_menu.gd
+res://src/globals/network_messaging.gd
+res://src/ui/main_menu.gd
+res://scenes/ui/main_menu.tscn
+res://scenes/ui/ui.tscn
+res://scenes/levels/main.tscn
+res://scenes/ui/main_ui.tscn
+res://scenes/ui/pause_menu.tscn

@@ -2,7 +2,200 @@
 
 [ext_resource type="Script" uid="uid://to1gsbfshnqg" path="res://src/ui/main_menu.gd" id="1_mainmenu"]
 
-[node name="MainMenu" type="Control" unique_id=1290963657]
+[sub_resource type="StyleBoxFlat" id="bg_panel"]
+bg_color = Color(0.08, 0.08, 0.12, 1)
+
+[sub_resource type="StyleBoxFlat" id="left_panel_style"]
+content_margin_left = 60.0
+content_margin_top = 40.0
+content_margin_right = 60.0
+content_margin_bottom = 40.0
+bg_color = Color(0.06, 0.06, 0.1, 0.95)
+border_width_right = 2
+border_color = Color(0.18, 0.18, 0.28, 1)
+
+[sub_resource type="StyleBoxFlat" id="right_panel_style"]
+content_margin_left = 80.0
+content_margin_top = 60.0
+content_margin_right = 80.0
+content_margin_bottom = 60.0
+bg_color = Color(0.1, 0.1, 0.16, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="input_normal"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.08, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.25, 0.25, 0.4, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="input_focus"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.1, 0.1, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.4, 0.5, 0.9, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="card_style"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.12, 0.12, 0.2, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.22, 0.35, 0.6)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="btn_solo_normal"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.22, 0.55, 0.85, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_solo_pressed"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.45, 0.75, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_solo_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.28, 0.62, 0.92, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="separator_style"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.2, 0.2, 0.32, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="btn_host_normal"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.6, 0.35, 0.85, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_host_pressed"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.5, 0.28, 0.75, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_host_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.68, 0.42, 0.92, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_join_normal"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.2, 0.7, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_join_pressed"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.15, 0.6, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_join_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.26, 0.78, 0.58, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_quit_normal"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.25, 0.15, 0.15, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_quit_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.55, 0.18, 0.18, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="MainMenu" type="Control" unique_id=1593514799]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,73 +204,182 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_mainmenu")
 
-[node name="Background" type="ColorRect" parent="." unique_id=719342207]
+[node name="Background" type="PanelContainer" parent="." unique_id=1445113745]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.1, 0.1, 0.15, 1)
+theme_override_styles/panel = SubResource("bg_panel")
 
-[node name="TitleLabel" type="Label" parent="." unique_id=1869001579]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 150.0
-offset_bottom = -50.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 48
-text = "Nice game"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="HBox" type="HBoxContainer" parent="Background" unique_id=565780086]
+layout_mode = 2
+theme_override_constants/separation = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=231431378]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = 20.0
-offset_right = 100.0
-offset_bottom = 140.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="LeftPanel" type="PanelContainer" parent="Background/HBox" unique_id=389833334]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.1
+theme_override_styles/panel = SubResource("left_panel_style")
+
+[node name="LeftContent" type="VBoxContainer" parent="Background/HBox/LeftPanel" unique_id=398602286]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=501160400]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 64
+text = "NICE GAME"
+
+[node name="SubtitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=1745825064]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.7, 0.8)
+theme_override_font_sizes/font_size = 18
+text = "Survive. Fight. Conquer."
+
+[node name="Spacer" type="Control" parent="Background/HBox/LeftPanel/LeftContent" unique_id=308476182]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="VersionLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=151803625]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.38, 0.5, 0.5)
+theme_override_font_sizes/font_size = 13
+text = "v0.1.0  —  Early Development"
+
+[node name="RightPanel" type="PanelContainer" parent="Background/HBox" unique_id=616282614]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.9
+theme_override_styles/panel = SubResource("right_panel_style")
+
+[node name="RightContent" type="VBoxContainer" parent="Background/HBox/RightPanel" unique_id=81480895]
+layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="StartButton" type="Button" parent="VBoxContainer" unique_id=1613055028]
+[node name="HeaderLabel" type="Label" parent="Background/HBox/RightPanel/RightContent" unique_id=947524736]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Start Game"
+theme_override_colors/font_color = Color(0.75, 0.78, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "PLAYER NAME"
 
-[node name="HostButton" type="Button" parent="VBoxContainer" unique_id=1613055029]
+[node name="IGNInput" type="LineEdit" parent="Background/HBox/RightPanel/RightContent" unique_id=2036026736]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Host Game"
-
-[node name="IGNInput" type="LineEdit" parent="VBoxContainer" unique_id=1613055030]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-placeholder_text = "Enter your IGN..."
-alignment = 1
+theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.4, 0.42, 0.55, 0.6)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("input_normal")
+theme_override_styles/focus = SubResource("input_focus")
+placeholder_text = "Enter your name..."
 max_length = 20
 
-[node name="CodeInput" type="LineEdit" parent="VBoxContainer" unique_id=1478891443]
+[node name="Spacer1" type="Control" parent="Background/HBox/RightPanel/RightContent" unique_id=953599022]
+custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-placeholder_text = "join a lobby"
-alignment = 1
+
+[node name="SoloCard" type="PanelContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=1488820230]
+layout_mode = 2
+theme_override_styles/panel = SubResource("card_style")
+
+[node name="SoloVBox" type="VBoxContainer" parent="Background/HBox/RightPanel/RightContent/SoloCard" unique_id=1608731825]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SoloLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/SoloCard/SoloVBox" unique_id=1879149928]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.75, 0.95, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "SOLO"
+
+[node name="StartButton" type="Button" parent="Background/HBox/RightPanel/RightContent/SoloCard/SoloVBox" unique_id=1365158615]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_solo_normal")
+theme_override_styles/pressed = SubResource("btn_solo_pressed")
+theme_override_styles/hover = SubResource("btn_solo_hover")
+text = "Play Solo"
+
+[node name="Separator" type="HSeparator" parent="Background/HBox/RightPanel/RightContent" unique_id=25649186]
+layout_mode = 2
+theme_override_styles/separator = SubResource("separator_style")
+
+[node name="MultiCard" type="PanelContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=2005516990]
+layout_mode = 2
+theme_override_styles/panel = SubResource("card_style")
+
+[node name="MultiVBox" type="VBoxContainer" parent="Background/HBox/RightPanel/RightContent/MultiCard" unique_id=1473343877]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MultiLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=664639461]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.55, 0.95, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "MULTIPLAYER"
+
+[node name="HostButton" type="Button" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=228841615]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_host_normal")
+theme_override_styles/pressed = SubResource("btn_host_pressed")
+theme_override_styles/hover = SubResource("btn_host_hover")
+text = "Host Game"
+
+[node name="JoinHBox" type="HBoxContainer" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=2010787407]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CodeInput" type="LineEdit" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox/JoinHBox" unique_id=1905997422]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.4, 0.42, 0.55, 0.6)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("input_normal")
+theme_override_styles/focus = SubResource("input_focus")
+placeholder_text = "Room code..."
 max_length = 50
 
-[node name="ConnectButton" type="Button" parent="VBoxContainer" unique_id=1368346998]
+[node name="ConnectButton" type="Button" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox/JoinHBox" unique_id=1949014845]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Connect"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("btn_join_normal")
+theme_override_styles/pressed = SubResource("btn_join_pressed")
+theme_override_styles/hover = SubResource("btn_join_hover")
+text = "Join"
+
+[node name="Spacer2" type="Control" parent="Background/HBox/RightPanel/RightContent" unique_id=833432329]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BottomRow" type="HBoxContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=1612881766]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="StatusLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/BottomRow" unique_id=257193553]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6, 0.62, 0.75, 0.7)
+theme_override_font_sizes/font_size = 13
+
+[node name="QuitButton" type="Button" parent="Background/HBox/RightPanel/RightContent/BottomRow" unique_id=458371010]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 0.8)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("btn_quit_normal")
+theme_override_styles/hover = SubResource("btn_quit_hover")
+text = "Quit"

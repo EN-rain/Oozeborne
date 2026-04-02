@@ -4,9 +4,9 @@ extends CanvasLayer
 @onready var score_label: Label = $Control/Score
 @onready var minimap: Control = $Control/Map
 @onready var death_screen: Control = $Death
-@onready var final_score_label: Label = $Death/VBoxContainer/FinalScore
-@onready var restart_button: Button = $Death/VBoxContainer/Restart
-@onready var menu_button: Button = $Death/VBoxContainer/MenuButton
+@onready var final_score_label: Label = $Death/DeathCard/VBoxContainer/FinalScore
+@onready var restart_button: Button = $Death/DeathCard/VBoxContainer/Restart
+@onready var menu_button: Button = $Death/DeathCard/VBoxContainer/MenuButton
 
 var current_score: int = 0
 var player_ref: CharacterBody2D

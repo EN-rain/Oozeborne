@@ -1,10 +1,10 @@
 extends Control
 
-@onready var room_code_label: Label = $VBoxContainer/RoomCodeLabel
-@onready var copy_code_button: Button = $VBoxContainer/CopyCodeButton
-@onready var players_list: VBoxContainer = $VBoxContainer/PlayersList
-@onready var start_button: Button = $VBoxContainer/StartButton
-@onready var back_button: Button = $VBoxContainer/BackButton
+@onready var room_code_label: Label = $Background/HBox/LeftPanel/LeftContent/CodeRow/CodeBadge/RoomCodeLabel
+@onready var copy_code_button: Button = $Background/HBox/LeftPanel/LeftContent/CodeRow/CopyCodeButton
+@onready var players_list: VBoxContainer = $Background/HBox/RightPanel/RightContent/PlayersCard/PlayersList
+@onready var start_button: Button = $Background/HBox/RightPanel/RightContent/StartButton
+@onready var back_button: Button = $Background/HBox/RightPanel/RightContent/BackButton
 
 const MAIN_GAME_SCENE = "res://scenes/levels/main.tscn"
 const MAIN_MENU_SCENE = "res://scenes/ui/main_menu.tscn"

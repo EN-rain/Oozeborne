@@ -1,4 +1,4 @@
-extends CharacterBody2D
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        extends CharacterBody2D
 class_name BTEnemy
 ## Base enemy class that works with LimboAI behavior trees
 

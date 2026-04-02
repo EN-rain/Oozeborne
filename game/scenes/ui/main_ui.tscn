@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://df851q5qve0ln"]
+[gd_scene format=3 uid="uid://k1m6v7rtimha"]
 
 [ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://src/ui/death_menu.gd" id="1_nt7q6"]
 
@@ -30,23 +30,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-; ── Score label backing ───────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="score_bg"]
-content_margin_left = 16.0
-content_margin_top = 6.0
-content_margin_right = 16.0
-content_margin_bottom = 6.0
-bg_color = Color(0.06, 0.06, 0.1, 0.75)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.22, 0.22, 0.35, 0.5)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
 
 ; ── Death card panel ──────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="death_card"]
@@ -197,8 +180,9 @@ offset_top = 12.0
 offset_bottom = 181.0
 grow_horizontal = 0
 
-; ── Death overlay (shown on death) ───────────────────────────────────────────
+; ── Death overlay (hidden at start, shown on death) ───────────────────────────
 [node name="Death" type="Control" parent="." unique_id=1587043198]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
