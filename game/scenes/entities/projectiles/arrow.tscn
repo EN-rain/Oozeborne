@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dusnie8pqikhu"]
+
+[ext_resource type="Script" uid="uid://dxsx5rup00enf" path="res://src/entities/projectiles/arrow.gd" id="1_2v6ga"]
+[ext_resource type="Texture2D" uid="uid://b7njd1psv1jfl" path="res://assets/sprites/Mobs/Archer/Arrow01(32x32).png" id="2_t7fbb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2v6ga"]
+size = Vector2(16, 4)
+
+[node name="Arrow" type="Area2D" unique_id=1818326945 groups=["projectile"]]
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_2v6ga")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=119040791]
+texture = ExtResource("2_t7fbb")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1072354540]
+shape = SubResource("RectangleShape2D_2v6ga")

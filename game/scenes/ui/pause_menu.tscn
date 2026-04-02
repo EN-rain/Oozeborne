@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://ndd30h5ijflg"]
+
+[ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://src/ui/pause_menu.gd" id="1_pausemenu"]
+
+[node name="PauseMenu" type="CanvasLayer" unique_id=1689519402]
+process_mode = 3
+layer = 100
+script = ExtResource("1_pausemenu")
+metadata/_edit_use_anchors_ = true
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=1164352067]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+metadata/_edit_use_anchors_ = true
+
+[node name="PausePanel" type="Panel" parent="." unique_id=1222374089]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -150.0
+offset_right = 150.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PausePanel" unique_id=606099650]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="PausePanel/VBoxContainer" unique_id=910023408]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=613919248]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Resume"
+
+[node name="RestartButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=983637769]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Restart"
+
+[node name="MenuButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=1276246409]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Back to Menu"

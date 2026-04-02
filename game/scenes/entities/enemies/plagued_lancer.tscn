@@ -1,0 +1,223 @@
+[gd_scene format=3 uid="uid://b2fhc13ouapkd"]
+
+[ext_resource type="Texture2D" uid="uid://biq0hy3wr1jd1" path="res://assets/sprites/Mobs/Plagued Lancer/attack01.png" id="1_0w26a"]
+[ext_resource type="Script" uid="uid://ouaeo0ohrfr0" path="res://src/entities/enemies/plagued_lancer.gd" id="1_6rj3g"]
+[ext_resource type="Texture2D" uid="uid://jo1b1tj8wc82" path="res://assets/sprites/Mobs/Plagued Lancer/idle01.png" id="1_nfew5"]
+[ext_resource type="Texture2D" uid="uid://ckb0872rd3itj" path="res://assets/sprites/Mobs/Plagued Lancer/idle02.png" id="2_4nm55"]
+[ext_resource type="Texture2D" uid="uid://t7wnumi7mw0s" path="res://assets/sprites/Mobs/Plagued Lancer/attack02.png" id="2_6rj3g"]
+[ext_resource type="Texture2D" uid="uid://b2cnbrfo6b5gf" path="res://assets/sprites/Mobs/Plagued Lancer/attack03.png" id="3_ae6dh"]
+[ext_resource type="Texture2D" uid="uid://rf5gfoh5lj1y" path="res://assets/sprites/Mobs/Plagued Lancer/idle03.png" id="3_nntj8"]
+[ext_resource type="Texture2D" uid="uid://b37id0otw816e" path="res://assets/sprites/Mobs/Plagued Lancer/idle04.png" id="4_gn7is"]
+[ext_resource type="Texture2D" uid="uid://xjmd582ooill" path="res://assets/sprites/Mobs/Plagued Lancer/attack04.png" id="4_ucbcx"]
+[ext_resource type="Texture2D" uid="uid://cklgsdry82gvw" path="res://assets/sprites/Mobs/Plagued Lancer/idle05.png" id="5_4l2ra"]
+[ext_resource type="Texture2D" uid="uid://bry4ltnihpwcj" path="res://assets/sprites/Mobs/Plagued Lancer/attack05.png" id="5_s7fxq"]
+[ext_resource type="Texture2D" uid="uid://bl6pkd8qab8jd" path="res://assets/sprites/Mobs/Plagued Lancer/attack06.png" id="6_ogloe"]
+[ext_resource type="Texture2D" uid="uid://bkdbxusodt8pc" path="res://assets/sprites/Mobs/Plagued Lancer/idle06.png" id="6_stm8k"]
+[ext_resource type="Texture2D" uid="uid://jh8mpgsgk1tr" path="res://assets/sprites/Mobs/Plagued Lancer/idle07.png" id="7_2v6ga"]
+[ext_resource type="Texture2D" uid="uid://veh38fhij4ro" path="res://assets/sprites/Mobs/Plagued Lancer/attack07.png" id="7_sfyxj"]
+[ext_resource type="Texture2D" uid="uid://ceirglcindktx" path="res://assets/sprites/Mobs/Plagued Lancer/hit01.png" id="20_yoavi"]
+[ext_resource type="Texture2D" uid="uid://ciyc7oafk7v11" path="res://assets/sprites/Mobs/Plagued Lancer/hit02.png" id="21_tqndv"]
+[ext_resource type="Texture2D" uid="uid://mpeyiedg7ua6" path="res://assets/sprites/Mobs/Plagued Lancer/hit03.png" id="22_gl1ha"]
+[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://src/components/health.gd" id="24_ae6dh"]
+[ext_resource type="Texture2D" uid="uid://ba22w27o75evi" path="res://assets/sprites/Mobs/Plagued Lancer/walk01.png" id="24_t7fbb"]
+[ext_resource type="Texture2D" uid="uid://c1y0shksf6y7d" path="res://assets/sprites/Mobs/Plagued Lancer/walk02.png" id="25_8ryja"]
+[ext_resource type="Texture2D" uid="uid://dmfhlt7ss3err" path="res://assets/sprites/Mobs/Plagued Lancer/walk03.png" id="26_igk01"]
+[ext_resource type="Texture2D" uid="uid://jqkaqwwceh3g" path="res://assets/sprites/Mobs/Plagued Lancer/walk04.png" id="27_ww2fq"]
+[ext_resource type="Texture2D" uid="uid://bbjg7yko6gir4" path="res://assets/sprites/Mobs/Plagued Lancer/walk05.png" id="28_yoavi"]
+[ext_resource type="Texture2D" uid="uid://b343gsfiopxgs" path="res://assets/sprites/Mobs/Plagued Lancer/walk06.png" id="29_tqndv"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_21161"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_0w26a")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_6rj3g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ae6dh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_ucbcx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_s7fxq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_ogloe")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_sfyxj")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_nfew5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_4nm55")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_nntj8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_gn7is")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_4l2ra")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_stm8k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_2v6ga")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("20_yoavi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_tqndv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_gl1ha")
+}],
+"loop": false,
+"name": &"took_damage",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("24_t7fbb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_8ryja")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_igk01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_ww2fq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_yoavi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_tqndv")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ae6dh"]
+radius = 7.0
+height = 36.66666
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ucbcx"]
+radius = 353.3962
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ae6dh"]
+radius = 44.011364
+
+[sub_resource type="Gradient" id="Gradient_0w26a"]
+offsets = PackedFloat32Array(0.21264368, 0.62643677, 0.85057473, 0.92528737)
+colors = PackedColorArray(1, 0, 1, 1, 0, 0, 1, 1, 0.40784314, 0.40784314, 1, 0.5921569, 0.40784314, 0.40784314, 1, 0.5921569)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_6rj3g"]
+gradient = SubResource("Gradient_0w26a")
+
+[sub_resource type="Curve" id="Curve_ae6dh"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.515, 0.55056185), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_ucbcx"]
+curve = SubResource("Curve_ae6dh")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_s7fxq"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 30.0
+direction = Vector3(0, -1, 0)
+spread = 70.0
+initial_velocity_min = 50.0
+initial_velocity_max = 150.0
+gravity = Vector3(0, -100, 0)
+scale_min = 0.5
+scale_max = 2.0
+scale_curve = SubResource("CurveTexture_ucbcx")
+color = Color(1, 0, 1, 1)
+color_ramp = SubResource("GradientTexture1D_6rj3g")
+
+[node name="PlaguedLancer" type="CharacterBody2D" unique_id=303467806 groups=["elite_mob", "enemy"]]
+scale = Vector2(0.6, 0.6)
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_6rj3g")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=624162675]
+texture_filter = 1
+position = Vector2(0, -11.666666)
+sprite_frames = SubResource("SpriteFrames_21161")
+animation = &"walk"
+frame = 1
+frame_progress = 0.96507066
+
+[node name="HealthBar" type="ProgressBar" parent="AnimatedSprite2D" unique_id=1514064650]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -83.33333
+offset_top = -48.999992
+offset_right = -44.66667
+offset_bottom = -41.66667
+grow_horizontal = 2
+grow_vertical = 2
+show_percentage = false
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="." unique_id=1963209338]
+shape = SubResource("CapsuleShape2D_ae6dh")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=1143512565]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=745822340]
+shape = SubResource("CircleShape2D_ucbcx")
+
+[node name="AttackArea" type="Area2D" parent="." unique_id=1435090054]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=1321932333]
+shape = SubResource("CircleShape2D_ae6dh")
+
+[node name="SightRay" type="RayCast2D" parent="." unique_id=2121738884]
+target_position = Vector2(-1.6666666, 196.66666)
+
+[node name="TeleportParticles" type="GPUParticles2D" parent="." unique_id=1687938728]
+position = Vector2(-1, 27)
+scale = Vector2(0.5, 0.5)
+emitting = false
+amount = 40
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_s7fxq")
+
+[node name="Health" type="Node2D" parent="." unique_id=610974417]
+script = ExtResource("24_ae6dh")
+
+[node name="BlinkCooldownTimer" type="Timer" parent="." unique_id=2023767854]
+
+[node name="DamageTimer" type="Timer" parent="." unique_id=1736281962]
+
+[node name="HealthBarHideTimer" type="Timer" parent="." unique_id=324418883]
+wait_time = 5.0
+
+[node name="AttackCooldownTimer" type="Timer" parent="." unique_id=1746669938]

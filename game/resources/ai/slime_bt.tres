@@ -1,0 +1,34 @@
+[gd_resource type="BehaviorTree" format=3 uid="uid://u7ya4j1dthb5"]
+
+[ext_resource type="Script" uid="uid://sw5y78nqr2lo" path="res://ai/tasks/bt_action_detect_player.gd" id="1_detect"]
+[ext_resource type="Script" uid="uid://dk8b1l1cndea8" path="res://ai/tasks/bt_condition_has_los.gd" id="2_los"]
+[ext_resource type="Script" uid="uid://hnah1g7xpyls" path="res://ai/tasks/bt_action_chase.gd" id="3_chase"]
+[ext_resource type="Script" uid="uid://dndvoxvljkqtf" path="res://ai/tasks/bt_action_melee_attack.gd" id="4_attack"]
+[ext_resource type="Script" uid="uid://38bgutxdnisg" path="res://ai/tasks/bt_action_idle.gd" id="5_idle"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_lu0j6"]
+
+[sub_resource type="BTAction" id="BTAction_detect"]
+script = ExtResource("1_detect")
+
+[sub_resource type="BTCondition" id="BTCondition_los"]
+script = ExtResource("2_los")
+
+[sub_resource type="BTAction" id="BTAction_chase"]
+script = ExtResource("3_chase")
+
+[sub_resource type="BTAction" id="BTAction_attack"]
+script = ExtResource("4_attack")
+
+[sub_resource type="BTSequence" id="BTSequence_chase"]
+children = [SubResource("BTAction_detect"), SubResource("BTCondition_los"), SubResource("BTAction_chase"), SubResource("BTAction_attack")]
+
+[sub_resource type="BTAction" id="BTAction_idle"]
+script = ExtResource("5_idle")
+
+[sub_resource type="BTSelector" id="BTSelector_slime"]
+children = [SubResource("BTSequence_chase"), SubResource("BTAction_idle")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_lu0j6")
+root_task = SubResource("BTSelector_slime")

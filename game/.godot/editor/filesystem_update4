@@ -1,0 +1,16 @@
+res://scenes/entities/enemies/blue_slime.tscn
+res://resources/ai/lancer_bt.tres
+res://resources/ai/archer_bt.tres
+res://resources/ai/slime_bt.tres
+res://src/globals/multiplayer_manager.gd
+res://src/ui/room_lobby.gd
+res://src/entities/player/player.gd
+res://src/entities/player/sword_slash.gd
+res://src/globals/client_prediction.gd
+res://src/systems/game/main.gd
+res://scenes/entities/enemies/archer.tscn
+res://scenes/entities/enemies/plagued_lancer.tscn
+res://src/globals/multiplayer_utils.gd
+res://addons/com.heroiclabs.nakama/socket/NakamaSocket.gd
+res://src/ui/death_menu.gd
+res://src/ui/pause_menu.gd

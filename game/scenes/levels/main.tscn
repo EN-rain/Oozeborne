@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://gf1yox3vwbbf"]
+
+[ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://jx31lxl2ga28" path="res://src/systems/game/main.gd" id="1_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://k1m6v7rtimha" path="res://scenes/ui/ui.tscn" id="2_sugp2"]
+[ext_resource type="PackedScene" uid="uid://dq4o0gc3o18ko" path="res://scenes/entities/player/slash.tscn" id="3_b6bv0"]
+[ext_resource type="PackedScene" uid="uid://cme2x4jaynejy" path="res://scenes/entities/player/player.tscn" id="3_sugp2"]
+[ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="8_pause"]
+
+[node name="Main" type="Node2D" unique_id=1316580081]
+y_sort_enabled = true
+script = ExtResource("1_tbgi4")
+player_scene = ExtResource("3_sugp2")
+sword_slash_scene = ExtResource("3_b6bv0")
+
+[node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("1_0wfyh")]
+
+[node name="UI" parent="." unique_id=1617366584 instance=ExtResource("2_sugp2")]
+
+[node name="Player" parent="." unique_id=734413701 instance=ExtResource("3_sugp2")]
+position = Vector2(61.782185, 3.4233246)
+
+[node name="PauseMenu" parent="." unique_id=1429287246 instance=ExtResource("8_pause")]

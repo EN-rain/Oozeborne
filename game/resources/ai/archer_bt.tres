@@ -1,0 +1,48 @@
+[gd_resource type="BehaviorTree" format=3 uid="uid://m7abdv88ljj4"]
+
+[ext_resource type="Script" uid="uid://sw5y78nqr2lo" path="res://ai/tasks/bt_action_detect_player.gd" id="1_detect"]
+[ext_resource type="Script" uid="uid://dk8b1l1cndea8" path="res://ai/tasks/bt_condition_has_los.gd" id="2_los"]
+[ext_resource type="Script" uid="uid://b8x0gr62bcyy4" path="res://ai/tasks/bt_condition_in_attack_range.gd" id="3_in_range"]
+[ext_resource type="Script" uid="uid://cwkqrph53fyfj" path="res://ai/tasks/bt_condition_can_attack.gd" id="4_can_attack"]
+[ext_resource type="Script" uid="uid://drjl13cr2nr25" path="res://ai/tasks/bt_action_ranged_attack.gd" id="5_ranged"]
+[ext_resource type="Script" uid="uid://bsnsppwqwnfqy" path="res://ai/tasks/bt_action_kite.gd" id="6_kite"]
+[ext_resource type="Script" uid="uid://38bgutxdnisg" path="res://ai/tasks/bt_action_idle.gd" id="7_idle"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_k5yn1"]
+
+[sub_resource type="BTAction" id="BTAction_detect"]
+script = ExtResource("1_detect")
+
+[sub_resource type="BTCondition" id="BTCondition_los"]
+script = ExtResource("2_los")
+
+[sub_resource type="BTCondition" id="BTCondition_in_range"]
+script = ExtResource("3_in_range")
+
+[sub_resource type="BTCondition" id="BTCondition_can_attack"]
+script = ExtResource("4_can_attack")
+
+[sub_resource type="BTAction" id="BTAction_ranged_attack"]
+script = ExtResource("5_ranged")
+
+[sub_resource type="BTSequence" id="BTSequence_attack"]
+children = [SubResource("BTCondition_in_range"), SubResource("BTCondition_can_attack"), SubResource("BTAction_ranged_attack")]
+
+[sub_resource type="BTAction" id="BTAction_kite"]
+script = ExtResource("6_kite")
+
+[sub_resource type="BTSelector" id="BTSelector_action"]
+children = [SubResource("BTSequence_attack"), SubResource("BTAction_kite")]
+
+[sub_resource type="BTSequence" id="BTSequence_combat"]
+children = [SubResource("BTAction_detect"), SubResource("BTCondition_los"), SubResource("BTSelector_action")]
+
+[sub_resource type="BTAction" id="BTAction_idle"]
+script = ExtResource("7_idle")
+
+[sub_resource type="BTSelector" id="BTSelector_archer"]
+children = [SubResource("BTSequence_combat"), SubResource("BTAction_idle")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_k5yn1")
+root_task = SubResource("BTSelector_archer")

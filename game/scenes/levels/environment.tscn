@@ -1,0 +1,53 @@
+[gd_scene format=4 uid="uid://212bgn1oxjjc"]
+
+[ext_resource type="Texture2D" uid="uid://cvuaw3b0jxq01" path="res://assets/sprites/Vegetation/spr_tree1.png" id="1_bc5iu"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fm4en"]
+texture = ExtResource("1_bc5iu")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+1:3/0/z_index = -1
+1:3/0/y_sort_origin = 5
+1:3/0/physics_layer_0/polygon_0/points = PackedVector2Array(-7.0022163, -6.510833, -3.3168392, -9.213444, 0.1228466, -12.284592, 3.1939945, -9.827673, 8, -8, 10.319057, -4.79099, 8, 3.071148, -8, 2.5180225, -10.073364, -4.422453)
+2:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_d5dl1"]
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_fm4en")
+
+[node name="Environment" type="Node2D" unique_id=1533676921]
+y_sort_enabled = true
+
+[node name="LandBg" type="ColorRect" parent="." unique_id=1590559971]
+z_index = -1
+y_sort_enabled = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2773.25
+offset_top = -1922.0
+offset_right = 2773.25
+offset_bottom = 1922.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.5019608, 0.25882354, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="Trees" type="Node2D" parent="." unique_id=1075357000]
+y_sort_enabled = true
+
+[node name="TileMapLayer" type="TileMapLayer" parent="Trees" unique_id=398007222]
+texture_filter = 1
+tile_map_data = PackedByteArray("AAAEAPn/AAAAAAAAAAAEAPr/AAAAAAEAAAAEAPv/AAAAAAIAAAAEAPz/AAAAAAMAAAAFAPn/AAABAAAAAAAFAPr/AAABAAEAAAAFAPv/AAABAAIAAAAFAPz/AAABAAMAAAAGAPn/AAACAAAAAAAGAPr/AAACAAEAAAAGAPv/AAACAAIAAAAGAPz/AAACAAMAAAA=")
+tile_set = SubResource("TileSet_d5dl1")
