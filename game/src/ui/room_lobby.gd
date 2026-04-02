@@ -12,6 +12,7 @@ const CROWN_EMOJI = "👑 "
 
 var _player_entries: Dictionary = {}
 var _last_state_log_time: int = 0  # Rate limit op_code 2 logs
+var _last_btn_log_time: int = 0  # Rate limit start button logs
 var _is_transitioning: bool = false
 
 func _get_player_count() -> int:
@@ -23,8 +24,13 @@ func _refresh_start_button_state() -> void:
 
 	start_button.visible = MultiplayerManager.is_host
 	start_button.disabled = not MultiplayerManager.is_host or _get_player_count() < 2
+	
+	# Rate limit log output
 	if MultiplayerManager.is_host:
-		print("[Lobby] Start button state: visible=", start_button.visible, " disabled=", start_button.disabled, " players=", _get_player_count())
+		var current_time = Time.get_ticks_msec()
+		if current_time - _last_btn_log_time > 2000:
+			_last_btn_log_time = current_time
+			print("[Lobby] Start button state: visible=", start_button.visible, " disabled=", start_button.disabled, " players=", _get_player_count())
 
 func _ready():
 	if MultiplayerManager.match_phase == "in_game":
