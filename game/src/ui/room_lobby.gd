@@ -228,7 +228,7 @@ func _on_start_pressed():
 			_refresh_start_button_state()
 			return
 		# Send start_game with op code 5 (server will forward to all players)
-		if MultiplayerManager.socket and not MultiplayerManager.match_id.is_empty():
+		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 			print("[Lobby] >>> SENDING START_GAME OP_CODE 5 <<<")
 			await MultiplayerManager.socket.send_match_state_async(
 				MultiplayerManager.match_id,

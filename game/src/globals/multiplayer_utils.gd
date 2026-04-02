@@ -245,7 +245,7 @@ func set_local_player(player_node: Node) -> void:
 
 ## Send input to authoritative server (replaces send_position)
 func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
-	if MultiplayerManager.socket == null or MultiplayerManager.match_id.is_empty():
+	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
 	_input_sequence += 1
@@ -293,7 +293,7 @@ func _send_input_updates(player_node: Node) -> void:
 	
 	while true:
 		# Check connection state first
-		if MultiplayerManager.socket == null or MultiplayerManager.match_id.is_empty():
+		if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 			print("[MultiplayerUtils] Stopping input updates - disconnected")
 			break
 		if not is_instance_valid(player_node):
@@ -323,6 +323,9 @@ func _send_input_updates(player_node: Node) -> void:
 		# Send input to server with facing and attack rotation
 		if is_attacking:
 			print("[MultiplayerUtils] Sending input with attack_rotation: ", attack_rotation)
+		if not MultiplayerManager.is_socket_open():
+			print("[MultiplayerUtils] Stopping input updates - socket closed before send")
+			break
 		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation)
 		
 		# Wait for next input tick

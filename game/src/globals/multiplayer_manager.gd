@@ -49,6 +49,9 @@ func _cleanup_connection() -> void:
 	client = null
 	session = null
 
+func is_socket_open() -> bool:
+	return socket != null and socket.is_connected_to_host()
+
 func _generate_room_code() -> String:
 	var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	var code = ""
@@ -248,7 +251,7 @@ func disconnect_server():
 	print("Disconnected from server")
 
 func send_match_state(data: Dictionary):
-	if socket == null or match_id.is_empty():
+	if not is_socket_open() or match_id.is_empty():
 		return
 	
 	var json = JSON.stringify(data)

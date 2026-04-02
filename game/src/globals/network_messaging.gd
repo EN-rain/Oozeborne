@@ -42,7 +42,7 @@ func extract_user_id_from_data(data: Dictionary) -> String:
 ## Send input to authoritative server
 func send_input(move_x: float, move_y: float, is_attacking: bool = false, 
 		facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
-	if MultiplayerManager.socket == null or MultiplayerManager.match_id.is_empty():
+	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
 	var seq = ClientPrediction.next_sequence()
