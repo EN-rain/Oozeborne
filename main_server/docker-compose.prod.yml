@@ -1,0 +1,94 @@
+# Production Docker Compose for Oracle Cloud VPS
+# Optimized for Always Free Tier (1 OCPU, 1GB RAM)
+
+version: "3.8"
+
+services:
+  cockroachdb:
+    container_name: cockroachdb
+    image: cockroachdb/cockroach:latest-v23.1
+    command: start-single-node --insecure --store=attrs=ssd,path=/var/lib/cockroach/,size=10GB
+    restart: unless-stopped
+    volumes:
+      - cockroach-data:/var/lib/cockroach
+    environment:
+      - COCKROACH_DATABASE=nakama
+    expose:
+      - "26257"
+    ports:
+      - "127.0.0.1:26257:26257"  # Only local, no external access needed
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - nakama-network
+    # Memory limits for free tier
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nakama:
+    container_name: nakama
+    image: registry.heroiclabs.com/heroiclabs/nakama:3.20.1
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address root@cockroachdb:26257 &&
+        exec /nakama/nakama --name nakama1 --database.address root@cockroachdb:26257
+        --logger.level INFO
+        --session.token_expiry_sec 7200
+        --session.refresh_token_expiry_sec 86400
+        --console.username ${NAKAMA_CONSOLE_USER:-admin}
+        --console.password ${NAKAMA_CONSOLE_PASSWORD:-changeme}
+        --console.port 7351
+        --socket.server_key ${NAKAMA_SERVER_KEY:-defaultkey}
+        --runtime.http_key ${NAKAMA_RUNTIME_KEY:-defaultkey}
+        --runtime.path /nakama/data/modules
+        --metrics.prometheus_enabled false
+        --socket.max_message_size_bytes 8192
+    restart: unless-stopped
+    depends_on:
+      cockroachdb:
+        condition: service_healthy
+    volumes:
+      - ./modules:/nakama/data/modules:ro
+      - ./logs:/nakama/data/logs
+    expose:
+      - "7349"
+      - "7350"
+      - "7351"
+    ports:
+      - "127.0.0.1:7349:7349"  # Internal gRPC
+      - "0.0.0.0:7350:7350"    # HTTP API (exposed for Cloudflare)
+      - "0.0.0.0:7351:7351"    # WebSocket (exposed for Cloudflare)
+    environment:
+      - NAKAMA_CONSOLE_USER=${NAKAMA_CONSOLE_USER:-admin}
+      - NAKAMA_CONSOLE_PASSWORD=${NAKAMA_CONSOLE_PASSWORD:-changeme}
+      - NAKAMA_SERVER_KEY=${NAKAMA_SERVER_KEY:-defaultkey}
+      - NAKAMA_RUNTIME_KEY=${NAKAMA_RUNTIME_KEY:-defaultkey}
+    healthcheck:
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - nakama-network
+    # Memory limits for free tier
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  cockroach-data:
+    driver: local
+
+networks:
+  nakama-network:
+    driver: bridge

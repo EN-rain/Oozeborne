@@ -74,6 +74,38 @@ docker-compose up -d
 - Place `server_config.cfg` next to the exported `.exe`
 - Send both files to testers
 
+## Cloudflare Tunnel
+
+Use Cloudflare Tunnel if you do not want router port forwarding for friend testing.
+
+### What It Publishes
+- Public hostname: `https://game.example.com`
+- Local origin: `http://localhost:7350`
+
+### Host Setup
+1. Install `cloudflared`
+2. Log in: `cloudflared tunnel login`
+3. Create a tunnel: `cloudflared tunnel create nakama-game`
+4. Create a DNS route: `cloudflared tunnel route dns nakama-game game.example.com`
+5. Copy `main_server/cloudflared/config.example.yml` to `%USERPROFILE%\\.cloudflared\\config.yml`
+6. Replace `YOUR_TUNNEL_ID`, `YOUR_TUNNEL_UUID.json`, and `game.example.com`
+7. Run the tunnel: `cloudflared tunnel run nakama-game`
+
+### Client Config
+Use this in the exported build's `server_config.cfg`:
+```cfg
+[server]
+host="game.example.com"
+port=443
+scheme="https"
+server_key="defaultkey"
+```
+
+### Notes
+- `cloudflared` must keep running while players are connected
+- Nakama still listens locally on `7350`
+- The admin console on `7351` does not need to be exposed publicly
+
 ## Features Available
 - User Authentication (Email, Device, Social)
 - Real-time Multiplayer
