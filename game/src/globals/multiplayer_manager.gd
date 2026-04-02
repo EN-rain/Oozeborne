@@ -10,12 +10,22 @@ var is_host: bool = false
 var match_phase: String = "lobby"
 var players: Dictionary = {}  # user_id -> {ign, is_host}
 
-const SERVER_KEY = "defaultkey"
-const SERVER_HOST = "127.0.0.1"
-const SERVER_PORT = 7350
-const SCHEME = "http"
+const SERVER_CONFIG_FILE = "server_config.cfg"
+const SERVER_CONFIG_SECTION = "server"
+const DEFAULT_SERVER_KEY = "defaultkey"
+const DEFAULT_SERVER_HOST = "127.0.0.1"
+const DEFAULT_SERVER_PORT = 7350
+const DEFAULT_SCHEME = "http"
 const TIMEOUT = 10
 const ROOM_COLLECTION = "room_registry"
+
+var _server_config: Dictionary = {
+	"host": DEFAULT_SERVER_HOST,
+	"port": DEFAULT_SERVER_PORT,
+	"scheme": DEFAULT_SCHEME,
+	"server_key": DEFAULT_SERVER_KEY,
+	"source": "built_in_defaults"
+}
 
 signal player_joined(user_id: String, ign: String, is_host_flag: bool)
 signal player_left(user_id: String)
@@ -59,9 +69,51 @@ func _generate_room_code() -> String:
 		code += chars[randi() % chars.length()]
 	return code
 
+func get_server_config() -> Dictionary:
+	return _server_config.duplicate(true)
+
+func get_server_endpoint_summary() -> String:
+	return "%s://%s:%d" % [_server_config["scheme"], _server_config["host"], _server_config["port"]]
+
+func _merge_server_config(resolved: Dictionary, path: String, source_name: String) -> bool:
+	if not FileAccess.file_exists(path):
+		return false
+
+	var config := ConfigFile.new()
+	if config.load(path) != OK:
+		push_warning("Failed to load server config: " + path)
+		return false
+
+	resolved["host"] = str(config.get_value(SERVER_CONFIG_SECTION, "host", resolved["host"]))
+	resolved["port"] = int(config.get_value(SERVER_CONFIG_SECTION, "port", resolved["port"]))
+	resolved["scheme"] = str(config.get_value(SERVER_CONFIG_SECTION, "scheme", resolved["scheme"]))
+	resolved["server_key"] = str(config.get_value(SERVER_CONFIG_SECTION, "server_key", resolved["server_key"]))
+	resolved["source"] = source_name
+	return true
+
+func _resolve_server_config() -> Dictionary:
+	var resolved := {
+		"host": DEFAULT_SERVER_HOST,
+		"port": DEFAULT_SERVER_PORT,
+		"scheme": DEFAULT_SCHEME,
+		"server_key": DEFAULT_SERVER_KEY,
+		"source": "built_in_defaults"
+	}
+
+	var project_config_path := ProjectSettings.globalize_path("res://" + SERVER_CONFIG_FILE)
+	_merge_server_config(resolved, project_config_path, "project_config")
+
+	if not OS.has_feature("editor"):
+		var external_config_path := OS.get_executable_path().get_base_dir().path_join(SERVER_CONFIG_FILE)
+		_merge_server_config(resolved, external_config_path, "external_release_config")
+
+	return resolved
+
 func connect_to_server(device_id: String) -> bool:
 	_cleanup_connection()
 	_reset_match_state()
+	_server_config = _resolve_server_config()
+	print("[Manager] Resolved server config from ", _server_config["source"], ": ", get_server_endpoint_summary())
 
 	# Create HTTP adapter for the client
 	var http_adapter = NakamaHTTPAdapter.new()
@@ -69,7 +121,14 @@ func connect_to_server(device_id: String) -> bool:
 	add_child(http_adapter)
 	
 	# Create Nakama client
-	client = NakamaClient.new(http_adapter, SERVER_KEY, SCHEME, SERVER_HOST, SERVER_PORT, TIMEOUT)
+	client = NakamaClient.new(
+		http_adapter,
+		_server_config["server_key"],
+		_server_config["scheme"],
+		_server_config["host"],
+		_server_config["port"],
+		TIMEOUT
+	)
 	
 	# Authenticate with device ID
 	var result = await client.authenticate_device_async(device_id, null, true, null)
@@ -87,7 +146,7 @@ func connect_to_server(device_id: String) -> bool:
 	add_child(socket_adapter)
 	
 	# Create socket
-	socket = NakamaSocket.new(socket_adapter, SERVER_HOST, SERVER_PORT, "ws")
+	socket = NakamaSocket.new(socket_adapter, _server_config["host"], _server_config["port"], "ws")
 	
 	# Connect to server using session
 	await socket.connect_async(session)

@@ -49,7 +49,7 @@ func _on_host_pressed():
 	var connected = await MultiplayerManager.connect_to_server("host_" + str(Time.get_unix_time_from_system()))
 	print("Connection result: " + str(connected))
 	if connected:
-		_set_status("Creating room...", Color(0.7, 0.55, 0.95))
+		_set_status("Creating room on " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.7, 0.55, 0.95))
 		var room_id = await MultiplayerManager.create_room()
 		print("Room created: " + room_id)
 		if not room_id.is_empty():
@@ -58,7 +58,7 @@ func _on_host_pressed():
 			_set_status("Failed to create room", Color(0.9, 0.4, 0.4))
 			print("Failed to create room - empty room ID")
 	else:
-		_set_status("Connection failed", Color(0.9, 0.4, 0.4))
+		_set_status("Connection failed: " + MultiplayerManager.get_server_endpoint_summary(), Color(0.9, 0.4, 0.4))
 		print("Failed to connect to server")
 	_set_buttons_enabled(true)
 
@@ -77,7 +77,7 @@ func _on_connect_pressed():
 	
 	var connected = await MultiplayerManager.connect_to_server("guest_" + str(Time.get_unix_time_from_system()))
 	if connected:
-		_set_status("Joining room...", Color(0.2, 0.8, 0.55))
+		_set_status("Joining via " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.2, 0.8, 0.55))
 		var joined = await MultiplayerManager.join_room(room_code)
 		if joined:
 			print("Joined room: " + room_code)
@@ -86,7 +86,7 @@ func _on_connect_pressed():
 			_set_status("Failed to join room", Color(0.9, 0.4, 0.4))
 			print("Failed to join room")
 	else:
-		_set_status("Connection failed", Color(0.9, 0.4, 0.4))
+		_set_status("Connection failed: " + MultiplayerManager.get_server_endpoint_summary(), Color(0.9, 0.4, 0.4))
 		print("Failed to connect to server")
 	_set_buttons_enabled(true)
 
