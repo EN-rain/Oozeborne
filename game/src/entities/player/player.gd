@@ -19,7 +19,6 @@ var is_local_player := true  # Set to false for remote players
 var ign_label: Label
 
 const FLIP_DEADZONE := 8.0
-
 var is_taking_damage := false
 var facing := 1
 var is_basic_attacking := false

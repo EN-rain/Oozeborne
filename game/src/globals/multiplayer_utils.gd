@@ -51,14 +51,14 @@ const EXTRAPOLATION_MAX_TIME: float = 0.15  # Don't extrapolate more than 150ms
 
 
 ## Initialize a remote player entry for interpolation
-func register_remote_player(user_id: String, player_node: Node, initial_pos: Vector2) -> void:
+func register_remote_player(user_id: String, player_node: Node, initial_pos: Vector2, start_visible: bool = false) -> void:
 	var timestamp = _now_sec()
 	_remote_players[user_id] = {
 		"node": player_node,
 		"positions": [{"pos": initial_pos, "timestamp": timestamp, "velocity": Vector2.ZERO}],
 		"velocity": Vector2.ZERO,
 		"smooth_velocity": Vector2.ZERO,  # For smooth damp
-		"is_visible": false,
+		"is_visible": start_visible,
 		"last_update_time": timestamp,
 		"render_time_offset": _adaptive_interpolation_delay,
 		"server_facing": 1,  # Track server-facing direction

@@ -30,9 +30,8 @@ func _ready():
 	if not MultiplayerManager.room_code.is_empty():
 		seed(MultiplayerManager.room_code.hash())
 	
-	# Sync local player position with server spawn point (400, 300)
-	# This ensures all clients see players at the same position
-	player.global_position = Vector2(400, 300)
+	# Start near the expected authoritative spawn instead of forcing every client to the same point.
+	player.global_position = Vector2(360, 300) if MultiplayerManager.is_host else Vector2(440, 300)
 	
 	ui.set_player(player)
 	spawn_players()
@@ -200,7 +199,7 @@ func spawn_players():
 		if not user_id.is_empty():
 			_spawn_player_for_user(user_id)
 
-func _spawn_player_for_user(user_id: String):
+func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 	# Skip empty user_id (broadcast echo)
 	if user_id.is_empty():
 		return
@@ -226,19 +225,22 @@ func _spawn_player_for_user(user_id: String):
 		if player_scene == null:
 			return
 		var remote_player = player_scene.instantiate()
-		# Spawn offscreen until first real position arrives
-		var spawn_pos = Vector2(-9999, -9999)
+		var has_initial_pos := initial_pos is Vector2
+		var spawn_pos: Vector2 = initial_pos if has_initial_pos else Vector2(-9999, -9999)
 		remote_player.global_position = spawn_pos
-		remote_player.visible = false  # Hide until first position received
+		remote_player.visible = has_initial_pos
 		remote_player.is_local_player = false  # Mark as remote player - this disables physics
 		remote_player.velocity = Vector2.ZERO  # Reset velocity
+		var remote_collision = remote_player.get_node_or_null("CollisionShape2D")
+		if remote_collision:
+			remote_collision.set_deferred("disabled", true)
 		if player_info.has("ign"):
 			remote_player.name = player_info.ign
 			if remote_player.has_method("set_ign"):
 				remote_player.set_ign(player_info.ign)
 		add_child(remote_player)
 		# Register with MultiplayerUtils for interpolation
-		MultiplayerUtils.register_remote_player(user_id, remote_player, spawn_pos)
+		MultiplayerUtils.register_remote_player(user_id, remote_player, spawn_pos, has_initial_pos)
 		# Add green dot indicator for this player on the minimap
 		_add_player_minimap_indicator(user_id, spawn_pos)
 		_apply_authoritative_player_info(user_id, player_info.get("ign", ""), player_info.get("is_host", false))
@@ -430,7 +432,7 @@ func _handle_player_join(data: Dictionary) -> void:
 	}
 	
 	if not MultiplayerUtils.has_remote_player(user_id):
-		_spawn_player_for_user(user_id)
+		_spawn_player_for_user(user_id, spawn_pos)
 	else:
 		_apply_authoritative_player_info(user_id, ign, is_host_flag)
 

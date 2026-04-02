@@ -14,6 +14,18 @@ var _player_entries: Dictionary = {}
 var _last_state_log_time: int = 0  # Rate limit op_code 2 logs
 var _is_transitioning: bool = false
 
+func _get_player_count() -> int:
+	return MultiplayerManager.players.size()
+
+func _refresh_start_button_state() -> void:
+	if not is_instance_valid(start_button):
+		return
+
+	start_button.visible = MultiplayerManager.is_host
+	start_button.disabled = not MultiplayerManager.is_host or _get_player_count() < 2
+	if MultiplayerManager.is_host:
+		print("[Lobby] Start button state: visible=", start_button.visible, " disabled=", start_button.disabled, " players=", _get_player_count())
+
 func _ready():
 	if MultiplayerManager.match_phase == "in_game":
 		_transition_to_game_scene("ready")
@@ -24,10 +36,6 @@ func _ready():
 	# Add self with crown if host
 	var prefix = CROWN_EMOJI if MultiplayerManager.is_host else ""
 	_add_player_entry(MultiplayerManager.session.user_id, MultiplayerManager.player_ign + " (You)", prefix, MultiplayerManager.is_host)
-	
-	# Show/hide start button based on host status
-	start_button.visible = MultiplayerManager.is_host
-	print("[Lobby] Start button visible: ", start_button.visible, " is_host: ", MultiplayerManager.is_host)
 	
 	# Connect buttons
 	start_button.pressed.connect(_on_start_pressed)
@@ -41,6 +49,8 @@ func _ready():
 			var is_host_flag = info.get("is_host", false)
 			var ign = info.get("ign", "Unknown")
 			_add_player_entry(user_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
+
+	_refresh_start_button_state()
 	
 	# Listen for player_joined signal from MultiplayerManager (handles scene transition cases)
 	if not MultiplayerManager.player_joined.is_connected(_on_player_joined_signal):
@@ -113,6 +123,7 @@ func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool):
 	# Handle player_joined signal from MultiplayerManager
 	print("[Lobby] Player joined signal: ", ign)
 	_add_player_entry(user_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
+	_refresh_start_button_state()
 
 func _on_player_left_signal(user_id: String):
 	# Handle player_left signal from MultiplayerManager
@@ -120,6 +131,7 @@ func _on_player_left_signal(user_id: String):
 	if _player_entries.has(user_id):
 		_player_entries[user_id].hbox.queue_free()
 		_player_entries.erase(user_id)
+	_refresh_start_button_state()
 
 func _on_match_state(match_state):
 	# ALWAYS print OP_START_GAME for debugging
@@ -164,6 +176,7 @@ func _on_match_state(match_state):
 				MultiplayerManager.players[user_id]["is_host"] = is_host
 			
 			_add_player_entry(user_id, ign, CROWN_EMOJI if is_host else "", is_host)
+		_refresh_start_button_state()
 		return
 	
 	var msg_type = data.get("type", "")
@@ -187,6 +200,7 @@ func _on_match_state(match_state):
 				MultiplayerManager.players[entry_id] = {"ign": ign, "is_host": is_host, "presence": null}
 			
 			_add_player_entry(entry_id, ign, CROWN_EMOJI if is_host else "", is_host)
+			_refresh_start_button_state()
 		
 		"request_players":
 			# Someone is requesting player info - send ours with user_id
@@ -209,6 +223,10 @@ func _on_start_pressed():
 	
 	# Only host can start the game
 	if MultiplayerManager.is_host:
+		if _get_player_count() < 2:
+			print("[Lobby] Cannot start game with fewer than 2 players")
+			_refresh_start_button_state()
+			return
 		# Send start_game with op code 5 (server will forward to all players)
 		if MultiplayerManager.socket and not MultiplayerManager.match_id.is_empty():
 			print("[Lobby] >>> SENDING START_GAME OP_CODE 5 <<<")
