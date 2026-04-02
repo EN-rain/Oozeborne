@@ -49,8 +49,7 @@ services:
         --socket.server_key ${NAKAMA_SERVER_KEY:-defaultkey}
         --runtime.http_key ${NAKAMA_RUNTIME_KEY:-defaultkey}
         --runtime.path /nakama/data/modules
-        --metrics.prometheus_enabled false
-        --socket.max_message_size_bytes 8192
+        --metrics.prometheus_port 0
     restart: unless-stopped
     depends_on:
       cockroachdb:

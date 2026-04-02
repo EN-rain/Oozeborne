@@ -1,2 +1,11 @@
+# Sensitive server configuration (contains real credentials/tunnels)
+exports/server_config.cfg
 main_server/.cookie
-exports/
+
+# SSH keys (private and public)
+main_server/ssh-key-*.key
+main_server/ssh-key-*.key.pub
+
+# Allow config templates and examples
+!exports/*.example.cfg
+!exports/config.template.cfg
