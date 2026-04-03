@@ -330,8 +330,12 @@ func _remove_player_minimap_indicator(user_id: String):
 func _on_mob_spawned(mob):
 	ui.register_slime(mob)
 
-func _on_mob_died(_mob, score_value: int):
+func _on_mob_died(_mob, score_value: int, xp_value: int):
 	ui.add_score(score_value)
+	# Award XP to local player via singleton
+	if player:
+		LevelSystem.add_xp(player, xp_value)
+		print("[Main] Awarded %d XP to player" % xp_value)
 
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
 	print("[Main] Player joined signal received for: ", username)

@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="NewGame"
-run/main_scene="res://scenes/ui/main_menu.tscn"
+run/main_scene="res://scenes/ui/auth_menu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://assets/icon.svg"
 
@@ -23,6 +23,11 @@ RemotePlayerManager="*res://src/globals/remote_player_manager.gd"
 ClientPrediction="*res://src/globals/client_prediction.gd"
 NetworkMessaging="*res://src/globals/network_messaging.gd"
 MultiplayerUtils="*res://src/globals/multiplayer_utils.gd"
+StatusEffectManager="*res://src/globals/status_effect_manager.gd"
+LevelSystem="*res://src/globals/level_system.gd"
+DamageNumbers="*res://src/globals/damage_number_manager.gd"
+CoinManager="*res://src/globals/coin_manager.gd"
+ShopManager="*res://src/globals/shop_manager.gd"
 
 [display]
 

@@ -1,0 +1,491 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/ui/auth_menu.gd" id="1_auth"]
+
+; ── Dark tavern background (#1a1008) ──────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="bg_panel"]
+bg_color = Color(0.1, 0.06, 0.03, 1)
+
+; ── Outer frame (dark oak border) ─────────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="outer_frame"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(0.16, 0.1, 0.04, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.06, 0.02, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.0, 0.0, 0.0, 0.8)
+shadow_size = 32
+
+; ── Parchment card (cream-tan gradient feel) ──────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="parchment_card"]
+content_margin_left = 48.0
+content_margin_top = 40.0
+content_margin_right = 48.0
+content_margin_bottom = 40.0
+bg_color = Color(0.83, 0.74, 0.51, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.63, 0.53, 0.31, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+; ── Inner parchment border (decorative inset) ─────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="inner_border"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.63, 0.47, 0.2, 0.3)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; ── Input field: normal (dark wood #4a3520) ───────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="input_normal"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.25, 0.17, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.27, 0.19, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; ── Input field: focus (golden highlight) ─────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="input_focus"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.29, 0.2, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.77, 0.64, 0.29, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; ── "Enter the Guild" button (warm brown-gold #6a4a20) ────────────────────────
+[sub_resource type="StyleBoxFlat" id="login_btn_normal"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
+bg_color = Color(0.36, 0.24, 0.1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.23, 0.08, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="login_btn_hover"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
+bg_color = Color(0.44, 0.3, 0.14, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.35, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1.0, 0.8, 0.3, 0.15)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="login_btn_pressed"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
+bg_color = Color(0.23, 0.14, 0.05, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.3, 0.2, 0.08, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="login_btn_disabled"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
+bg_color = Color(0.2, 0.15, 0.08, 0.5)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25, 0.18, 0.08, 0.4)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+; ── "New Adventurer" button (darker, muted #5a4a35) ───────────────────────────
+[sub_resource type="StyleBoxFlat" id="register_btn_normal"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.27, 0.22, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.29, 0.23, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.0, 0.0, 0.0, 0.3)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="register_btn_hover"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.34, 0.28, 0.18, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.32, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.77, 0.66, 0.44, 0.1)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="register_btn_pressed"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.17, 0.13, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.17, 0.1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="register_btn_disabled"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.18, 0.14, 0.09, 0.5)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.16, 0.1, 0.4)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+; ── Corner Rivets ─────────────────────────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="rivet_style"]
+bg_color = Color(0.68, 0.54, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.33, 0.13, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 2
+
+; =============================================================================
+; Scene Tree
+; =============================================================================
+
+[node name="AuthMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_auth")
+
+; ── Dark tavern stone background ──────────────────────────────────────────────
+[node name="Background" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("bg_panel")
+
+; ── Centered layout ───────────────────────────────────────────────────────────
+[node name="Center" type="CenterContainer" parent="Background"]
+layout_mode = 2
+
+; ── Outer dark frame (oak wood border) ────────────────────────────────────────
+[node name="OuterFrame" type="PanelContainer" parent="Background/Center"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("outer_frame")
+
+; ── Corner Rivets Container ───────────────────────────────────────────────────
+[node name="RivetsLayer" type="Control" parent="Background/Center/OuterFrame"]
+layout_mode = 2
+
+[node name="TL" type="Panel" parent="Background/Center/OuterFrame/RivetsLayer"]
+layout_mode = 1
+offset_left = -6.0
+offset_top = -6.0
+offset_right = 18.0
+offset_bottom = 18.0
+theme_override_styles/panel = SubResource("rivet_style")
+
+[node name="TR" type="Panel" parent="Background/Center/OuterFrame/RivetsLayer"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -18.0
+offset_top = -6.0
+offset_right = 6.0
+offset_bottom = 18.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("rivet_style")
+
+[node name="BL" type="Panel" parent="Background/Center/OuterFrame/RivetsLayer"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -6.0
+offset_top = -18.0
+offset_right = 18.0
+offset_bottom = 6.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("rivet_style")
+
+[node name="BR" type="Panel" parent="Background/Center/OuterFrame/RivetsLayer"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 6.0
+offset_bottom = 6.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("rivet_style")
+
+; ── Parchment card ────────────────────────────────────────────────────────────
+[node name="ParchmentCard" type="PanelContainer" parent="Background/Center/OuterFrame"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("parchment_card")
+
+; ── Inner decorative border ───────────────────────────────────────────────────
+[node name="InnerBorder" type="PanelContainer" parent="Background/Center/OuterFrame/ParchmentCard"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("inner_border")
+
+; ── Main content VBox ─────────────────────────────────────────────────────────
+[node name="VBox" type="VBoxContainer" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+; ── Header section ────────────────────────────────────────────────────────────
+[node name="HeaderSpacer" type="Control" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
+[node name="SubtitleRow" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.42, 0.13, 0.85)
+theme_override_font_sizes/font_size = 10
+text = "⚔  LEGENDS OF THE  🛡"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23, 0.16, 0.06, 1)
+theme_override_font_sizes/font_size = 28
+text = "EMBER GUILD"
+horizontal_alignment = 1
+
+; ── Divider with flame ────────────────────────────────────────────────────────
+[node name="DividerRow" type="HBoxContainer" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="LeftLine" type="HSeparator" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox/DividerRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="Flame" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox/DividerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.77, 0.48, 0.13, 1)
+theme_override_font_sizes/font_size = 14
+text = "🔥"
+
+[node name="RightLine" type="HSeparator" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox/DividerRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+; ── Spacer ────────────────────────────────────────────────────────────────────
+[node name="Spacer1" type="Control" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+
+; ── Adventurer Name field ─────────────────────────────────────────────────────
+[node name="EmailLabel" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.31, 0.19, 1)
+theme_override_font_sizes/font_size = 10
+text = "ADVENTURER NAME"
+
+[node name="EmailInput" type="LineEdit" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.84, 0.66, 1)
+theme_override_colors/font_placeholder_color = Color(0.65, 0.55, 0.35, 0.6)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("input_normal")
+theme_override_styles/focus = SubResource("input_focus")
+placeholder_text = "Enter thy name..."
+
+; ── Spacer ────────────────────────────────────────────────────────────────────
+[node name="InputSpacer" type="Control" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+
+; ── Secret Passphrase field ───────────────────────────────────────────────────
+[node name="PasswordLabel" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.31, 0.19, 1)
+theme_override_font_sizes/font_size = 10
+text = "SECRET PASSPHRASE"
+
+[node name="PasswordInput" type="LineEdit" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.84, 0.66, 1)
+theme_override_colors/font_placeholder_color = Color(0.65, 0.55, 0.35, 0.6)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("input_normal")
+theme_override_styles/focus = SubResource("input_focus")
+placeholder_text = "••••••••"
+secret = true
+
+; ── Spacer ────────────────────────────────────────────────────────────────────
+[node name="Spacer2" type="Control" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+
+; ── "Enter the Guild" login button ────────────────────────────────────────────
+[node name="LoginButton" type="Button" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1.0, 0.8, 0.4, 1)
+theme_override_colors/font_disabled_color = Color(0.5, 0.4, 0.2, 0.5)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("login_btn_normal")
+theme_override_styles/hover = SubResource("login_btn_hover")
+theme_override_styles/pressed = SubResource("login_btn_pressed")
+theme_override_styles/disabled = SubResource("login_btn_disabled")
+text = "🚪 ENTER THE GUILD"
+
+; ── "New Adventurer" register button ──────────────────────────────────────────
+[node name="RegisterButton" type="Button" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.77, 0.66, 0.44, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.33, 0.2, 0.5)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("register_btn_normal")
+theme_override_styles/hover = SubResource("register_btn_hover")
+theme_override_styles/pressed = SubResource("register_btn_pressed")
+theme_override_styles/disabled = SubResource("register_btn_disabled")
+text = "📜 NEW ADVENTURER"
+
+; ── Status / oracle text ──────────────────────────────────────────────────────
+[node name="StatusLabel" type="Label" parent="Background/Center/OuterFrame/ParchmentCard/InnerBorder/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.44, 0.31, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "Lost thy passphrase? Seek the Oracle..."
+horizontal_alignment = 1
+
+; ── Bottom version bar ────────────────────────────────────────────────────────
+[node name="VersionBar" type="Label" parent="Background"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -30.0
+offset_right = 160.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.29, 0.23, 0.16, 0.5)
+theme_override_font_sizes/font_size = 9
+text = "─── v0.8.3 — Forged in the Ember Smithy ───"
+horizontal_alignment = 1

@@ -3,7 +3,7 @@ extends Node
 ## Encapsulates common and elite mob spawning logic
 
 signal mob_spawned(mob: Node)
-signal mob_died(mob: Node, score_value: int)
+signal mob_died(mob: Node, score_value: int, xp_value: int)
 
 @export var common_mob_scene: PackedScene
 @export var elite_mob_lancer_scene: PackedScene
@@ -62,7 +62,8 @@ func spawn_common_mob():
 
 func _on_common_mob_died(_mob):
 	current_common_mob_count -= 1
-	mob_died.emit(_mob, 1)
+	var xp = _mob.xp_value if _mob.has_method("get") or "xp_value" in _mob else 10
+	mob_died.emit(_mob, 1, xp)
 	
 	if total_common_mob_spawned < max_total_common_mob:
 		await _parent.get_tree().create_timer(0.5).timeout
@@ -96,7 +97,8 @@ func spawn_elite_mob():
 
 func _on_elite_mob_died(_elite):
 	current_elite_mob_count -= 1
-	mob_died.emit(_elite, 5)
+	var xp = _elite.xp_value if _elite.has_method("get") or "xp_value" in _elite else 25
+	mob_died.emit(_elite, 5, xp)
 	
 	if total_elite_mob_spawned < max_total_elite_mob:
 		await _parent.get_tree().create_timer(1.0).timeout

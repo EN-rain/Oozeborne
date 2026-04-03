@@ -2,131 +2,189 @@
 
 [ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://src/ui/pause_menu.gd" id="1_pausemenu"]
 
+; ── Pause panel (dungeon stone dialog box) ────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 48.0
-content_margin_top = 40.0
-content_margin_right = 48.0
-content_margin_bottom = 40.0
-bg_color = Color(0.07, 0.07, 0.12, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.8, 0.8, 0.8, 0)
-border_blend = true
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+content_margin_left = 44.0
+content_margin_top = 36.0
+content_margin_right = 44.0
+content_margin_bottom = 36.0
+bg_color = Color(0.08, 0.06, 0.14, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.55, 0.45, 0.2, 0.85)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+shadow_size = 8
 
+; ── Separator (golden pixel line) ─────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="sep_style"]
-content_margin_top = 1.0
-content_margin_bottom = 1.0
-bg_color = Color(0.22, 0.22, 0.38, 0.5)
+content_margin_top = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.55, 0.45, 0.2, 0.45)
 
+; ── Resume button (emerald) ───────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_resume_normal"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.2, 0.7, 0.5, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.15, 0.55, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.4, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_resume_pressed"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.14, 0.58, 0.4, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.1, 0.42, 0.22, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.08, 0.32, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_resume_hover"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.26, 0.82, 0.58, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.2, 0.65, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.5, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.15, 0.55, 0.3, 0.3)
+shadow_size = 5
 
+; ── Restart button (amethyst) ─────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_restart_normal"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.6, 0.35, 0.85, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.45, 0.22, 0.65, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.15, 0.5, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_restart_pressed"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.5, 0.28, 0.75, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.35, 0.15, 0.5, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.28, 0.1, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_restart_hover"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.68, 0.42, 0.92, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.55, 0.3, 0.78, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.42, 0.2, 0.62, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.45, 0.22, 0.65, 0.3)
+shadow_size = 5
 
+; ── Menu button (blood red) ───────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_menu_normal"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.25, 0.15, 0.15, 0.65)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.5, 0.18, 0.18, 0.5)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.35, 0.1, 0.1, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.18, 0.18, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_menu_pressed"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.42, 0.12, 0.12, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.45, 0.1, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.15, 0.15, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_menu_hover"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.55, 0.18, 0.18, 0.85)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.55, 0.15, 0.15, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.22, 0.22, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; =============================================================================
+; Scene tree
+; =============================================================================
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1689519402]
 process_mode = 3
@@ -134,15 +192,17 @@ layer = 100
 script = ExtResource("1_pausemenu")
 metadata/_edit_use_anchors_ = true
 
+; Dark veil overlay
 [node name="Overlay" type="ColorRect" parent="." unique_id=1164352067]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0.06, 0.72)
+color = Color(0.03, 0.0, 0.08, 0.75)
 metadata/_edit_use_anchors_ = true
 
+; Pause panel (pixel RPG dialog box)
 [node name="PausePanel" type="Panel" parent="." unique_id=1222374089]
 anchors_preset = 8
 anchor_left = 0.5
@@ -168,44 +228,58 @@ grow_vertical = 2
 theme_override_constants/separation = 14
 alignment = 1
 
+; Pause icon
+[node name="PauseIcon" type="Label" parent="PausePanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 0.8)
+theme_override_font_sizes/font_size = 32
+text = "⏸"
+horizontal_alignment = 1
+
+; Title
 [node name="TitleLabel" type="Label" parent="PausePanel/VBoxContainer" unique_id=910023408]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 32
 text = "PAUSED"
 horizontal_alignment = 1
 
+; Separator
 [node name="Separator" type="HSeparator" parent="PausePanel/VBoxContainer" unique_id=1032622985]
 layout_mode = 2
 theme_override_styles/separator = SubResource("sep_style")
 
+; Spacer
 [node name="Spacer" type="Control" parent="PausePanel/VBoxContainer" unique_id=119275498]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 
+; Resume
 [node name="ResumeButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=613919248]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("btn_resume_normal")
 theme_override_styles/pressed = SubResource("btn_resume_pressed")
 theme_override_styles/hover = SubResource("btn_resume_hover")
-text = "Resume"
+text = "▶ Resume"
 
+; Restart
 [node name="RestartButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=983637769]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("btn_restart_normal")
 theme_override_styles/pressed = SubResource("btn_restart_pressed")
 theme_override_styles/hover = SubResource("btn_restart_hover")
-text = "Restart"
+text = "⚔ Restart"
 
+; Back to Menu
 [node name="MenuButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=1276246409]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.55, 0.55, 0.9)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.8, 0.45, 0.45, 0.9)
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("btn_menu_normal")
 theme_override_styles/pressed = SubResource("btn_menu_pressed")
 theme_override_styles/hover = SubResource("btn_menu_hover")
-text = "Back to Menu"
+text = "← Retreat to Menu"

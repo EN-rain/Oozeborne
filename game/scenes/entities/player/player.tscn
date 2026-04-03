@@ -242,8 +242,12 @@ height = 12.0
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fjrip"]
 
 [sub_resource type="Curve" id="Curve_dash"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_dash"]
+offsets = PackedFloat32Array(0, 0.3, 1)
+colors = PackedColorArray(0.3, 0.7, 1, 1, 0.2, 0.5, 0.9, 0.8, 0.1, 0.2, 0.5, 0)
 
 [node name="Player" type="CharacterBody2D" unique_id=1112980080 groups=["player"]]
 y_sort_enabled = true
@@ -280,14 +284,34 @@ damping_max = 20.0
 
 [node name="DashParticles" type="CPUParticles2D" parent="." unique_id=999999999]
 emitting = false
-amount = 50
-lifetime = 0.4
-spread = 0.0
+amount = 30
+lifetime = 0.3
+one_shot = true
+explosiveness = 0.8
 gravity = Vector2(0, 0)
-scale_amount_min = 2.0
-scale_amount_max = 3.0
+initial_velocity_min = 80.0
+initial_velocity_max = 150.0
+damping_min = 50.0
+damping_max = 100.0
+scale_amount_min = 3.0
+scale_amount_max = 6.0
 scale_amount_curve = SubResource("Curve_dash")
-color = Color(1, 1, 1, 0.8)
+color_ramp = SubResource("Gradient_dash")
+
+[node name="DashTrail" type="CPUParticles2D" parent="." unique_id=888888888]
+emitting = false
+amount = 20
+lifetime = 0.25
+spread = 10.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 20.0
+initial_velocity_max = 50.0
+damping_min = 30.0
+damping_max = 60.0
+scale_amount_min = 4.0
+scale_amount_max = 8.0
+scale_amount_curve = SubResource("Curve_dash")
+color_ramp = SubResource("Gradient_dash")
 
 [node name="Health" type="Node2D" parent="." unique_id=206277462]
 script = ExtResource("8_smehm")

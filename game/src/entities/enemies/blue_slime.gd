@@ -16,6 +16,9 @@ var current_state = State.IDLE
 @export var knockback_force: float = 300.0
 @export var knockback_decay: float = 500.0
 @export var max_health: int = 50
+@export var xp_value: int = 10  ## XP awarded when killed
+
+signal died(xp_reward: int)  ## Emitted when enemy dies, includes XP value
 
 var player: CharacterBody2D = null
 var can_damage := true
@@ -91,9 +94,9 @@ func take_damage(amount: int):
 	if is_taking_damage or is_dying:
 		return
 	
-	var died = health.take_damage(amount)
+	var was_killed = health.take_damage(amount)
 	
-	if not died:
+	if not was_killed:
 		is_taking_damage = true
 		animated_sprite.play("took_damage")
 
@@ -115,6 +118,8 @@ func die():
 	detection_area.monitoring = false
 	attack_area.monitoring = false
 	
+	# Emit death signal with XP reward before playing animation
+	died.emit(xp_value)
 	animated_sprite.play("death")
 
 # ---------------- ATTACK ----------------

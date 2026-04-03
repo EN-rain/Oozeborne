@@ -12,6 +12,7 @@ class_name BTEnemy
 @export var knockback_force: float = 300.0
 @export var knockback_decay: float = 500.0
 @export var max_health: int = 50
+@export var xp_value: int = 10  ## XP awarded when killed
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var detection_area: Area2D = $DetectionArea
@@ -27,6 +28,8 @@ var is_dying := false
 var health: HealthComponent
 var bt_player: BTPlayer
 
+
+signal died(xp_reward: int)  ## Emitted when enemy dies, includes XP value
 
 func _ready() -> void:
 	health = HealthComponent.new()
@@ -70,8 +73,14 @@ func take_damage(amount: int) -> void:
 	if is_taking_damage or is_dying:
 		return
 
-	var died := health.take_damage(amount)
-	if not died:
+	var was_killed := health.take_damage(amount)
+	
+	# Spawn damage number
+	var damage_numbers := get_node_or_null("/root/DamageNumbers")
+	if damage_numbers:
+		damage_numbers.spawn_damage(global_position + Vector2(0, -20), amount, false, false)
+	
+	if not was_killed:
 		is_taking_damage = true
 		animated_sprite.play("took_damage")
 
@@ -91,6 +100,11 @@ func die() -> void:
 	if bt_player:
 		bt_player.active = false
 
+	# Spawn coin drop (50% chance)
+	CoinManager.try_spawn_coin_drop(global_position, xp_value)
+
+	# Emit death signal with XP reward before playing animation
+	died.emit(xp_value)
 	animated_sprite.play("death")
 
 

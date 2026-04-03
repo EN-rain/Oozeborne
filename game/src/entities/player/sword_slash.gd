@@ -3,8 +3,11 @@ extends Node2D
 var weapon_damage = 10
 var hit_enemies = []  # Track enemies already hit this swing
 
+func set_damage(damage: int) -> void:
+	weapon_damage = damage
+
 func _ready() -> void:
-	print("[Slash] _ready called, global_position: ", global_position)
+	print("[Slash] _ready called, global_position: ", global_position, " damage: ", weapon_damage)
 	var anim_player = $SlashEffect/SlashAnim
 	if anim_player:
 		print("[Slash] Playing slash_anim")

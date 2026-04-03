@@ -2,198 +2,280 @@
 
 [ext_resource type="Script" uid="uid://to1gsbfshnqg" path="res://src/ui/main_menu.gd" id="1_mainmenu"]
 
+; ── Dungeon background ────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="bg_panel"]
-bg_color = Color(0.08, 0.08, 0.12, 1)
+bg_color = Color(0.06, 0.04, 0.1, 1)
 
+; ── Left panel: Parchment-styled hero area ────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="left_panel_style"]
 content_margin_left = 60.0
 content_margin_top = 40.0
-content_margin_right = 60.0
+content_margin_right = 40.0
 content_margin_bottom = 40.0
-bg_color = Color(0.06, 0.06, 0.1, 0.95)
-border_width_right = 2
-border_color = Color(0.18, 0.18, 0.28, 1)
+bg_color = Color(0.05, 0.04, 0.09, 0.98)
+border_width_right = 3
+border_color = Color(0.55, 0.45, 0.2, 0.7)
 
+; ── Right panel: Quest board ──────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="right_panel_style"]
-content_margin_left = 80.0
-content_margin_top = 60.0
-content_margin_right = 80.0
-content_margin_bottom = 60.0
-bg_color = Color(0.1, 0.1, 0.16, 0.9)
+content_margin_left = 60.0
+content_margin_top = 48.0
+content_margin_right = 60.0
+content_margin_bottom = 48.0
+bg_color = Color(0.08, 0.06, 0.14, 0.95)
 
+; ── Input: normal ─────────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="input_normal"]
-content_margin_left = 14.0
+content_margin_left = 12.0
 content_margin_top = 10.0
-content_margin_right = 14.0
+content_margin_right = 12.0
 content_margin_bottom = 10.0
-bg_color = Color(0.08, 0.08, 0.14, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
+bg_color = Color(0.05, 0.04, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.25, 0.25, 0.4, 0.7)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.3, 0.25, 0.45, 0.8)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
+; ── Input: focus ──────────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="input_focus"]
-content_margin_left = 14.0
+content_margin_left = 12.0
 content_margin_top = 10.0
-content_margin_right = 14.0
+content_margin_right = 12.0
 content_margin_bottom = 10.0
-bg_color = Color(0.1, 0.1, 0.18, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
+bg_color = Color(0.08, 0.06, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.4, 0.5, 0.9, 0.9)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.9, 0.75, 0.3, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
+; ── Card panel (RPG quest board) ──────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="card_style"]
-content_margin_left = 28.0
-content_margin_top = 24.0
-content_margin_right = 28.0
-content_margin_bottom = 24.0
-bg_color = Color(0.12, 0.12, 0.2, 0.8)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.22, 0.22, 0.35, 0.6)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+bg_color = Color(0.1, 0.08, 0.18, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.35, 0.55, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
+; ── Solo button (ocean blue) ──────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_solo_normal"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.22, 0.55, 0.85, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.15, 0.4, 0.7, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.3, 0.55, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_solo_pressed"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.16, 0.45, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.1, 0.3, 0.55, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.08, 0.22, 0.42, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_solo_hover"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.28, 0.62, 0.92, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.2, 0.5, 0.8, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.38, 0.65, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.15, 0.4, 0.7, 0.3)
+shadow_size = 5
 
+; ── Separator (pixel line) ────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="separator_style"]
-content_margin_top = 1.0
-content_margin_bottom = 1.0
-bg_color = Color(0.2, 0.2, 0.32, 0.5)
+content_margin_top = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.55, 0.45, 0.2, 0.4)
 
+; ── Host button (amethyst purple) ─────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_host_normal"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.6, 0.35, 0.85, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.45, 0.22, 0.65, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.15, 0.5, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_host_pressed"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.5, 0.28, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.35, 0.15, 0.5, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.28, 0.1, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_host_hover"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.68, 0.42, 0.92, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.55, 0.3, 0.78, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.42, 0.2, 0.62, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.45, 0.22, 0.65, 0.3)
+shadow_size = 5
 
+; ── Join button (emerald green) ───────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_join_normal"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.2, 0.7, 0.5, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.15, 0.55, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.4, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_join_pressed"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.15, 0.6, 0.42, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.1, 0.4, 0.2, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.08, 0.3, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_join_hover"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.26, 0.78, 0.58, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.2, 0.65, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.5, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.15, 0.55, 0.3, 0.3)
+shadow_size = 5
 
+; ── Quit button (blood red subtle) ────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_quit_normal"]
 content_margin_left = 16.0
 content_margin_top = 8.0
 content_margin_right = 16.0
 content_margin_bottom = 8.0
-bg_color = Color(0.25, 0.15, 0.15, 0.6)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.3, 0.08, 0.08, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.15, 0.15, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_quit_hover"]
 content_margin_left = 16.0
 content_margin_top = 8.0
 content_margin_right = 16.0
 content_margin_bottom = 8.0
-bg_color = Color(0.55, 0.18, 0.18, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.55, 0.12, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.2, 0.2, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; =============================================================================
+; Scene Tree
+; =============================================================================
 
 [node name="MainMenu" type="Control" unique_id=1593514799]
 layout_mode = 3
@@ -217,6 +299,7 @@ theme_override_styles/panel = SubResource("bg_panel")
 layout_mode = 2
 theme_override_constants/separation = 0
 
+; ── LEFT PANEL: Hero splash area ──────────────────────────────────────────────
 [node name="LeftPanel" type="PanelContainer" parent="Background/HBox" unique_id=389833334]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -225,19 +308,25 @@ theme_override_styles/panel = SubResource("left_panel_style")
 
 [node name="LeftContent" type="VBoxContainer" parent="Background/HBox/LeftPanel" unique_id=398602286]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
+
+[node name="GameIcon" type="Label" parent="Background/HBox/LeftPanel/LeftContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 48
+text = "🗡️"
 
 [node name="TitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=501160400]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.92, 1, 1)
-theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 56
 text = "NICE GAME"
 
 [node name="SubtitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=1745825064]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.55, 0.7, 0.8)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.5, 0.45, 0.65, 0.85)
+theme_override_font_sizes/font_size = 16
 text = "Survive. Fight. Conquer."
 
 [node name="Spacer" type="Control" parent="Background/HBox/LeftPanel/LeftContent" unique_id=308476182]
@@ -246,10 +335,11 @@ layout_mode = 2
 
 [node name="VersionLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent" unique_id=151803625]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.38, 0.5, 0.5)
-theme_override_font_sizes/font_size = 13
-text = "v0.1.0  —  Early Development"
+theme_override_colors/font_color = Color(0.35, 0.3, 0.5, 0.5)
+theme_override_font_sizes/font_size = 12
+text = "v0.1.0 — Early Development"
 
+; ── RIGHT PANEL: Quest board ──────────────────────────────────────────────────
 [node name="RightPanel" type="PanelContainer" parent="Background/HBox" unique_id=616282614]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -258,80 +348,108 @@ theme_override_styles/panel = SubResource("right_panel_style")
 
 [node name="RightContent" type="VBoxContainer" parent="Background/HBox/RightPanel" unique_id=81480895]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 18
 
+; ── Account row ───────────────────────────────────────────────────────────────
+[node name="AccountRow" type="HBoxContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=990001011]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AccountLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/AccountRow" unique_id=990001012]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "Account: Offline"
+
+[node name="LogoutButton" type="Button" parent="Background/HBox/RightPanel/RightContent/AccountRow" unique_id=990001013]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.4, 0.4, 0.9)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("btn_quit_normal")
+theme_override_styles/hover = SubResource("btn_quit_hover")
+text = "Logout"
+
+; ── Player name section ───────────────────────────────────────────────────────
 [node name="HeaderLabel" type="Label" parent="Background/HBox/RightPanel/RightContent" unique_id=947524736]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.78, 0.9, 0.9)
-theme_override_font_sizes/font_size = 14
-text = "PLAYER NAME"
+theme_override_colors/font_color = Color(0.65, 0.6, 0.8, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "⚔ ADVENTURER NAME"
 
 [node name="IGNInput" type="LineEdit" parent="Background/HBox/RightPanel/RightContent" unique_id=2036026736]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
-theme_override_colors/font_placeholder_color = Color(0.4, 0.42, 0.55, 0.6)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.8, 0.95, 1)
+theme_override_colors/font_placeholder_color = Color(0.4, 0.35, 0.55, 0.6)
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("input_normal")
 theme_override_styles/focus = SubResource("input_focus")
 placeholder_text = "Enter your name..."
 max_length = 20
 
 [node name="Spacer1" type="Control" parent="Background/HBox/RightPanel/RightContent" unique_id=953599022]
-custom_minimum_size = Vector2(0, 4)
+custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
 
+; ── Solo quest card ───────────────────────────────────────────────────────────
 [node name="SoloCard" type="PanelContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=1488820230]
 layout_mode = 2
 theme_override_styles/panel = SubResource("card_style")
 
 [node name="SoloVBox" type="VBoxContainer" parent="Background/HBox/RightPanel/RightContent/SoloCard" unique_id=1608731825]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="SoloLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/SoloCard/SoloVBox" unique_id=1879149928]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.75, 0.95, 0.9)
-theme_override_font_sizes/font_size = 13
-text = "SOLO"
+theme_override_colors/font_color = Color(0.4, 0.65, 0.9, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "🗺 SOLO QUEST"
+horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="Background/HBox/RightPanel/RightContent/SoloCard/SoloVBox" unique_id=1365158615]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("btn_solo_normal")
 theme_override_styles/pressed = SubResource("btn_solo_pressed")
 theme_override_styles/hover = SubResource("btn_solo_hover")
-text = "Play Solo"
+text = "⚔ Play Solo"
 
+; ── Separator ─────────────────────────────────────────────────────────────────
 [node name="Separator" type="HSeparator" parent="Background/HBox/RightPanel/RightContent" unique_id=25649186]
 layout_mode = 2
 theme_override_styles/separator = SubResource("separator_style")
 
+; ── Multiplayer card ──────────────────────────────────────────────────────────
 [node name="MultiCard" type="PanelContainer" parent="Background/HBox/RightPanel/RightContent" unique_id=2005516990]
 layout_mode = 2
 theme_override_styles/panel = SubResource("card_style")
 
 [node name="MultiVBox" type="VBoxContainer" parent="Background/HBox/RightPanel/RightContent/MultiCard" unique_id=1473343877]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="MultiLabel" type="Label" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=664639461]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.55, 0.95, 0.9)
-theme_override_font_sizes/font_size = 13
-text = "MULTIPLAYER"
+theme_override_colors/font_color = Color(0.6, 0.4, 0.85, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "🏰 MULTIPLAYER"
+horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=228841615]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("btn_host_normal")
 theme_override_styles/pressed = SubResource("btn_host_pressed")
 theme_override_styles/hover = SubResource("btn_host_hover")
-text = "Host Game"
+text = "✦ Host Game"
 
 [node name="JoinHBox" type="HBoxContainer" parent="Background/HBox/RightPanel/RightContent/MultiCard/MultiVBox" unique_id=2010787407]
 layout_mode = 2
@@ -341,9 +459,9 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
-theme_override_colors/font_placeholder_color = Color(0.4, 0.42, 0.55, 0.6)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.85, 0.8, 0.95, 1)
+theme_override_colors/font_placeholder_color = Color(0.4, 0.35, 0.55, 0.6)
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("input_normal")
 theme_override_styles/focus = SubResource("input_focus")
 placeholder_text = "Room code..."
@@ -353,12 +471,13 @@ max_length = 50
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("btn_join_normal")
 theme_override_styles/pressed = SubResource("btn_join_pressed")
 theme_override_styles/hover = SubResource("btn_join_hover")
 text = "Join"
 
+; ── Bottom spacer + status ────────────────────────────────────────────────────
 [node name="Spacer2" type="Control" parent="Background/HBox/RightPanel/RightContent" unique_id=833432329]
 layout_mode = 2
 size_flags_vertical = 3
@@ -372,14 +491,14 @@ alignment = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.6, 0.62, 0.75, 0.7)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.5, 0.45, 0.65, 0.7)
+theme_override_font_sizes/font_size = 12
 
 [node name="QuitButton" type="Button" parent="Background/HBox/RightPanel/RightContent/BottomRow" unique_id=458371010]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.5, 0.5, 0.8)
-theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.75, 0.4, 0.4, 0.8)
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("btn_quit_normal")
 theme_override_styles/hover = SubResource("btn_quit_hover")
-text = "Quit"
+text = "✕ Quit"

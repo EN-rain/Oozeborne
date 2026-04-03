@@ -25,8 +25,6 @@ const MAX_PENDING_INPUTS: int = 60  # Keep last 60 inputs (3 seconds at 20Hz)
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
 
-## Server position tracking for reconciliation
-var _last_server_pos: Vector2 = Vector2.ZERO
 var _reconciliation_threshold: float = 15.0  # Snap if desync > 15 pixels
 
 ## Prediction enabled flag
@@ -39,8 +37,6 @@ func _now_sec() -> float:
 # Ping tracking
 var _last_ping_time: float = 0.0
 
-# Network quality adaptation
-var _packet_loss_counter: int = 0
 var _jitter_samples: Array = []  # Store recent update intervals
 var _adaptive_interpolation_delay: float = 0.07  # 70ms for smooth interpolation
 const MIN_INTERPOLATION_DELAY: float = 0.05  # 50ms minimum
@@ -397,7 +393,7 @@ func _smooth_damp(current: Vector2, target: Vector2, velocity: Vector2, smooth_t
 	# Based on Unity's Mathf.SmoothDamp
 	var omega = 2.0 / smooth_time
 	var x = omega * delta
-	var exp = 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
+	var smoothing_factor = 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
 	
 	var change = current - target
 	var max_change = SMOOTH_DAMP_MAX_SPEED * smooth_time
@@ -410,8 +406,8 @@ func _smooth_damp(current: Vector2, target: Vector2, velocity: Vector2, smooth_t
 		change = change / mag * max_change
 	
 	var temp = (velocity + omega * change) * delta
-	var new_velocity = (velocity - omega * temp) * exp
-	var new_pos = current - (change + temp) * exp
+	var new_velocity = (velocity - omega * temp) * smoothing_factor
+	var new_pos = current - (change + temp) * smoothing_factor
 	
 	# Prevent overshooting
 	if (target - current).dot(new_pos - target) > 0:
@@ -422,7 +418,7 @@ func _smooth_damp(current: Vector2, target: Vector2, velocity: Vector2, smooth_t
 
 
 ## Get interpolated position from buffer based on render time
-func _get_interpolated_position(positions: Array, render_time: float, player_data: Dictionary) -> Vector2:
+func _get_interpolated_position(positions: Array, render_time: float, _player_state: Dictionary) -> Vector2:
 	if positions.is_empty():
 		return Vector2.ZERO
 	
@@ -535,9 +531,6 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 			player_node.global_position.x += input.move_x * 100.0 * dt
 			player_node.global_position.y += input.move_y * 100.0 * dt
 	
-	_last_server_pos = server_pos
-
-
 ## Enable/disable prediction (for debugging)
 func set_prediction_enabled(enabled: bool) -> void:
 	_prediction_enabled = enabled

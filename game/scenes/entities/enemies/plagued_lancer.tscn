@@ -157,6 +157,10 @@ scale_curve = SubResource("CurveTexture_ucbcx")
 color = Color(1, 0, 1, 1)
 color_ramp = SubResource("GradientTexture1D_6rj3g")
 
+[sub_resource type="Gradient" id="Gradient_vuln"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.3, 0.3, 1, 1, 0.5, 0.2, 0.8, 1, 0.2, 0.2, 0)
+
 [node name="PlaguedLancer" type="CharacterBody2D" unique_id=303467806 groups=["elite_mob", "enemy"]]
 scale = Vector2(0.6, 0.6)
 collision_layer = 8
@@ -221,3 +225,22 @@ script = ExtResource("24_ae6dh")
 wait_time = 5.0
 
 [node name="AttackCooldownTimer" type="Timer" parent="." unique_id=1746669938]
+
+[node name="VulnerabilityParticles" type="CPUParticles2D" parent="." unique_id=999888777]
+position = Vector2(0, -10)
+emitting = false
+amount = 15
+lifetime = 1.0
+one_shot = false
+explosiveness = 0.1
+local_coords = true
+direction = Vector2(0, -1)
+spread = 45.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 10.0
+initial_velocity_max = 25.0
+damping_min = 5.0
+damping_max = 15.0
+scale_amount_min = 3.0
+scale_amount_max = 6.0
+color_ramp = SubResource("Gradient_vuln")

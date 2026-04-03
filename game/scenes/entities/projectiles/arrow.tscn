@@ -6,6 +6,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2v6ga"]
 size = Vector2(16, 4)
 
+[sub_resource type="Gradient" id="Gradient_slow"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.2, 0.5, 1, 1, 0.3, 0.6, 1, 0.8, 0.1, 0.3, 0.8, 0)
+
 [node name="Arrow" type="Area2D" unique_id=1818326945 groups=["projectile"]]
 collision_layer = 8
 collision_mask = 2
@@ -16,3 +20,22 @@ texture = ExtResource("2_t7fbb")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1072354540]
 shape = SubResource("RectangleShape2D_2v6ga")
+
+[node name="SlowParticles" type="CPUParticles2D" parent="." unique_id=888999111]
+emitting = false
+amount = 8
+lifetime = 0.3
+one_shot = false
+explosiveness = 0.2
+local_coords = true
+offset = Vector2(0, 0)
+direction = Vector2(0, 0)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 20.0
+initial_velocity_max = 40.0
+damping_min = 20.0
+damping_max = 40.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color_ramp = SubResource("Gradient_slow")

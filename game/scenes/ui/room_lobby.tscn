@@ -1,191 +1,486 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bu8cpoti5dsrs"]
 
-[ext_resource type="Script" path="res://src/ui/room_lobby.gd" id="1_roomlobby"]
+[ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://src/ui/room_lobby.gd" id="1_roomlobby"]
+[ext_resource type="Texture2D" uid="uid://d3qsmfahd1p1" path="res://assets/sprites/Player/Side animations/spr_player_right_idle.png" id="2_idle"]
 
-; ── Background panel ──────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="bg_panel"]
-bg_color = Color(0.08, 0.08, 0.12, 1)
+bg_color = Color(0.09, 0.07, 0.05, 1)
 
-; ── Left decorative panel ─────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="left_panel_style"]
-content_margin_left = 60.0
-content_margin_top = 40.0
-content_margin_right = 60.0
-content_margin_bottom = 40.0
-bg_color = Color(0.06, 0.06, 0.1, 0.95)
-border_width_right = 2
-border_color = Color(0.18, 0.18, 0.28, 1)
+[sub_resource type="AtlasTexture" id="idle_0"]
+atlas = ExtResource("2_idle")
+region = Rect2(0, 0, 64, 64)
 
-; ── Right content panel ───────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="right_panel_style"]
-content_margin_left = 60.0
-content_margin_top = 50.0
-content_margin_right = 60.0
-content_margin_bottom = 50.0
-bg_color = Color(0.1, 0.1, 0.16, 0.9)
+[sub_resource type="AtlasTexture" id="idle_1"]
+atlas = ExtResource("2_idle")
+region = Rect2(64, 0, 64, 64)
 
-; ── Room code badge ───────────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="code_badge_style"]
+[sub_resource type="AtlasTexture" id="idle_2"]
+atlas = ExtResource("2_idle")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_3"]
+atlas = ExtResource("2_idle")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_4"]
+atlas = ExtResource("2_idle")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_5"]
+atlas = ExtResource("2_idle")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_6"]
+atlas = ExtResource("2_idle")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_7"]
+atlas = ExtResource("2_idle")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_8"]
+atlas = ExtResource("2_idle")
+region = Rect2(512, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_9"]
+atlas = ExtResource("2_idle")
+region = Rect2(576, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_10"]
+atlas = ExtResource("2_idle")
+region = Rect2(640, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="idle_11"]
+atlas = ExtResource("2_idle")
+region = Rect2(704, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_11")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 11.0
+}]
+
+[sub_resource type="StyleBoxFlat" id="btn_roomcode_normal"]
 content_margin_left = 20.0
 content_margin_top = 10.0
 content_margin_right = 20.0
 content_margin_bottom = 10.0
-bg_color = Color(0.12, 0.12, 0.22, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.4, 0.5, 0.9, 0.5)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.1, 0.06, 0.2, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.45, 0.9, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.5, 0.3, 0.85, 0.12)
+shadow_size = 5
 
-; ── Players card ──────────────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="players_card_style"]
-content_margin_left = 24.0
-content_margin_top = 20.0
-content_margin_right = 24.0
-content_margin_bottom = 20.0
-bg_color = Color(0.1, 0.1, 0.18, 0.8)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.22, 0.22, 0.38, 0.6)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+[sub_resource type="StyleBoxFlat" id="btn_roomcode_pressed"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.04, 0.16, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.35, 0.75, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-; ── Copy code button ──────────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="btn_copy_normal"]
+[sub_resource type="StyleBoxFlat" id="btn_roomcode_hover"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.15, 0.08, 0.28, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.55, 1, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.5, 0.3, 0.85, 0.2)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="btn_leave_normal"]
 content_margin_left = 14.0
 content_margin_top = 8.0
 content_margin_right = 14.0
 content_margin_bottom = 8.0
-bg_color = Color(0.18, 0.22, 0.38, 0.7)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.35, 0.48, 0.85, 0.6)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.3, 0.08, 0.08, 0.6)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.18, 0.18, 0.5)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="btn_copy_hover"]
+[sub_resource type="StyleBoxFlat" id="btn_leave_pressed"]
 content_margin_left = 14.0
 content_margin_top = 8.0
 content_margin_right = 14.0
 content_margin_bottom = 8.0
-bg_color = Color(0.25, 0.32, 0.55, 0.85)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.45, 0.58, 0.95, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.42, 0.1, 0.1, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.2, 0.2, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="btn_copy_pressed"]
+[sub_resource type="StyleBoxFlat" id="btn_leave_hover"]
 content_margin_left = 14.0
 content_margin_top = 8.0
 content_margin_right = 14.0
 content_margin_bottom = 8.0
-bg_color = Color(0.14, 0.18, 0.32, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.42, 0.78, 0.7)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.55, 0.12, 0.12, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.25, 0.25, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-; ── Start button (green-ish) ──────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_start_normal"]
-content_margin_left = 20.0
+content_margin_left = 28.0
 content_margin_top = 14.0
-content_margin_right = 20.0
+content_margin_right = 28.0
 content_margin_bottom = 14.0
-bg_color = Color(0.2, 0.7, 0.5, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="btn_start_hover"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.26, 0.8, 0.58, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.15, 0.55, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.4, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_start_pressed"]
-content_margin_left = 20.0
+content_margin_left = 28.0
 content_margin_top = 14.0
-content_margin_right = 20.0
+content_margin_right = 28.0
 content_margin_bottom = 14.0
-bg_color = Color(0.15, 0.58, 0.4, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.1, 0.42, 0.22, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.08, 0.32, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-; ── Back button (muted red) ───────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="btn_back_normal"]
-content_margin_left = 16.0
+[sub_resource type="StyleBoxFlat" id="btn_start_hover"]
+content_margin_left = 28.0
+content_margin_top = 14.0
+content_margin_right = 28.0
+content_margin_bottom = 14.0
+bg_color = Color(0.2, 0.65, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.5, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.15, 0.55, 0.3, 0.3)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_start_disabled"]
+content_margin_left = 28.0
+content_margin_top = 14.0
+content_margin_right = 28.0
+content_margin_bottom = 14.0
+bg_color = Color(0.12, 0.18, 0.14, 0.5)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.2, 0.15, 0.4)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="chat_panel_style"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.18, 0.13, 0.08, 0.94)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.56, 0.39, 0.16, 0.8)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="chat_input_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.05, 0.03, 0.08, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.2, 0.4, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="chat_input_focus"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.07, 0.05, 0.12, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.75, 0.3, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="btn_send_normal"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.5, 0.28, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1, 0.38, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="btn_send_hover"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.6, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.48, 0.26, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="stats_panel_style"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.76, 0.67, 0.48, 0.96)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.37, 0.23, 0.1, 0.92)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="btn_arrow_normal"]
+content_margin_left = 18.0
 content_margin_top = 10.0
-content_margin_right = 16.0
+content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.25, 0.15, 0.15, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.1, 0.08, 0.18, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.35, 0.6, 0.5)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="btn_back_hover"]
-content_margin_left = 16.0
+[sub_resource type="StyleBoxFlat" id="btn_arrow_pressed"]
+content_margin_left = 18.0
 content_margin_top = 10.0
-content_margin_right = 16.0
+content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.55, 0.18, 0.18, 0.85)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.08, 0.06, 0.14, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.28, 0.5, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="btn_back_pressed"]
-content_margin_left = 16.0
+[sub_resource type="StyleBoxFlat" id="btn_arrow_hover"]
+content_margin_left = 18.0
 content_margin_top = 10.0
-content_margin_right = 16.0
+content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.42, 0.12, 0.12, 0.9)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.15, 0.12, 0.28, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.8, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-; ── Separator ────────────────────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="separator_style"]
-content_margin_top = 1.0
-content_margin_bottom = 1.0
-bg_color = Color(0.2, 0.2, 0.32, 0.5)
+[sub_resource type="StyleBoxFlat" id="btn_select_normal"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.2, 0.35, 0.7, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.25, 0.55, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 3
 
-; =============================================================================
-; Scene tree
-; =============================================================================
+[sub_resource type="StyleBoxFlat" id="btn_select_pressed"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.15, 0.28, 0.55, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.2, 0.42, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[node name="RoomLobby" type="Control"]
+[sub_resource type="StyleBoxFlat" id="btn_select_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.28, 0.45, 0.82, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2, 0.35, 0.65, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.2, 0.35, 0.7, 0.25)
+shadow_size = 5
+
+[sub_resource type="StyleBoxEmpty" id="transparent_panel_style"]
+
+[sub_resource type="StyleBoxFlat" id="subclass_panel_style"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.72, 0.62, 0.45, 0.96)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.34, 0.21, 0.1, 0.92)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="RoomLobby" type="Control" unique_id=611701028]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -194,126 +489,693 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_roomlobby")
 
-; Full-screen background
-[node name="Background" type="PanelContainer" parent="."]
+[node name="Background" type="PanelContainer" parent="." unique_id=809277405]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("bg_panel")
 
-; Two-column split
-[node name="HBox" type="HBoxContainer" parent="Background"]
-layout_mode = 2
-theme_override_constants/separation = 0
+[node name="Class1" type="Control" parent="." unique_id=1818136206]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -248.0
+offset_right = 128.0
+offset_bottom = 125.0
+grow_horizontal = 2
+grow_vertical = 2
 
-; ── LEFT PANEL ───────────────────────────────────────────────────────────────
-[node name="LeftPanel" type="PanelContainer" parent="Background/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
-theme_override_styles/panel = SubResource("left_panel_style")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class1" unique_id=10125792]
+texture_filter = 1
+position = Vector2(128, 170)
+scale = Vector2(4.3, 4.3)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="LeftContent" type="VBoxContainer" parent="Background/HBox/LeftPanel"]
-layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
-
-[node name="TitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.92, 1, 1)
-theme_override_font_sizes/font_size = 56
-text = "ROOM LOBBY"
-
-[node name="SubtitleLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.55, 0.7, 0.75)
-theme_override_font_sizes/font_size = 16
-text = "Waiting for players to join..."
-
-[node name="Spacer" type="Control" parent="Background/HBox/LeftPanel/LeftContent"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-
-; Room code row
-[node name="CodeRow" type="HBoxContainer" parent="Background/HBox/LeftPanel/LeftContent"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 0
-
-[node name="CodeBadge" type="PanelContainer" parent="Background/HBox/LeftPanel/LeftContent/CodeRow"]
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_styles/panel = SubResource("code_badge_style")
-
-[node name="RoomCodeLabel" type="Label" parent="Background/HBox/LeftPanel/LeftContent/CodeRow/CodeBadge"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.82, 1, 1)
-theme_override_font_sizes/font_size = 22
-text = "Room Code: ..."
-
-[node name="CopyCodeButton" type="Button" parent="Background/HBox/LeftPanel/LeftContent/CodeRow"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.85, 1, 0.9)
+[node name="ClassName" type="Label" parent="Class1" unique_id=1171220843]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = 3.0
+offset_right = 60.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("btn_copy_normal")
-theme_override_styles/hover = SubResource("btn_copy_hover")
-theme_override_styles/pressed = SubResource("btn_copy_pressed")
-text = "Copy"
+theme_override_colors/font_hover_color = Color(0.92, 0.73, 0.53, 1)
+text = "Knight"
+horizontal_alignment = 1
 
-; ── RIGHT PANEL ──────────────────────────────────────────────────────────────
-[node name="RightPanel" type="PanelContainer" parent="Background/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.9
-theme_override_styles/panel = SubResource("right_panel_style")
+[node name="Class2" type="Control" parent="." unique_id=1302152310]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 410.0
+offset_top = -197.0
+offset_right = 599.5
+offset_bottom = 66.25
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="RightContent" type="VBoxContainer" parent="Background/HBox/RightPanel"]
-layout_mode = 2
-theme_override_constants/separation = 20
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class2" unique_id=1309769611]
+texture_filter = 1
+position = Vector2(95, 131)
+scale = Vector2(3, 3)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
 
-; Players section header
-[node name="PlayersLabel" type="Label" parent="Background/HBox/RightPanel/RightContent"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.75, 0.9, 0.85)
-theme_override_font_sizes/font_size = 13
-text = "PLAYERS"
+[node name="ClassName" type="Label" parent="Class2" unique_id=1529060361]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 3.0
+offset_right = 50.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.55, 0.9, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Mage"
+horizontal_alignment = 1
 
-; Players card
-[node name="PlayersCard" type="PanelContainer" parent="Background/HBox/RightPanel/RightContent"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("players_card_style")
+[node name="Class3" type="Control" parent="." unique_id=1985456576]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 168.0
+offset_top = -214.0
+offset_right = 393.0
+offset_bottom = 101.5
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="PlayersList" type="VBoxContainer" parent="Background/HBox/RightPanel/RightContent/PlayersCard"]
-layout_mode = 2
-theme_override_constants/separation = 10
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class3" unique_id=800642479]
+texture_filter = 1
+position = Vector2(112, 158)
+scale = Vector2(3.5, 3.5)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="Separator" type="HSeparator" parent="Background/HBox/RightPanel/RightContent"]
-layout_mode = 2
-theme_override_styles/separator = SubResource("separator_style")
+[node name="ClassName" type="Label" parent="Class3" unique_id=2039350518]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 3.0
+offset_right = 50.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.75, 0.25, 0.2, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Archer"
+horizontal_alignment = 1
 
-; Flexible spacer to push buttons to the bottom
-[node name="Spacer" type="Control" parent="Background/HBox/RightPanel/RightContent"]
-layout_mode = 2
-size_flags_vertical = 3
+[node name="Class4" type="Control" parent="." unique_id=435685204]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -607.0
+offset_top = -197.0
+offset_right = -417.5
+offset_bottom = 66.25
+grow_horizontal = 2
+grow_vertical = 2
 
-; Action buttons
-[node name="StartButton" type="Button" parent="Background/HBox/RightPanel/RightContent"]
-layout_mode = 2
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class4" unique_id=1922354205]
+texture_filter = 1
+position = Vector2(95, 131)
+scale = Vector2(3, 3)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="ClassName" type="Label" parent="Class4" unique_id=662307875]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 3.0
+offset_right = 50.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.2, 0.65, 0.35, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Healer"
+horizontal_alignment = 1
+
+[node name="Class5" type="Control" parent="." unique_id=2070190401]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -381.0
+offset_top = -214.0
+offset_right = -156.0
+offset_bottom = 101.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class5" unique_id=544639271]
+texture_filter = 1
+position = Vector2(112, 158)
+scale = Vector2(3.5, 3.5)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="ClassName" type="Label" parent="Class5" unique_id=468433618]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 3.0
+offset_right = 50.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.25, 0.5, 0.75, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Tank"
+horizontal_alignment = 1
+
+[node name="RoomCode" type="Button" parent="." unique_id=2109980078]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -132.0
+offset_top = 22.0
+offset_right = 132.0
+offset_bottom = 70.0
+grow_horizontal = 2
+tooltip_text = "Copy room code"
+theme_override_colors/font_color = Color(0.88, 0.78, 0.5, 0.96)
+theme_override_font_sizes/font_size = 16
+text = "ROOM-CODE"
+
+[node name="LeaveLobby" type="Button" parent="." unique_id=656760061]
+layout_mode = 1
+offset_left = 18.0
+offset_top = 20.0
+offset_right = 174.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.82, 0.63, 0.44, 0.94)
+theme_override_font_sizes/font_size = 14
+text = "← Leave"
+
+[node name="StartGame" type="Button" parent="." unique_id=672953285]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -164.0
+offset_top = -120.0
+offset_right = 164.0
+offset_bottom = -58.0
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("btn_start_normal")
-theme_override_styles/hover = SubResource("btn_start_hover")
 theme_override_styles/pressed = SubResource("btn_start_pressed")
-text = "Start Game"
+theme_override_styles/hover = SubResource("btn_start_hover")
+theme_override_styles/disabled = SubResource("btn_start_disabled")
+text = "▶ Start Game"
 
-[node name="BackButton" type="Button" parent="Background/HBox/RightPanel/RightContent"]
+[node name="ChatBox" type="PanelContainer" parent="." unique_id=955636777]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -320.0
+offset_right = 320.0
+offset_bottom = -12.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("chat_panel_style")
+
+[node name="VBox" type="VBoxContainer" parent="ChatBox" unique_id=692326315]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.55, 0.55, 0.9)
+theme_override_constants/separation = 6
+
+[node name="ChatHeader" type="Label" parent="ChatBox/VBox" unique_id=1422090106]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.84, 0.44, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "💬 CHAT"
+
+[node name="ChatLog" type="RichTextLabel" parent="ChatBox/VBox" unique_id=1175713416]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.94, 0.88, 0.74, 0.95)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+scroll_following = true
+
+[node name="InputRow" type="HBoxContainer" parent="ChatBox/VBox" unique_id=2020857974]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ChatInput" type="LineEdit" parent="ChatBox/VBox/InputRow" unique_id=1047771303]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.9, 0.8, 1)
+theme_override_colors/font_placeholder_color = Color(0.54, 0.45, 0.27, 0.72)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("chat_input_normal")
+theme_override_styles/focus = SubResource("chat_input_focus")
+placeholder_text = "Type a message..."
+max_length = 200
+
+[node name="SendButton" type="Button" parent="ChatBox/VBox/InputRow" unique_id=1551862379]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("btn_send_normal")
+theme_override_styles/hover = SubResource("btn_send_hover")
+text = "Send"
+
+[node name="ClassStats" type="PanelContainer" parent="." unique_id=1896781710]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -400.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("stats_panel_style")
+
+[node name="StatsVBox" type="VBoxContainer" parent="ClassStats" unique_id=904198357]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatsTitle" type="Label" parent="ClassStats/StatsVBox" unique_id=493215798]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.19, 0.1, 0.96)
+theme_override_font_sizes/font_size = 13
+text = "Combat Stats"
+
+[node name="StatsCards" type="GridContainer" parent="ClassStats/StatsVBox" unique_id=1456439516]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="HPCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=481353661]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/HPCard" unique_id=849956502]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin" unique_id=2102612461]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1122226692]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "HP"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1853932290]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "1,450"
+
+[node name="AttackCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=241978345]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/AttackCard" unique_id=1527529048]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin" unique_id=666549555]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=645068191]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "ATTACK"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1790935392]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "245"
+
+[node name="DefenseCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=29212680]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/DefenseCard" unique_id=703492286]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin" unique_id=1705402686]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=1728710880]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "DEFENSE"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=338114341]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "180"
+
+[node name="SpeedCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=1015956863]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/SpeedCard" unique_id=1533328635]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin" unique_id=1357146599]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=969725831]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "SPEED"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1146953593]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "95"
+
+[node name="CritCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=877540963]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/CritCard" unique_id=1027024443]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin" unique_id=187080617]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=299845704]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "CRIT RATE"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=1412280641]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "15%"
+
+[node name="EvadeCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=522968690]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/EvadeCard" unique_id=1471703169]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin" unique_id=1592818945]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=534188271]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "EVADE"
+
+[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1932028259]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+text = "5%"
+
+[node name="StatsContent" type="RichTextLabel" parent="ClassStats/StatsVBox" unique_id=539378620]
+visible = false
+layout_mode = 2
+theme_override_colors/default_color = Color(0.22, 0.16, 0.1, 0.96)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+text = "Select a class to view stats"
+
+[node name="LeftButton" type="Button" parent="." unique_id=142096212]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -276.0
+offset_top = -188.0
+offset_right = -182.0
+offset_bottom = -132.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.65, 0.85, 0.9)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("btn_arrow_normal")
+theme_override_styles/pressed = SubResource("btn_arrow_pressed")
+theme_override_styles/hover = SubResource("btn_arrow_hover")
+text = "◀"
+
+[node name="RightButton" type="Button" parent="." unique_id=2078494455]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 181.0
+offset_top = -188.0
+offset_right = 275.0
+offset_bottom = -132.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.65, 0.85, 0.9)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("btn_arrow_normal")
+theme_override_styles/pressed = SubResource("btn_arrow_pressed")
+theme_override_styles/hover = SubResource("btn_arrow_hover")
+text = "▶"
+
+[node name="Label" type="Label" parent="." unique_id=2103001564]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 60.0
+offset_right = 160.0
+offset_bottom = 105.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_font_sizes/font_size = 31
+text = "ADVENTURERS' GUILD HALL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LobbyNameEdit" type="LineEdit" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -190.0
+offset_top = 58.0
+offset_right = 190.0
+offset_bottom = 107.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_colors/caret_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_colors/font_placeholder_color = Color(0.84, 0.72, 0.46, 0.55)
+theme_override_font_sizes/font_size = 28
+placeholder_text = "Player's Lobby"
+alignment = 1
+max_length = 28
+
+[node name="Label" type="Label" parent="Label" unique_id=859066297]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -169.0
+offset_top = 2.0
+offset_right = 169.0
+offset_bottom = 22.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.84, 0.72, 0.46, 0.82)
+theme_override_font_sizes/font_size = 13
+text = "🔒 Subclass unlocks at Level 10"
+horizontal_alignment = 1
+
+[node name="SelectClass" type="Button" parent="." unique_id=1714175096]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -115.0
+offset_top = -249.0
+offset_right = 115.0
+offset_bottom = -202.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("btn_back_normal")
-theme_override_styles/hover = SubResource("btn_back_hover")
-theme_override_styles/pressed = SubResource("btn_back_pressed")
-text = "Back to Menu"
+theme_override_styles/normal = SubResource("btn_select_normal")
+theme_override_styles/pressed = SubResource("btn_select_pressed")
+theme_override_styles/hover = SubResource("btn_select_hover")
+text = "✦ Select Class"
+
+[node name="Players" type="PanelContainer" parent="." unique_id=965899457]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -323.0
+offset_right = 232.0
+offset_bottom = -11.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("transparent_panel_style")
+
+[node name="VBox" type="VBoxContainer" parent="Players" unique_id=1670601119]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlayersTitle" type="Label" parent="Players/VBox" unique_id=1446825960]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.97, 0.85, 0.44, 0.95)
+theme_override_font_sizes/font_size = 18
+text = "⚔ PLAYERS"
+
+[node name="PlayersList" type="VBoxContainer" parent="Players/VBox" unique_id=613267774]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Player1" type="Label" parent="Players/VBox/PlayersList" unique_id=1586361066]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.89, 0.77, 0.96)
+theme_override_font_sizes/font_size = 20
+text = "👑 Player (You)"
+
+[node name="Player2" type="Label" parent="Players/VBox/PlayersList" unique_id=348936909]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.74, 0.62, 0.78)
+theme_override_font_sizes/font_size = 20
+text = "Waiting..."
+
+[node name="SubClassInfo" type="PanelContainer" parent="." unique_id=1992445129]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_top = 60.0
+offset_right = -12.0
+offset_bottom = 420.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("subclass_panel_style")
+
+[node name="VBox" type="VBoxContainer" parent="SubClassInfo" unique_id=1107099789]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SubclassTitle" type="Label" parent="SubClassInfo/VBox" unique_id=740013645]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "Talent Path"
+
+[node name="TalentCards" type="VBoxContainer" parent="SubClassInfo/VBox" unique_id=1093695707]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="SubclassContent" type="RichTextLabel" parent="SubClassInfo/VBox" unique_id=206165252]
+visible = false
+layout_mode = 2
+theme_override_colors/default_color = Color(0.6, 0.55, 0.72, 0.7)
+theme_override_font_sizes/normal_font_size = 12
+bbcode_enabled = true
+text = "Select a class to see available subclasses."

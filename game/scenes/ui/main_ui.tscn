@@ -2,124 +2,155 @@
 
 [ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://src/ui/death_menu.gd" id="1_nt7q6"]
 
-; ── Health bar background ─────────────────────────────────────────────────────
+; ── Health bar: background ────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="hp_bg"]
-content_margin_left = 4.0
-content_margin_top = 4.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
-bg_color = Color(0.08, 0.08, 0.12, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.2, 0.32, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_left = 3.0
+content_margin_top = 3.0
+content_margin_right = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.06, 0.05, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.25, 0.4, 0.8)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
-; ── Health bar fill ───────────────────────────────────────────────────────────
+; ── Health bar: fill ──────────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="hp_fill"]
 content_margin_left = 2.0
 content_margin_top = 2.0
 content_margin_right = 2.0
 content_margin_bottom = 2.0
-bg_color = Color(0.18, 0.75, 0.38, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.2, 0.7, 0.35, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
 
-; ── Death card panel ──────────────────────────────────────────────────────────
+; ── Death card (tombstone panel) ──────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="death_card"]
-content_margin_left = 48.0
-content_margin_top = 40.0
-content_margin_right = 48.0
-content_margin_bottom = 40.0
-bg_color = Color(0.07, 0.06, 0.1, 0.97)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.55, 0.15, 0.15, 0.7)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+content_margin_left = 44.0
+content_margin_top = 36.0
+content_margin_right = 44.0
+content_margin_bottom = 36.0
+bg_color = Color(0.08, 0.05, 0.12, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.65, 0.15, 0.15, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.5, 0.05, 0.05, 0.3)
+shadow_size = 8
 
-; ── Restart button ────────────────────────────────────────────────────────────
+; ── Restart button (emerald) ──────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_restart_normal"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.2, 0.7, 0.5, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="btn_restart_hover"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.26, 0.82, 0.58, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.15, 0.55, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.1, 0.4, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+shadow_size = 3
 
 [sub_resource type="StyleBoxFlat" id="btn_restart_pressed"]
 content_margin_left = 20.0
 content_margin_top = 14.0
 content_margin_right = 20.0
 content_margin_bottom = 14.0
-bg_color = Color(0.14, 0.58, 0.4, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.1, 0.42, 0.22, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.08, 0.32, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-; ── Menu button ───────────────────────────────────────────────────────────────
+[sub_resource type="StyleBoxFlat" id="btn_restart_hover"]
+content_margin_left = 20.0
+content_margin_top = 14.0
+content_margin_right = 20.0
+content_margin_bottom = 14.0
+bg_color = Color(0.2, 0.65, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.15, 0.5, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.15, 0.55, 0.3, 0.3)
+shadow_size = 5
+
+; ── Menu button (blood red) ───────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="btn_menu_normal"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.25, 0.15, 0.15, 0.65)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.5, 0.18, 0.18, 0.5)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="btn_menu_hover"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.55, 0.18, 0.18, 0.85)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.35, 0.1, 0.1, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.18, 0.18, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_menu_pressed"]
 content_margin_left = 20.0
 content_margin_top = 12.0
 content_margin_right = 20.0
 content_margin_bottom = 12.0
-bg_color = Color(0.42, 0.12, 0.12, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+bg_color = Color(0.45, 0.1, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.15, 0.15, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="btn_menu_hover"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.55, 0.15, 0.15, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.22, 0.22, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 ; =============================================================================
 ; Scene tree
@@ -128,7 +159,6 @@ corner_radius_bottom_left = 10
 [node name="Ui" type="CanvasLayer" unique_id=958867226]
 script = ExtResource("1_nt7q6")
 
-; ── In-game HUD ───────────────────────────────────────────────────────────────
 [node name="Control" type="Control" parent="." unique_id=1230823350]
 layout_mode = 3
 anchors_preset = 15
@@ -138,49 +168,141 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-; Health bar — top-left, styled
-[node name="HealtBar" type="ProgressBar" parent="Control" unique_id=1295593475]
-custom_minimum_size = Vector2(280, 28)
+; ── Player stats area ─────────────────────────────────────────────────────────
+[node name="PlayerStats" type="Control" parent="Control" unique_id=1019271898]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 589.0
+offset_bottom = 191.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/PlayerStats" unique_id=888559358]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 296.0
-offset_bottom = 44.0
-show_percentage = false
+offset_left = 293.0
+offset_top = 92.0
+offset_right = 573.0
+offset_bottom = 152.0
+
+[node name="ManaBar" type="ProgressBar" parent="Control/PlayerStats/VBoxContainer" unique_id=377156295]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 2
 theme_override_styles/background = SubResource("hp_bg")
 theme_override_styles/fill = SubResource("hp_fill")
+show_percentage = false
 
-; Score — top-center
+[node name="HealtBar" type="ProgressBar" parent="Control/PlayerStats/VBoxContainer" unique_id=1295593475]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 2
+theme_override_styles/background = SubResource("hp_bg")
+theme_override_styles/fill = SubResource("hp_fill")
+show_percentage = false
+
+[node name="PlayerIcon" type="TextureRect" parent="Control/PlayerStats" unique_id=802531615]
+layout_mode = 0
+offset_right = 196.0
+offset_bottom = 186.0
+
+[node name="Status" type="HBoxContainer" parent="Control/PlayerStats" unique_id=605716508]
+layout_mode = 0
+offset_left = 301.0
+offset_top = 160.0
+offset_right = 341.0
+offset_bottom = 200.0
+
+[node name="TextureRect" type="TextureRect" parent="Control/PlayerStats/Status" unique_id=767378623]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="Control/PlayerStats" unique_id=777888999]
+layout_mode = 0
+offset_left = 301.0
+offset_top = 60.0
+offset_right = 380.0
+offset_bottom = 85.0
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "Lv.1"
+
+[node name="CoinDisplay" type="HBoxContainer" parent="Control/PlayerStats" unique_id=888999111]
+layout_mode = 0
+offset_left = 301.0
+offset_top = 200.0
+offset_right = 400.0
+offset_bottom = 225.0
+
+[node name="CoinIcon" type="TextureRect" parent="Control/PlayerStats/CoinDisplay" unique_id=999888222]
+layout_mode = 2
+stretch_mode = 4
+
+[node name="CoinLabel" type="Label" parent="Control/PlayerStats/CoinDisplay" unique_id=111222333]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="PlayerName" type="Label" parent="Control/PlayerStats" unique_id=939969195]
+layout_mode = 0
+offset_left = 301.0
+offset_top = 16.0
+offset_right = 514.0
+offset_bottom = 39.0
+
+; ── Score (top-center) ────────────────────────────────────────────────────────
 [node name="Score" type="Label" parent="Control" unique_id=287511849]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -120.0
-offset_right = 120.0
 offset_top = 12.0
+offset_right = 120.0
 offset_bottom = 56.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.9, 0.92, 1, 0.95)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.6)
-theme_override_font_sizes/font_size = 28
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 26
 text = "Score: 0"
 horizontal_alignment = 1
 
-; Minimap — top-right
+; ── Minimap ───────────────────────────────────────────────────────────────────
 [node name="Map" type="Control" parent="Control" unique_id=206952806]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -212.0
-offset_top = 12.0
-offset_bottom = 181.0
+offset_bottom = 169.0
 grow_horizontal = 0
 
-; ── Death overlay (hidden at start, shown on death) ───────────────────────────
+; ── Players sidebar ───────────────────────────────────────────────────────────
+[node name="Players" type="VBoxContainer" parent="Control" unique_id=1941611403]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -284.0
+offset_top = -167.0
+offset_bottom = 92.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control/Players" unique_id=683932961]
+layout_mode = 2
+
+; ── Store button ──────────────────────────────────────────────────────────────
+[node name="Store" type="Button" parent="Control" unique_id=720655672]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -35.0
+offset_right = 74.0
+offset_bottom = 35.0
+grow_vertical = 2
+
+; ── Death overlay ─────────────────────────────────────────────────────────────
 [node name="Death" type="Control" parent="." unique_id=1587043198]
 visible = false
 layout_mode = 3
@@ -192,7 +314,6 @@ grow_vertical = 2
 mouse_filter = 2
 metadata/_edit_use_anchors_ = true
 
-; Dark backdrop
 [node name="ColorRect" type="ColorRect" parent="Death" unique_id=1468384267]
 layout_mode = 1
 anchors_preset = 15
@@ -201,9 +322,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.0, 0.0, 0.04, 0.82)
+color = Color(0.03, 0.0, 0.06, 0.85)
 
-; Centered death card
 [node name="DeathCard" type="PanelContainer" parent="Death" unique_id=1468384268]
 layout_mode = 1
 anchors_preset = 8
@@ -221,49 +341,51 @@ theme_override_styles/panel = SubResource("death_card")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Death/DeathCard" unique_id=995860019]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 16
 alignment = 1
 
-; "YOU DIED" heading
-[node name="YouDiedLabel" type="Label" parent="Death/DeathCard/VBoxContainer"]
+[node name="SkullIcon" type="Label" parent="Death/DeathCard/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.22, 0.22, 1)
-theme_override_font_sizes/font_size = 52
+theme_override_colors/font_color = Color(0.75, 0.15, 0.15, 0.8)
+theme_override_font_sizes/font_size = 40
+text = "💀"
+horizontal_alignment = 1
+
+[node name="YouDiedLabel" type="Label" parent="Death/DeathCard/VBoxContainer" unique_id=929598492]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.18, 0.18, 1)
+theme_override_font_sizes/font_size = 46
 text = "YOU DIED"
 horizontal_alignment = 1
 
-; Final score
 [node name="FinalScore" type="Label" parent="Death/DeathCard/VBoxContainer" unique_id=310591930]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.84, 1, 0.9)
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.75, 0.7, 0.9, 0.9)
+theme_override_font_sizes/font_size = 20
 text = "Final Score: 00"
 horizontal_alignment = 1
 
-; Spacer
-[node name="Spacer" type="Control" parent="Death/DeathCard/VBoxContainer"]
+[node name="Spacer" type="Control" parent="Death/DeathCard/VBoxContainer" unique_id=1568632345]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-; Restart
 [node name="Restart" type="Button" parent="Death/DeathCard/VBoxContainer" unique_id=1156698958]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("btn_restart_normal")
-theme_override_styles/hover = SubResource("btn_restart_hover")
 theme_override_styles/pressed = SubResource("btn_restart_pressed")
-text = "Restart"
+theme_override_styles/hover = SubResource("btn_restart_hover")
+text = "⚔ Try Again"
 
-; Back to Menu
 [node name="MenuButton" type="Button" parent="Death/DeathCard/VBoxContainer" unique_id=1156698959]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.55, 0.55, 0.9)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.8, 0.45, 0.45, 0.9)
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("btn_menu_normal")
-theme_override_styles/hover = SubResource("btn_menu_hover")
 theme_override_styles/pressed = SubResource("btn_menu_pressed")
-text = "Back to Menu"
+theme_override_styles/hover = SubResource("btn_menu_hover")
+text = "← Retreat to Menu"
 
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/Restart" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/MenuButton" to="." method="_on_menu_pressed"]

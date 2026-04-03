@@ -12,8 +12,6 @@ const MAX_PENDING_INPUTS: int = 60
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
 
-## Server position tracking
-var _last_server_pos: Vector2 = Vector2.ZERO
 var _reconciliation_threshold: float = 15.0
 
 ## Prediction enabled flag
@@ -92,9 +90,6 @@ func reconcile(server_pos: Vector2, server_vel: Vector2, server_seq: int) -> voi
 			player_node.global_position.x += input.move_x * 100.0 * dt
 			player_node.global_position.y += input.move_y * 100.0 * dt
 	
-	_last_server_pos = server_pos
-
-
 # === INTERNAL HELPERS ===
 
 func _now_sec() -> float:

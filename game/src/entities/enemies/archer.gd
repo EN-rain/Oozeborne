@@ -222,9 +222,9 @@ func take_damage(amount: int):
 	if is_taking_damage or is_dying:
 		return
 	
-	var died = health.take_damage(amount)
+	var was_killed = health.take_damage(amount)
 	
-	if died:
+	if was_killed:
 		return
 	
 	# FORCE cancel attack animation and state

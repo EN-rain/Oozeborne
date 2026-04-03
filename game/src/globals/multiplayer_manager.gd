@@ -5,10 +5,15 @@ var session: NakamaSession
 var socket: NakamaSocket
 var match_id: String = ""
 var player_ign: String = ""
+var account_email: String = ""
 var room_code: String = ""  # 9-char alphanumeric display code
+var lobby_name: String = ""
 var is_host: bool = false
 var match_phase: String = "lobby"
 var players: Dictionary = {}  # user_id -> {ign, is_host}
+var player_class: PlayerClass = null  # Selected main class
+var player_subclass: PlayerClass = null  # Selected subclass (unlocked at level 10)
+var player_level: int = 1  # Player level for subclass unlock
 
 const SERVER_CONFIG_FILE = "server_config.cfg"
 const SERVER_CONFIG_SECTION = "server"
@@ -18,6 +23,7 @@ const DEFAULT_SERVER_PORT = 7350
 const DEFAULT_SCHEME = "http"
 const TIMEOUT = 10
 const ROOM_COLLECTION = "room_registry"
+const AUTH_SESSION_FILE = "user://auth_session.json"
 
 var _server_config: Dictionary = {
 	"host": DEFAULT_SERVER_HOST,
@@ -31,18 +37,21 @@ signal player_joined(user_id: String, ign: String, is_host_flag: bool)
 signal player_left(user_id: String)
 signal match_joined()
 signal match_phase_changed(new_phase: String)
+signal auth_state_changed(is_authenticated: bool, username: String, email: String)
 
 func _ready():
+	_server_config = _resolve_server_config()
 	print("MultiplayerManager ready")
 
 func _reset_match_state() -> void:
 	match_id = ""
 	room_code = ""
+	lobby_name = ""
 	is_host = false
 	match_phase = "lobby"
 	players.clear()
 
-func _cleanup_connection() -> void:
+func _cleanup_socket_connection() -> void:
 	if socket != null:
 		if socket.received_match_presence.is_connected(_on_match_presence):
 			socket.received_match_presence.disconnect(_on_match_presence)
@@ -51,13 +60,168 @@ func _cleanup_connection() -> void:
 		socket.close()
 		socket = null
 
-	for child_name in ["NakamaHTTPAdapter", "NakamaSocketAdapter"]:
-		var child = get_node_or_null(child_name)
-		if child != null:
-			child.queue_free()
+	var socket_adapter = get_node_or_null("NakamaSocketAdapter")
+	if socket_adapter != null:
+		socket_adapter.queue_free()
 
+func _cleanup_client() -> void:
+	var http_adapter = get_node_or_null("NakamaHTTPAdapter")
+	if http_adapter != null:
+		http_adapter.queue_free()
 	client = null
+
+func _clear_auth_state() -> void:
 	session = null
+	account_email = ""
+
+func _set_authenticated_session(new_session: NakamaSession, email: String = "") -> void:
+	session = new_session
+	account_email = email
+	if player_ign.is_empty() and session != null and not session.username.is_empty():
+		player_ign = session.username
+	_emit_auth_state()
+
+func _emit_auth_state() -> void:
+	var username = ""
+	if session != null:
+		username = session.username
+	if username.is_empty():
+		username = player_ign
+	auth_state_changed.emit(is_authenticated(), username, account_email)
+
+func _ensure_client() -> void:
+	_server_config = _resolve_server_config()
+	if client != null:
+		return
+
+	print("[Manager] Resolved server config from ", _server_config["source"], ": ", get_server_endpoint_summary())
+	var http_adapter = get_node_or_null("NakamaHTTPAdapter")
+	if http_adapter == null:
+		http_adapter = NakamaHTTPAdapter.new()
+		http_adapter.name = "NakamaHTTPAdapter"
+		add_child(http_adapter)
+
+	client = NakamaClient.new(
+		http_adapter,
+		_server_config["server_key"],
+		_server_config["scheme"],
+		_server_config["host"],
+		_server_config["port"],
+		TIMEOUT
+	)
+
+func _save_auth_session() -> void:
+	if session == null or session.token.is_empty():
+		return
+
+	var auth_payload = {
+		"token": session.token,
+		"refresh_token": session.refresh_token,
+		"email": account_email,
+		"username": session.username if not session.username.is_empty() else player_ign
+	}
+	var auth_file = FileAccess.open(AUTH_SESSION_FILE, FileAccess.WRITE)
+	if auth_file == null:
+		push_warning("Failed to persist auth session")
+		return
+	auth_file.store_string(JSON.stringify(auth_payload))
+
+func _clear_saved_auth_session() -> void:
+	if FileAccess.file_exists(AUTH_SESSION_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(AUTH_SESSION_FILE))
+
+func _load_saved_auth_session() -> Dictionary:
+	if not FileAccess.file_exists(AUTH_SESSION_FILE):
+		return {}
+
+	var auth_file = FileAccess.open(AUTH_SESSION_FILE, FileAccess.READ)
+	if auth_file == null:
+		return {}
+
+	var parsed = JSON.parse_string(auth_file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	return parsed
+
+func is_authenticated() -> bool:
+	return session != null and not session.is_exception() and session.is_valid() and not session.is_expired()
+
+func get_last_auth_error(session_result: NakamaSession) -> String:
+	if session_result == null:
+		return "Authentication failed"
+	if session_result.is_exception():
+		return str(session_result.get_exception().message)
+	if not session_result.is_valid():
+		return "Authentication failed"
+	return ""
+
+func authenticate_email(email: String, password: String, username: String = "", create_account: bool = false) -> Dictionary:
+	_ensure_client()
+	var normalized_email = email.strip_edges().to_lower()
+	var normalized_username = username.strip_edges()
+	var auth_session: NakamaSession
+
+	if create_account:
+		auth_session = await client.authenticate_email_async(normalized_email, password, normalized_username, true, null)
+	else:
+		auth_session = await client.authenticate_email_async(normalized_email, password, null, false, null)
+
+	var auth_error = get_last_auth_error(auth_session)
+	if not auth_error.is_empty():
+		return {"success": false, "error": auth_error}
+
+	_set_authenticated_session(auth_session, normalized_email)
+	if create_account and not normalized_username.is_empty():
+		player_ign = normalized_username
+	_save_auth_session()
+	return {"success": true, "error": ""}
+
+func login_with_email(email: String, password: String) -> Dictionary:
+	return await authenticate_email(email, password, "", false)
+
+func register_with_email(email: String, password: String, username: String) -> Dictionary:
+	return await authenticate_email(email, password, username, true)
+
+func restore_saved_session() -> Dictionary:
+	_ensure_client()
+	var saved_auth = _load_saved_auth_session()
+	if saved_auth.is_empty():
+		return {"success": false, "error": "No saved session"}
+
+	var restored_session = NakamaSession.new(
+		str(saved_auth.get("token", "")),
+		false,
+		str(saved_auth.get("refresh_token", ""))
+	)
+	if not restored_session.is_valid():
+		_clear_saved_auth_session()
+		return {"success": false, "error": "Saved session is invalid"}
+
+	if restored_session.is_expired():
+		if restored_session.refresh_token.is_empty() or restored_session.is_refresh_expired():
+			_clear_saved_auth_session()
+			return {"success": false, "error": "Saved session expired"}
+
+		restored_session = await client.session_refresh_async(restored_session)
+		var refresh_error = get_last_auth_error(restored_session)
+		if not refresh_error.is_empty():
+			_clear_saved_auth_session()
+			return {"success": false, "error": refresh_error}
+
+	_set_authenticated_session(restored_session, str(saved_auth.get("email", "")))
+	if player_ign.is_empty():
+		player_ign = str(saved_auth.get("username", ""))
+	_save_auth_session()
+	return {"success": true, "error": ""}
+
+func logout() -> void:
+	_cleanup_socket_connection()
+	if client != null and session != null and not session.refresh_token.is_empty():
+		await client.session_logout_async(session)
+	_clear_saved_auth_session()
+	_clear_auth_state()
+	_reset_match_state()
+	_emit_auth_state()
 
 func is_socket_open() -> bool:
 	return socket != null and socket.is_connected_to_host()
@@ -109,37 +273,22 @@ func _resolve_server_config() -> Dictionary:
 
 	return resolved
 
-func connect_to_server(device_id: String) -> bool:
-	_cleanup_connection()
+func connect_to_server(device_id: String = "") -> bool:
+	_cleanup_socket_connection()
 	_reset_match_state()
-	_server_config = _resolve_server_config()
-	print("[Manager] Resolved server config from ", _server_config["source"], ": ", get_server_endpoint_summary())
+	_ensure_client()
 
-	# Create HTTP adapter for the client
-	var http_adapter = NakamaHTTPAdapter.new()
-	http_adapter.name = "NakamaHTTPAdapter"
-	add_child(http_adapter)
-	
-	# Create Nakama client
-	client = NakamaClient.new(
-		http_adapter,
-		_server_config["server_key"],
-		_server_config["scheme"],
-		_server_config["host"],
-		_server_config["port"],
-		TIMEOUT
-	)
-	
-	# Authenticate with device ID
-	var result = await client.authenticate_device_async(device_id, null, true, null)
-	
-	if result.is_exception():
-		print("Failed to authenticate: " + result.get_exception().message)
-		return false
-	
-	session = result
-	print("Connected to Nakama! Session: " + session.token)
-	
+	if not is_authenticated():
+		var fallback_device_id = device_id
+		if fallback_device_id.is_empty():
+			fallback_device_id = "guest_" + str(Time.get_unix_time_from_system())
+		var result = await client.authenticate_device_async(fallback_device_id, null, true, null)
+		var auth_error = get_last_auth_error(result)
+		if not auth_error.is_empty():
+			print("Failed to authenticate: " + auth_error)
+			return false
+		_set_authenticated_session(result)
+
 	# Create socket adapter for real-time communication
 	var socket_adapter = NakamaSocketAdapter.new()
 	socket_adapter.name = "NakamaSocketAdapter"
@@ -172,6 +321,7 @@ func create_room() -> String:
 
 	# Generate short room code
 	room_code = _generate_room_code()
+	lobby_name = "%s's Lobby" % player_ign
 	is_host = true
 	players[session.user_id] = {"ign": player_ign, "is_host": true}
 
@@ -240,6 +390,7 @@ func join_room(join_code: String) -> bool:
 		return false
 	
 	var host_ign = result_data.get("host_ign", "Unknown")
+	lobby_name = result_data.get("lobby_name", "%s's Lobby" % host_ign)
 	print("Found room, host: " + host_ign + ", joining match: " + target_match_id)
 
 	var join_result = await socket.join_match_async(target_match_id, {"ign": player_ign})
@@ -305,7 +456,7 @@ func disconnect_server():
 		# Call RPC to delete room
 		var payload = JSON.stringify({"room_code": room_code})
 		await client.rpc_async(session, "delete_room", payload)
-	_cleanup_connection()
+	_cleanup_socket_connection()
 	_reset_match_state()
 	print("Disconnected from server")
 
@@ -338,7 +489,17 @@ func _on_match_state(match_state) -> void:
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:
 		_set_match_phase("in_game")
 		return
-
+	
+	# Handle OP_PLAYER_JOIN (op code 3) - server broadcasts this when players join
+	if match_state.op_code == MultiplayerUtils.OP_PLAYER_JOIN:
+		var join_payload = JSON.parse_string(match_state.data)
+		if join_payload != null:
+			# Capture phase from server - critical for late joiners
+			var server_phase = join_payload.get("phase", "lobby")
+			if server_phase == "in_game":
+				_set_match_phase("in_game")
+		return
+	
 	var data = JSON.parse_string(match_state.data)
 	if data == null:
 		return

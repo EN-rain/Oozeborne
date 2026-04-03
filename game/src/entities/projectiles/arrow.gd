@@ -6,6 +6,8 @@ extends Area2D
 @export var homing_strength: float = 0.15  # How aggressively arrow tracks (0-1)
 @export var homing_delay: float = 0.1  # Delay before homing kicks in
 @export var homing_duration: float = 1.0  # Homing turns off after this timer
+@export var slow_chance: float = 0.5  # 50% chance to apply slow
+@export var slow_duration: float = 3.0  # 3 seconds slow
 
 var direction: Vector2 = Vector2.RIGHT
 var has_hit := false
@@ -13,6 +15,9 @@ var distance_traveled: float = 0.0
 var start_position: Vector2
 var player: Node2D = null
 var homing_timer: float = 0.0
+var is_slow_arrow := false
+
+@onready var slow_particles: CPUParticles2D = $SlowParticles
 
 func _ready():
 	# Arrow detects player on layer 1
@@ -30,6 +35,12 @@ func _ready():
 	
 	# Rotate arrow to face direction
 	rotation = direction.angle()
+	
+	# Determine if this is a slow arrow (50% chance)
+	is_slow_arrow = randf() < slow_chance
+	if is_slow_arrow and slow_particles:
+		slow_particles.emitting = true
+		print("[Arrow] Slow arrow spawned!")
 
 func _physics_process(delta):
 	if has_hit:
@@ -60,6 +71,13 @@ func _on_body_entered(body):
 	if body.is_in_group("player") and body.has_method("apply_damage"):
 		has_hit = true
 		body.apply_damage(damage, global_position, 150.0)
+		
+		# Apply slow debuff if this is a slow arrow
+		if is_slow_arrow:
+			var slow = SlowDebuff.new()
+			slow.duration = slow_duration
+			StatusEffectManager.apply_effect(body, slow)
+		
 		queue_free()
 	else:
 		# Hit a wall or TileMapLayer — destroy arrow

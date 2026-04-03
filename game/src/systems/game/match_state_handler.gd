@@ -13,7 +13,7 @@ signal request_players_received()
 ## Handle incoming match state
 func handle_match_state(match_state) -> void:
 	var op_code = match_state.op_code
-	var data = JSON.parse_string(match_state.data)
+	var payload = JSON.parse_string(match_state.data)
 	
 	# Op code 2 = Server state snapshot (handled by main.gd)
 	if op_code == NetworkMessaging.OP_STATE:
@@ -28,71 +28,71 @@ func handle_match_state(match_state) -> void:
 		return  # Let main.gd handle this directly
 	
 	# Legacy JSON-based messages
-	if data == null:
+	if payload == null:
 		return
 	
 	var sender_id = NetworkMessaging.extract_sender_id(match_state)
 	
-	match data.get("type", ""):
+	match payload.get("type", ""):
 		"player_info":
-			_handle_player_info(data, sender_id)
+			_handle_player_info(payload, sender_id)
 		
 		"player_attack":
-			_handle_player_attack(data, sender_id)
+			_handle_player_attack(payload, sender_id)
 		
 		"ping":
-			_handle_ping(data, sender_id)
+			_handle_ping(payload, sender_id)
 		
 		"pong":
-			_handle_pong(data, sender_id)
+			_handle_pong(payload, sender_id)
 		
 		"request_players":
 			request_players_received.emit()
 
 
 ## Parse server snapshot data
-func parse_server_snapshot(data: Dictionary) -> Array:
-	if data == null:
+func parse_server_snapshot(snapshot: Dictionary) -> Array:
+	if snapshot == null:
 		return []
-	return data.get("players", [])
+	return snapshot.get("players", [])
 
 
 ## Parse player join data
-func parse_player_join(data: Dictionary) -> Dictionary:
-	if data == null:
+func parse_player_join(payload: Dictionary) -> Dictionary:
+	if payload == null:
 		return {}
 	return {
-		"user_id": data.get("user_id", ""),
-		"ign": data.get("ign", "Unknown"),
+		"user_id": payload.get("user_id", ""),
+		"ign": payload.get("ign", "Unknown"),
 		"pos": Vector2(
-			data.get("pos", {}).get("x", 400),
-			data.get("pos", {}).get("y", 300)
+			payload.get("pos", {}).get("x", 400),
+			payload.get("pos", {}).get("y", 300)
 		)
 	}
 
 
 ## Parse player leave data
-func parse_player_leave(data: Dictionary) -> String:
-	if data == null:
+func parse_player_leave(payload: Dictionary) -> String:
+	if payload == null:
 		return ""
-	return data.get("user_id", "")
+	return payload.get("user_id", "")
 
 
 ## Parse player data from snapshot
-func parse_player_data(player_data: Dictionary) -> Dictionary:
-	var pos_data = player_data.get("pos", {})
-	var vel_data = player_data.get("vel", {})
+func parse_player_data(snapshot_player: Dictionary) -> Dictionary:
+	var pos_data = snapshot_player.get("pos", {})
+	var vel_data = snapshot_player.get("vel", {})
 	
 	return {
-		"user_id": player_data.get("user_id", ""),
+		"user_id": snapshot_player.get("user_id", ""),
 		"pos": Vector2(pos_data.get("x", 0), pos_data.get("y", 0)),
 		"velocity": Vector2(vel_data.get("x", 0), vel_data.get("y", 0)),
-		"input_seq": player_data.get("input_seq", 0),
-		"facing": player_data.get("facing", 1),
-		"is_attacking": player_data.get("is_attacking", false),
-		"is_dashing": player_data.get("is_dashing", false),
-		"attack_rotation": player_data.get("attack_rotation", 0.0),
-		"ign": player_data.get("ign", "Unknown")
+		"input_seq": snapshot_player.get("input_seq", 0),
+		"facing": snapshot_player.get("facing", 1),
+		"is_attacking": snapshot_player.get("is_attacking", false),
+		"is_dashing": snapshot_player.get("is_dashing", false),
+		"attack_rotation": snapshot_player.get("attack_rotation", 0.0),
+		"ign": snapshot_player.get("ign", "Unknown")
 	}
 
 

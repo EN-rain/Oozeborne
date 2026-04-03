@@ -10,6 +10,7 @@ var current_state = State.IDLE
 @onready var damage_timer: Timer = $DamageTimer
 @onready var teleport_particles: GPUParticles2D = $TeleportParticles
 @onready var blink_cooldown_timer: Timer = $BlinkCooldownTimer
+@onready var vulnerability_particles: CPUParticles2D = $VulnerabilityParticles
 
 @export var speed: float = 60.0
 @export var stop_distance: float = 10.0
@@ -21,6 +22,7 @@ var current_state = State.IDLE
 @export var teleport_distance: float = 10.0  # Reduced from 20 to get closer for attack
 @export var blink_cooldown: float = 3.0  # Reduced from 15 for testing
 @export var max_health: int = 100
+@export var vulnerability_duration: float = 3.0  # Duration of vulnerability after teleport
 
 const TELEPORT_FADE_TIME := 0.3
 const INITIAL_TELEPORT_OFFSET := 20.0  # Reduced from 100 to teleport closer
@@ -71,6 +73,7 @@ func _ready():
 	blink_cooldown_timer.timeout.connect(_on_blink_cooldown_timeout)
 	
 	teleport_particles.emitting = false
+	vulnerability_particles.emitting = false
 
 func _physics_process(delta):
 	# Failsafe: reset stuck animation flags if animation isn't playing
@@ -265,7 +268,8 @@ func initial_teleport():
 	if is_instance_valid(player) and attack_area.overlaps_body(player):
 		start_attack(player)
 	
-	change_state(State.CHASE)
+	# Apply vulnerability debuff to self after teleport
+	_apply_vulnerability()
 
 func start_blink():
 	if not _has_valid_player() or is_teleporting or is_blinking:
@@ -333,6 +337,23 @@ func teleport_to_player_back():
 	# NOTE: Attack animation happens AFTER cooldown starts, so timer runs during attack
 	if is_instance_valid(player) and attack_area.overlaps_body(player):
 		start_attack(player)
+	
+	# Apply vulnerability debuff to self after teleport
+	_apply_vulnerability()
+
+func _apply_vulnerability():
+	# Apply vulnerability to self after teleporting
+	set_meta("damage_modifier", 1.3)  # 30% more damage taken
+	vulnerability_particles.emitting = true
+	print("[Lancer] Vulnerability applied for %.1fs" % vulnerability_duration)
+	
+	await get_tree().create_timer(vulnerability_duration).timeout
+	
+	# Remove vulnerability after duration
+	if has_meta("damage_modifier"):
+		remove_meta("damage_modifier")
+		vulnerability_particles.emitting = false
+		print("[Lancer] Vulnerability removed")
 
 func _on_blink_cooldown_timeout():
 	can_blink = true

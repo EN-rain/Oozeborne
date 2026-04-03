@@ -1,12 +1,19 @@
 extends CanvasLayer
 
-@onready var health_bar: ProgressBar = $Control/HealtBar
+@onready var health_bar: ProgressBar = $Control/PlayerStats/VBoxContainer/HealtBar
+@onready var xp_bar: ProgressBar = $Control/PlayerStats/VBoxContainer/ManaBar
+@onready var level_label: Label = $Control/PlayerStats/LevelLabel
+@onready var player_name_label: Label = $Control/PlayerStats/PlayerName
+@onready var coin_label: Label = $Control/PlayerStats/CoinDisplay/CoinLabel
 @onready var score_label: Label = $Control/Score
 @onready var minimap: Control = $Control/Map
 @onready var death_screen: Control = $Death
 @onready var final_score_label: Label = $Death/DeathCard/VBoxContainer/FinalScore
 @onready var restart_button: Button = $Death/DeathCard/VBoxContainer/Restart
 @onready var menu_button: Button = $Death/DeathCard/VBoxContainer/MenuButton
+@onready var store_button: Button = $Control/Store
+
+var shop_ui: Control = null
 
 var current_score: int = 0
 var player_ref: CharacterBody2D
@@ -36,6 +43,10 @@ func _ready():
 	
 	death_screen.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	
+	# Connect to coin changes
+	CoinManager.coins_changed.connect(_on_coins_changed)
+	_on_coins_changed(CoinManager.get_coins())
+	
 	if restart_button and not restart_button.pressed.is_connected(_on_restart_pressed):
 		restart_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 		restart_button.pressed.connect(_on_restart_pressed)
@@ -43,6 +54,13 @@ func _ready():
 	if menu_button and not menu_button.pressed.is_connected(_on_menu_pressed):
 		menu_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 		menu_button.pressed.connect(_on_menu_pressed)
+	
+	# Connect store button
+	if store_button and not store_button.pressed.is_connected(_on_store_pressed):
+		store_button.pressed.connect(_on_store_pressed)
+	
+	# Create shop UI
+	_setup_shop_ui()
 
 func _process(_delta):
 	minimap.queue_redraw()
@@ -53,6 +71,17 @@ func set_player(player):
 	health.health_changed.connect(_on_health_changed)
 	health.died.connect(_on_player_died)
 	_on_health_changed(health.current_health, health.max_health)
+	
+	# Set player name in UI
+	if player_name_label:
+		player_name_label.text = MultiplayerManager.player_ign
+	
+	# Connect to LevelSystem singleton for XP/level updates
+	LevelSystem.xp_gained.connect(_on_xp_gained)
+	LevelSystem.level_up.connect(_on_level_up)
+	LevelSystem.stats_updated.connect(_on_stats_updated)
+	# Initialize display
+	_update_level_display(LevelSystem.get_level(player), LevelSystem.get_xp_progress(player))
 
 func _on_health_changed(current, max):
 	health_bar.max_value = max
@@ -60,6 +89,25 @@ func _on_health_changed(current, max):
 
 func _on_player_died():
 	show_death_screen()
+
+func _on_xp_gained(entity_id: int, _amount: int, _total: int):
+	if player_ref and player_ref.get_instance_id() == entity_id:
+		_update_level_display(LevelSystem.get_level(player_ref), LevelSystem.get_xp_progress(player_ref))
+
+func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary):
+	if player_ref and player_ref.get_instance_id() == entity_id:
+		print("[UI] Player leveled up to %d!" % new_level)
+		_update_level_display(new_level, LevelSystem.get_xp_progress(player_ref))
+
+func _on_stats_updated(stats: Dictionary):
+	# Stats are applied by LevelSystem directly to player
+	pass
+
+func _update_level_display(level: int, xp_progress: float):
+	if level_label:
+		level_label.text = "Lv.%d" % level
+	if xp_bar:
+		xp_bar.value = xp_progress * 100.0
 
 func show_death_screen():
 	death_screen.visible = true
@@ -162,3 +210,24 @@ func _on_menu_pressed() -> void:
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+func _on_coins_changed(total: int) -> void:
+	if coin_label:
+		coin_label.text = str(total)
+
+func _setup_shop_ui():
+	var shop_scene = preload("res://scenes/ui/shop.tscn")
+	shop_ui = shop_scene.instantiate()
+	shop_ui.hide()
+	add_child(shop_ui)
+
+func _on_store_pressed():
+	if shop_ui:
+		shop_ui.open()
+
+func toggle_shop():
+	if shop_ui:
+		if shop_ui.visible:
+			shop_ui.hide()
+		else:
+			shop_ui.open()

@@ -7,9 +7,6 @@ extends Node
 ##   "velocity": Vector2, "smooth_velocity": Vector2, "is_visible": bool } }
 var _remote_players: Dictionary = {}
 
-## Server position tracking
-var _last_server_pos: Vector2 = Vector2.ZERO
-
 ## Network quality adaptation
 var _jitter_samples: Array = []
 var _adaptive_interpolation_delay: float = 0.07
@@ -195,16 +192,21 @@ func _trigger_attack(player_data: Dictionary, attack_rotation: float) -> void:
 
 func _update_dash_visuals(player_data: Dictionary, is_dashing: bool) -> void:
 	var dash_particles = player_data.node.get_node_or_null("DashParticles")
+	var dash_trail = player_data.node.get_node_or_null("DashTrail")
 	var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 	
 	if is_dashing:
 		if dash_particles and not dash_particles.emitting:
 			dash_particles.emitting = true
+		if dash_trail and not dash_trail.emitting:
+			dash_trail.emitting = true
 		if sprite:
 			sprite.modulate = Color(1.2, 1.2, 1.5)
 	else:
 		if dash_particles:
 			dash_particles.emitting = false
+		if dash_trail:
+			dash_trail.emitting = false
 		if sprite:
 			sprite.modulate = Color.WHITE
 
@@ -230,7 +232,7 @@ func _smooth_damp(current: Vector2, target: Vector2, velocity: Vector2,
 		smooth_time: float, delta: float) -> Dictionary:
 	var omega = 2.0 / smooth_time
 	var x = omega * delta
-	var exp = 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
+	var smoothing_factor = 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
 	
 	var change = current - target
 	var max_change = SMOOTH_DAMP_MAX_SPEED * smooth_time
@@ -242,8 +244,8 @@ func _smooth_damp(current: Vector2, target: Vector2, velocity: Vector2,
 		change = change / mag * max_change
 	
 	var temp = (velocity + omega * change) * delta
-	var new_velocity = (velocity - omega * temp) * exp
-	var new_pos = current - (change + temp) * exp
+	var new_velocity = (velocity - omega * temp) * smoothing_factor
+	var new_pos = current - (change + temp) * smoothing_factor
 	
 	if (target - current).dot(new_pos - target) > 0:
 		new_pos = target
