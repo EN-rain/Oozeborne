@@ -30,6 +30,9 @@ func _ready():
 	if not MultiplayerManager.room_code.is_empty():
 		seed(MultiplayerManager.room_code.hash())
 	
+	# Replace local player with class-specific scene if available
+	_replace_local_player_with_class_scene()
+	
 	# Start near the expected authoritative spawn instead of forcing every client to the same point.
 	player.global_position = Vector2(360, 300) if MultiplayerManager.is_host else Vector2(440, 300)
 	
@@ -65,6 +68,23 @@ func _ready():
 		MultiplayerUtils.start_input_update_loop(player)
 		# Announce our presence in game
 		MultiplayerUtils.send_player_info(MultiplayerManager.player_ign, MultiplayerManager.is_host)
+
+func _replace_local_player_with_class_scene():
+	# Replace the default player with the class-specific slime scene
+	var player_class: PlayerClass = MultiplayerManager.player_class
+	if player_class and player_class.player_scene:
+		var old_player = player
+		var new_player = player_class.player_scene.instantiate()
+		new_player.global_position = old_player.global_position
+		new_player.name = old_player.name
+		new_player.is_local_player = true
+		# Copy IGN if available
+		if old_player.has_method("get_ign") and new_player.has_method("set_ign"):
+			new_player.set_ign(old_player.get_ign())
+		old_player.queue_free()
+		add_child(new_player)
+		player = new_player
+		print("[Main] Replaced player with class scene: ", player_class.display_name)
 
 func _create_fps_display():
 	# Create CanvasLayer for overlay
@@ -221,10 +241,12 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 			if player.has_method("set_ign"):
 				player.set_ign(player_info.ign)
 	else:
-		# Spawn remote player
-		if player_scene == null:
+		# Spawn remote player - use their class's player_scene if available
+		var remote_player_class: PlayerClass = MultiplayerManager.get_player_class(user_id)
+		var scene_to_use: PackedScene = remote_player_class.player_scene if remote_player_class and remote_player_class.player_scene else player_scene
+		if scene_to_use == null:
 			return
-		var remote_player = player_scene.instantiate()
+		var remote_player = scene_to_use.instantiate()
 		var has_initial_pos := initial_pos is Vector2
 		var spawn_pos: Vector2 = initial_pos if has_initial_pos else Vector2(-9999, -9999)
 		remote_player.global_position = spawn_pos
@@ -256,11 +278,6 @@ func _spawn_remote_attack(user_id: String, pos: Vector2, rotation_angle: float):
 	# Play attack animation on remote player
 	if is_instance_valid(remote_player) and remote_player.has_method("play_attack_animation"):
 		remote_player.play_attack_animation()
-	elif is_instance_valid(remote_player):
-		# Fallback: directly access the sprite if method doesn't exist
-		var sprite = remote_player.get_node_or_null("AnimatedSprite2D")
-		if sprite:
-			sprite.play("basic_attack")
 	
 	_spawn_remote_slash(pos, rotation_angle)
 

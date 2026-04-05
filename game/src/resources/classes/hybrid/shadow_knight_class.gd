@@ -8,6 +8,9 @@ func _init():
 	description = "A fallen warrior who has embraced the darkness. Shadow Knights sacrifice their own HP to fuel devastating attacks."
 	lore = "Once noble paladins, Shadow Knights made a pact with darkness to gain power at a terrible price."
 	
+	# Player scene - Purple slime for dark knight classes
+	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.2        # +20% HP
 	modifiers_speed = 1.05    # +5% Speed

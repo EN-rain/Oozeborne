@@ -8,6 +8,9 @@ func _init():
 	description = "Master of the arcane arts. Mages wield devastating spells but are extremely fragile."
 	lore = "Scholars of the Arcane Academy, Mages have spent decades mastering the elemental forces."
 	
+	# Player scene - Purple slime for magic classes
+	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 0.7        # -30% HP
 	modifiers_speed = 1.1     # +10% Speed

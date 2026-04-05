@@ -1,202 +1,117 @@
 [gd_scene format=3 uid="uid://bu8cpoti5dsrs"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base3.png" id="idle_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base4.png" id="idle_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base5.png" id="idle_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base6.png" id="idle_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base7.png" id="idle_07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base8.png" id="idle_08"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base9.png" id="idle_09"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base10.png" id="idle_10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base1.png" id="walk_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base2.png" id="walk_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base3.png" id="walk_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base4.png" id="walk_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base5.png" id="walk_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base6.png" id="walk_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
+
 
 [ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://src/ui/room_lobby.gd" id="1_roomlobby"]
-[ext_resource type="Texture2D" uid="uid://d3qsmfahd1p1" path="res://assets/sprites/Player/Side animations/spr_player_right_idle.png" id="2_idle"]
+[ext_resource type="Texture2D" uid="uid://cmxlei5j5rtla" path="res://assets/bg/bg.png" id="2_2lpa5"]
 
-[sub_resource type="StyleBoxFlat" id="bg_panel"]
-bg_color = Color(0.09, 0.07, 0.05, 1)
+[sub_resource type="Shader" id="top_fade_shader"]
+code = "shader_type canvas_item;
 
-[sub_resource type="AtlasTexture" id="idle_0"]
-atlas = ExtResource("2_idle")
-region = Rect2(0, 0, 64, 64)
+uniform vec4 fade_color : source_color = vec4(0.08, 0.05, 0.02, 1.0);
 
-[sub_resource type="AtlasTexture" id="idle_1"]
-atlas = ExtResource("2_idle")
-region = Rect2(64, 0, 64, 64)
+void fragment() {
+	float alpha = smoothstep(0.0, 1.0, UV.y);
+	COLOR = vec4(fade_color.rgb, fade_color.a * alpha);
+}
+"
 
-[sub_resource type="AtlasTexture" id="idle_2"]
-atlas = ExtResource("2_idle")
-region = Rect2(128, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_3"]
-atlas = ExtResource("2_idle")
-region = Rect2(192, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_4"]
-atlas = ExtResource("2_idle")
-region = Rect2(256, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_5"]
-atlas = ExtResource("2_idle")
-region = Rect2(320, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_6"]
-atlas = ExtResource("2_idle")
-region = Rect2(384, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_7"]
-atlas = ExtResource("2_idle")
-region = Rect2(448, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_8"]
-atlas = ExtResource("2_idle")
-region = Rect2(512, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_9"]
-atlas = ExtResource("2_idle")
-region = Rect2(576, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_10"]
-atlas = ExtResource("2_idle")
-region = Rect2(640, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="idle_11"]
-atlas = ExtResource("2_idle")
-region = Rect2(704, 0, 64, 64)
+[sub_resource type="ShaderMaterial" id="top_fade_material"]
+shader = SubResource("top_fade_shader")
+shader_parameter/fade_color = Color(0.08, 0.05, 0.02, 1)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_player"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("idle_0")
+"texture": ExtResource("dash_01")
+}],
+"loop": true,
+"name": &"dash",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("idle_01")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_1")
+"texture": ExtResource("idle_02")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_2")
+"texture": ExtResource("idle_03")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_3")
+"texture": ExtResource("idle_04")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_4")
+"texture": ExtResource("idle_05")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_5")
+"texture": ExtResource("idle_06")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_6")
+"texture": ExtResource("idle_07")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_7")
+"texture": ExtResource("idle_08")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_8")
+"texture": ExtResource("idle_09")
 }, {
 "duration": 1.0,
-"texture": SubResource("idle_9")
-}, {
-"duration": 1.0,
-"texture": SubResource("idle_10")
-}, {
-"duration": 1.0,
-"texture": SubResource("idle_11")
+"texture": ExtResource("idle_10")
 }],
 "loop": true,
 "name": &"idle",
-"speed": 11.0
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("idle_01")
+}],
+"loop": false,
+"name": &"took_damage",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("walk_01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_06")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
 }]
-
-[sub_resource type="StyleBoxFlat" id="btn_roomcode_normal"]
-content_margin_left = 20.0
-content_margin_top = 10.0
-content_margin_right = 20.0
-content_margin_bottom = 10.0
-bg_color = Color(0.1, 0.06, 0.2, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.6, 0.45, 0.9, 0.6)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.5, 0.3, 0.85, 0.12)
-shadow_size = 5
-
-[sub_resource type="StyleBoxFlat" id="btn_roomcode_pressed"]
-content_margin_left = 20.0
-content_margin_top = 10.0
-content_margin_right = 20.0
-content_margin_bottom = 10.0
-bg_color = Color(0.08, 0.04, 0.16, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.5, 0.35, 0.75, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_roomcode_hover"]
-content_margin_left = 20.0
-content_margin_top = 10.0
-content_margin_right = 20.0
-content_margin_bottom = 10.0
-bg_color = Color(0.15, 0.08, 0.28, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.7, 0.55, 1, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.5, 0.3, 0.85, 0.2)
-shadow_size = 7
-
-[sub_resource type="StyleBoxFlat" id="btn_leave_normal"]
-content_margin_left = 14.0
-content_margin_top = 8.0
-content_margin_right = 14.0
-content_margin_bottom = 8.0
-bg_color = Color(0.3, 0.08, 0.08, 0.6)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.55, 0.18, 0.18, 0.5)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_leave_pressed"]
-content_margin_left = 14.0
-content_margin_top = 8.0
-content_margin_right = 14.0
-content_margin_bottom = 8.0
-bg_color = Color(0.42, 0.1, 0.1, 0.85)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.6, 0.2, 0.2, 0.6)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_leave_hover"]
-content_margin_left = 14.0
-content_margin_top = 8.0
-content_margin_right = 14.0
-content_margin_bottom = 8.0
-bg_color = Color(0.55, 0.12, 0.12, 0.8)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.7, 0.25, 0.25, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="btn_start_normal"]
 content_margin_left = 28.0
@@ -351,28 +266,28 @@ content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-bg_color = Color(0.76, 0.67, 0.48, 0.96)
+bg_color = Color(0, 0, 0, 0)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.37, 0.23, 0.1, 0.92)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="stats_card_transparent"]
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="btn_arrow_normal"]
 content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.1, 0.08, 0.18, 0.7)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.35, 0.6, 0.5)
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -383,12 +298,8 @@ content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.08, 0.06, 0.14, 0.9)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.35, 0.28, 0.5, 0.6)
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -399,12 +310,8 @@ content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.15, 0.12, 0.28, 0.85)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.55, 0.45, 0.8, 0.7)
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -469,12 +376,12 @@ content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-bg_color = Color(0.72, 0.62, 0.45, 0.96)
+bg_color = Color(0, 0, 0, 0)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.34, 0.21, 0.1, 0.92)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -489,7 +396,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_roomlobby")
 
-[node name="Background" type="PanelContainer" parent="." unique_id=809277405]
+[node name="Background" type="TextureRect" parent="." unique_id=1291819552]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -497,7 +405,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("bg_panel")
+texture = ExtResource("2_2lpa5")
+
+[node name="TopFade" type="ColorRect" parent="Background" unique_id=1325984017]
+material = SubResource("top_fade_material")
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -472.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
 
 [node name="Class1" type="Control" parent="." unique_id=1818136206]
 layout_mode = 1
@@ -516,10 +436,9 @@ grow_vertical = 2
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class1" unique_id=10125792]
 texture_filter = 1
 position = Vector2(128, 170)
-scale = Vector2(4.3, 4.3)
+scale = Vector2(4, 4)
 sprite_frames = SubResource("SpriteFrames_player")
 animation = &"idle"
-autoplay = "idle"
 
 [node name="ClassName" type="Label" parent="Class1" unique_id=1171220843]
 layout_mode = 1
@@ -528,15 +447,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -60.0
+offset_left = -92.0
 offset_top = 3.0
-offset_right = 60.0
-offset_bottom = 26.0
+offset_right = 92.0
+offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_hover_color = Color(0.92, 0.73, 0.53, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
 text = "Knight"
 horizontal_alignment = 1
 
@@ -559,8 +479,7 @@ texture_filter = 1
 position = Vector2(95, 131)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"
+animation = &"walk"
 
 [node name="ClassName" type="Label" parent="Class2" unique_id=1529060361]
 layout_mode = 1
@@ -569,14 +488,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
+offset_left = -86.0
 offset_top = 3.0
-offset_right = 50.0
-offset_bottom = 26.0
+offset_right = 86.0
+offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.7, 0.55, 0.9, 0.9)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "Mage"
 horizontal_alignment = 1
 
@@ -599,8 +520,7 @@ texture_filter = 1
 position = Vector2(112, 158)
 scale = Vector2(3.5, 3.5)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"
+animation = &"walk"
 
 [node name="ClassName" type="Label" parent="Class3" unique_id=2039350518]
 layout_mode = 1
@@ -609,14 +529,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
+offset_left = -86.0
 offset_top = 3.0
-offset_right = 50.0
-offset_bottom = 26.0
+offset_right = 86.0
+offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.75, 0.25, 0.2, 0.9)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "Archer"
 horizontal_alignment = 1
 
@@ -639,8 +561,7 @@ texture_filter = 1
 position = Vector2(95, 131)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"
+animation = &"walk"
 
 [node name="ClassName" type="Label" parent="Class4" unique_id=662307875]
 layout_mode = 1
@@ -649,14 +570,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
+offset_left = -86.0
 offset_top = 3.0
-offset_right = 50.0
-offset_bottom = 26.0
+offset_right = 86.0
+offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.2, 0.65, 0.35, 0.9)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "Healer"
 horizontal_alignment = 1
 
@@ -679,8 +602,7 @@ texture_filter = 1
 position = Vector2(112, 158)
 scale = Vector2(3.5, 3.5)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"
+animation = &"walk"
 
 [node name="ClassName" type="Label" parent="Class5" unique_id=468433618]
 layout_mode = 1
@@ -689,14 +611,16 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
+offset_left = -86.0
 offset_top = 3.0
-offset_right = 50.0
-offset_bottom = 26.0
+offset_right = 86.0
+offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.25, 0.5, 0.75, 0.9)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "Tank"
 horizontal_alignment = 1
 
@@ -806,9 +730,9 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -300.0
-offset_top = -400.0
-offset_right = -12.0
+offset_left = -304.0
+offset_top = -222.0
+offset_right = -13.0
 offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 0
@@ -820,19 +744,20 @@ theme_override_constants/separation = 8
 
 [node name="StatsTitle" type="Label" parent="ClassStats/StatsVBox" unique_id=493215798]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.29, 0.19, 0.1, 0.96)
-theme_override_font_sizes/font_size = 13
-text = "Combat Stats"
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_font_sizes/font_size = 15
+text = "Main Stats"
 
 [node name="StatsCards" type="GridContainer" parent="ClassStats/StatsVBox" unique_id=1456439516]
 layout_mode = 2
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
-columns = 2
+columns = 3
 
 [node name="HPCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=481353661]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/HPCard" unique_id=849956502]
 layout_mode = 2
@@ -846,19 +771,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1122226692]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "HP"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1853932290]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "1,450"
 
 [node name="AttackCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=241978345]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/AttackCard" unique_id=1527529048]
 layout_mode = 2
@@ -872,19 +798,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=645068191]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "ATTACK"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1790935392]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "245"
 
 [node name="DefenseCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=29212680]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/DefenseCard" unique_id=703492286]
 layout_mode = 2
@@ -898,19 +825,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=1728710880]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "DEFENSE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=338114341]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "180"
 
 [node name="SpeedCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=1015956863]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/SpeedCard" unique_id=1533328635]
 layout_mode = 2
@@ -924,19 +852,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=969725831]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "SPEED"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1146953593]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "95"
 
 [node name="CritCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=877540963]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/CritCard" unique_id=1027024443]
 layout_mode = 2
@@ -950,19 +879,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=299845704]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "CRIT RATE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=1412280641]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "15%"
 
 [node name="EvadeCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=522968690]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_styles/panel = SubResource("stats_card_transparent")
 
 [node name="Margin" type="MarginContainer" parent="ClassStats/StatsVBox/StatsCards/EvadeCard" unique_id=1471703169]
 layout_mode = 2
@@ -976,20 +906,20 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=534188271]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
 text = "EVADE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1932028259]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.25, 0.19, 0.12, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
 text = "5%"
 
 [node name="StatsContent" type="RichTextLabel" parent="ClassStats/StatsVBox" unique_id=539378620]
 visible = false
 layout_mode = 2
-theme_override_colors/default_color = Color(0.22, 0.16, 0.1, 0.96)
+theme_override_colors/default_color = Color(1, 1, 1, 0.96)
 theme_override_font_sizes/normal_font_size = 13
 bbcode_enabled = true
 text = "Select a class to view stats"
@@ -1040,34 +970,15 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -160.0
-offset_top = 60.0
+offset_top = 84.0
 offset_right = 160.0
-offset_bottom = 105.0
+offset_bottom = 129.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 31
-text = "ADVENTURERS' GUILD HALL"
+text = "Players Lobby"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="LobbyNameEdit" type="LineEdit" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -190.0
-offset_top = 58.0
-offset_right = 190.0
-offset_bottom = 107.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
-theme_override_colors/caret_color = Color(0.98, 0.86, 0.45, 1)
-theme_override_colors/font_placeholder_color = Color(0.84, 0.72, 0.46, 0.55)
-theme_override_font_sizes/font_size = 28
-placeholder_text = "Player's Lobby"
-alignment = 1
-max_length = 28
 
 [node name="Label" type="Label" parent="Label" unique_id=859066297]
 layout_mode = 1
@@ -1082,10 +993,29 @@ offset_right = 169.0
 offset_bottom = 22.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.84, 0.72, 0.46, 0.82)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 13
 text = "🔒 Subclass unlocks at Level 10"
 horizontal_alignment = 1
+
+[node name="LobbyNameEdit" type="LineEdit" parent="." unique_id=806834103]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -190.0
+offset_top = 58.0
+offset_right = 190.0
+offset_bottom = 107.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_colors/font_placeholder_color = Color(0.84, 0.72, 0.46, 0.55)
+theme_override_colors/caret_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_font_sizes/font_size = 28
+placeholder_text = "Player's Lobby"
+alignment = 1
+max_length = 28
 
 [node name="SelectClass" type="Button" parent="." unique_id=1714175096]
 layout_mode = 1
@@ -1125,7 +1055,7 @@ theme_override_constants/separation = 6
 
 [node name="PlayersTitle" type="Label" parent="Players/VBox" unique_id=1446825960]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.97, 0.85, 0.44, 0.95)
+theme_override_colors/font_color = Color(0, 0, 0, 0.9)
 theme_override_font_sizes/font_size = 18
 text = "⚔ PLAYERS"
 
@@ -1135,26 +1065,29 @@ theme_override_constants/separation = 4
 
 [node name="Player1" type="Label" parent="Players/VBox/PlayersList" unique_id=1586361066]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.89, 0.77, 0.96)
+theme_override_colors/font_color = Color(0, 0, 0, 0.92)
 theme_override_font_sizes/font_size = 20
 text = "👑 Player (You)"
 
 [node name="Player2" type="Label" parent="Players/VBox/PlayersList" unique_id=348936909]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.74, 0.62, 0.78)
+theme_override_colors/font_color = Color(0, 0, 0, 0.64)
 theme_override_font_sizes/font_size = 20
 text = "Waiting..."
 
 [node name="SubClassInfo" type="PanelContainer" parent="." unique_id=1992445129]
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = 3
 anchor_left = 1.0
+anchor_top = 1.0
 anchor_right = 1.0
-offset_left = -280.0
-offset_top = 60.0
-offset_right = -12.0
-offset_bottom = 420.0
+anchor_bottom = 1.0
+offset_left = -301.0
+offset_top = -521.0
+offset_right = -7.0
+offset_bottom = -242.0
 grow_horizontal = 0
+grow_vertical = 0
 theme_override_styles/panel = SubResource("subclass_panel_style")
 
 [node name="VBox" type="VBoxContainer" parent="SubClassInfo" unique_id=1107099789]
@@ -1163,19 +1096,20 @@ theme_override_constants/separation = 8
 
 [node name="SubclassTitle" type="Label" parent="SubClassInfo/VBox" unique_id=740013645]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.46, 0.38, 0.28, 0.9)
-theme_override_font_sizes/font_size = 13
-text = "Talent Path"
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_font_sizes/font_size = 14
+text = "Subclasses"
 
 [node name="TalentCards" type="VBoxContainer" parent="SubClassInfo/VBox" unique_id=1093695707]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
 [node name="SubclassContent" type="RichTextLabel" parent="SubClassInfo/VBox" unique_id=206165252]
-visible = false
 layout_mode = 2
-theme_override_colors/default_color = Color(0.6, 0.55, 0.72, 0.7)
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(1, 1, 1, 0.96)
 theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
 text = "Select a class to see available subclasses."

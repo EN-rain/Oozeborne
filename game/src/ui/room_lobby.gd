@@ -45,9 +45,51 @@ const MAIN_GAME_SCENE = "res://scenes/levels/main.tscn"
 const MAIN_MENU_SCENE = "res://scenes/ui/main_menu.tscn"
 const CROWN_EMOJI = "👑 "
 
+const SLIME_PREVIEW_SHADER = preload("res://assets/shaders/slime_color.gdshader")
+const SLIME_VARIANT_ORDER := [
+	"blue", "red", "green", "purple", "gold",
+	"pink", "dark", "orange", "white", "cyan",
+	"lime", "crimson", "teal", "brown",
+]
+const SLIME_SCENE_PATHS := {
+	"blue": "res://scenes/entities/player/slime_blue.tscn",
+	"red": "res://scenes/entities/player/slime_red.tscn",
+	"green": "res://scenes/entities/player/slime_green.tscn",
+	"purple": "res://scenes/entities/player/slime_purple.tscn",
+	"gold": "res://scenes/entities/player/slime_gold.tscn",
+	"pink": "res://scenes/entities/player/slime_pink.tscn",
+	"dark": "res://scenes/entities/player/slime_dark.tscn",
+	"orange": "res://scenes/entities/player/slime_orange.tscn",
+	"white": "res://scenes/entities/player/slime_white.tscn",
+	"cyan": "res://scenes/entities/player/slime_cyan.tscn",
+	"lime": "res://scenes/entities/player/slime_lime.tscn",
+	"crimson": "res://scenes/entities/player/slime_crimson.tscn",
+	"teal": "res://scenes/entities/player/slime_teal.tscn",
+	"brown": "res://scenes/entities/player/slime_brown.tscn",
+}
+const SLIME_PREVIEW_COLORS := {
+	"blue": {"highlight": Color(0.52549, 0.890196, 0.996078, 1), "mid": Color(0.454902, 0.843137, 1, 1), "shadow": Color(0.34902, 0.741176, 0.905882, 1), "outline": Color(0.082353, 0.141176, 0.27451, 1), "iris": Color(0.109804, 0.184314, 0.360784, 1)},
+	"red": {"highlight": Color(1, 0.52549, 0.52549, 1), "mid": Color(1, 0.337255, 0.337255, 1), "shadow": Color(1, 0.196078, 0.196078, 1), "outline": Color(0.368627, 0.047059, 0.047059, 1), "iris": Color(0.380392, 0.058824, 0.117647, 1)},
+	"green": {"highlight": Color(0.52549, 0.996078, 0.690196, 1), "mid": Color(0.337255, 0.909804, 0.478431, 1), "shadow": Color(0.196078, 0.788235, 0.341176, 1), "outline": Color(0.058824, 0.286275, 0.121569, 1), "iris": Color(0.086275, 0.258824, 0.14902, 1)},
+	"purple": {"highlight": Color(0.847059, 0.52549, 0.996078, 1), "mid": Color(0.756863, 0.337255, 1, 1), "shadow": Color(0.6, 0.196078, 1, 1), "outline": Color(0.231373, 0.070588, 0.380392, 1), "iris": Color(0.203922, 0.078431, 0.321569, 1)},
+	"gold": {"highlight": Color(0.996078, 0.941176, 0.52549, 1), "mid": Color(1, 0.85098, 0.196078, 1), "shadow": Color(1, 0.737255, 0, 1), "outline": Color(0.431373, 0.27451, 0.043137, 1), "iris": Color(0.34902, 0.219608, 0.054902, 1)},
+	"pink": {"highlight": Color(1, 0.701961, 0.85098, 1), "mid": Color(1, 0.501961, 0.752941, 1), "shadow": Color(1, 0.301961, 0.65098, 1), "outline": Color(0.470588, 0.082353, 0.278431, 1), "iris": Color(0.431373, 0.098039, 0.278431, 1)},
+	"dark": {"highlight": Color(0.541176, 0.541176, 0.619608, 1), "mid": Color(0.290196, 0.290196, 0.415686, 1), "shadow": Color(0.101961, 0.101961, 0.227451, 1), "outline": Color(0.035294, 0.035294, 0.109804, 1), "iris": Color(0.760784, 0.733333, 0.878431, 1)},
+	"orange": {"highlight": Color(0.996078, 0.784314, 0.52549, 1), "mid": Color(1, 0.615686, 0.25098, 1), "shadow": Color(1, 0.466667, 0, 1), "outline": Color(0.427451, 0.180392, 0.031373, 1), "iris": Color(0.407843, 0.180392, 0.05098, 1)},
+	"white": {"highlight": Color(1, 1, 1, 1), "mid": Color(0.839216, 0.941176, 1, 1), "shadow": Color(0.658824, 0.847059, 0.941176, 1), "outline": Color(0.305882, 0.447059, 0.560784, 1), "iris": Color(0.360784, 0.541176, 0.760784, 1)},
+	"cyan": {"highlight": Color(0.682353, 0.996078, 1, 1), "mid": Color(0.384314, 0.952941, 1, 1), "shadow": Color(0.117647, 0.784314, 0.878431, 1), "outline": Color(0.047059, 0.286275, 0.329412, 1), "iris": Color(0.058824, 0.270588, 0.317647, 1)},
+	"lime": {"highlight": Color(0.847059, 1, 0.52549, 1), "mid": Color(0.658824, 0.960784, 0.258824, 1), "shadow": Color(0.454902, 0.823529, 0.121569, 1), "outline": Color(0.196078, 0.321569, 0.047059, 1), "iris": Color(0.211765, 0.317647, 0.062745, 1)},
+	"crimson": {"highlight": Color(1, 0.603922, 0.635294, 1), "mid": Color(1, 0.360784, 0.423529, 1), "shadow": Color(0.788235, 0.164706, 0.227451, 1), "outline": Color(0.411765, 0.062745, 0.145098, 1), "iris": Color(0.380392, 0.05098, 0.129412, 1)},
+	"teal": {"highlight": Color(0.560784, 1, 0.878431, 1), "mid": Color(0.211765, 0.85098, 0.705882, 1), "shadow": Color(0.082353, 0.560784, 0.470588, 1), "outline": Color(0.043137, 0.243137, 0.184314, 1), "iris": Color(0.054902, 0.239216, 0.180392, 1)},
+	"brown": {"highlight": Color(0.85098, 0.627451, 0.4, 1), "mid": Color(0.658824, 0.419608, 0.235294, 1), "shadow": Color(0.431373, 0.239216, 0.121569, 1), "outline": Color(0.203922, 0.109804, 0.047059, 1), "iris": Color(0.219608, 0.12549, 0.054902, 1)},
+}
 const CAROUSEL_SLOT_RELS := [-2, -1, 0, 1, 2]
 const DRAG_SNAP_DISTANCE := 140.0
 const DRAG_TRIGGER_DISTANCE := 55.0
+const CLASS_NAME_IDLE_PULSE_SPEED := 3.2
+const CLASS_NAME_IDLE_LIFT := 5.0
+const CLASS_NAME_CENTER_SCALE := 1.16
+const CLASS_NAME_SIDE_ALPHA := 0.72
 
 var _player_entries: Dictionary = {}
 var _last_state_log_time: int = 0
@@ -65,6 +107,9 @@ var _drag_start_pos := Vector2.ZERO
 var _drag_delta_x: float = 0.0
 var _carousel_tween: Tween = null
 var _view: RoomLobbyView
+var _carousel_idle_time: float = 0.0
+var _class_slime_variants: Dictionary = {}
+var _slime_rng := RandomNumberGenerator.new()
 
 func _get_player_count() -> int:
 	return MultiplayerManager.players.size()
@@ -176,6 +221,7 @@ func _update_player_count():
 	_refresh_party_cards()
 
 func _ready():
+	_slime_rng.randomize()
 	# Check if game is already in progress - late joiner scenario
 	if MultiplayerManager.match_phase == "in_game":
 		_show_join_game_ui()
@@ -211,6 +257,7 @@ func _ready():
 		"stat_cards": [hp_card, attack_card, defense_card, speed_card, crit_card, evade_card],
 	})
 	_view.setup_right_panels()
+	_assign_random_slime_variants()
 	_setup_carousel()
 	_render_carousel(0.0)
 	_refresh_lobby_title()
@@ -259,6 +306,14 @@ func _ready():
 	# Highlight current selected class slot
 	_update_class_highlight()
 	_refresh_party_cards()
+
+func _process(delta: float) -> void:
+	_carousel_idle_time += delta
+	if _carousel_nodes.is_empty() or _is_dragging_carousel:
+		return
+	if _carousel_tween != null and _carousel_tween.is_running():
+		return
+	_render_carousel(0.0)
 
 func _exit_tree() -> void:
 	if MultiplayerManager.player_joined.is_connected(_on_player_joined_signal):
@@ -342,6 +397,13 @@ func _setup_carousel() -> void:
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sprite: AnimatedSprite2D = slot.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 		var name_label: Label = slot.get_node_or_null("ClassName") as Label
+		if sprite:
+			var material := ShaderMaterial.new()
+			material.shader = SLIME_PREVIEW_SHADER
+			sprite.material = material
+			sprite.play("idle")
+			sprite.stop()
+			sprite.frame = 0
 		if name_label:
 			name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_carousel_slot_refs.append({
@@ -362,6 +424,8 @@ func _setup_carousel() -> void:
 			"position": flat_position,
 			"scale": sprite.scale if sprite else Vector2.ONE,
 			"font_size": name_label.get_theme_font_size("font_size") if name_label else 12,
+			"label_top": name_label.offset_top if name_label else center_label_top,
+			"label_bottom": name_label.offset_bottom if name_label else center_label_bottom,
 		})
 
 func _wrap_class_index(index: int) -> int:
@@ -396,11 +460,40 @@ func _render_carousel(progress: float = 0.0) -> void:
 		slot.position = from_layout["position"].lerp(to_layout["position"], t)
 		if sprite:
 			sprite.scale = from_layout["scale"].lerp(to_layout["scale"], t)
-			sprite.speed_scale = 1.0 if slot_idx == 2 and direction == 0 else lerp(0.6, 1.0, 1.0 - min(abs(float(slot_idx - 2)), 1.0))
+			var is_center_slot := slot_idx == 2 and direction == 0
+			if is_center_slot:
+				if sprite.animation != "walk":
+					sprite.play("walk")
+				elif not sprite.is_playing():
+					sprite.play()
+				sprite.speed_scale = 1.0
+			else:
+				if sprite.animation != "idle":
+					sprite.play("idle")
+				sprite.stop()
+				sprite.frame = 0
+				sprite.speed_scale = 1.0
+			_apply_preview_slime_to_sprite(sprite, _get_class_name_for_slot(slot_idx))
 		if name_label:
 			name_label.text = _get_class_name_for_slot(slot_idx)
-			name_label.add_theme_font_size_override("font_size", roundi(lerp(float(from_layout["font_size"]), float(to_layout["font_size"]), t)))
-			name_label.add_theme_color_override("font_color", _view.get_class_name_color(name_label.text))
+			var from_center_weight: float = float(abs(slot_idx - 2))
+			var to_center_weight: float = float(abs(target_idx - 2))
+			var blended_center_weight: float = float(lerp(from_center_weight, to_center_weight, t))
+			var focus: float = float(clamp(1.0 - blended_center_weight * 0.52, 0.0, 1.0))
+			var pulse: float = 0.0
+			if direction == 0:
+				pulse = float(max(sin(_carousel_idle_time * CLASS_NAME_IDLE_PULSE_SPEED), 0.0) * focus)
+			var font_size: float = float(lerp(float(from_layout["font_size"]), float(to_layout["font_size"]), t) + focus * 3.0 + pulse * 2.0)
+			name_label.add_theme_font_size_override("font_size", roundi(font_size))
+			name_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+			name_label.scale = Vector2.ONE.lerp(Vector2.ONE * CLASS_NAME_CENTER_SCALE, focus)
+			name_label.scale += Vector2.ONE * pulse * 0.03
+			var label_top: float = float(lerp(float(from_layout["label_top"]), float(to_layout["label_top"]), t))
+			var label_bottom: float = float(lerp(float(from_layout["label_bottom"]), float(to_layout["label_bottom"]), t))
+			var lift: float = float(focus * 8.0 + pulse * CLASS_NAME_IDLE_LIFT)
+			name_label.offset_top = label_top - lift
+			name_label.offset_bottom = label_bottom - lift
+			name_label.modulate = Color(1, 1, 1, clamp(CLASS_NAME_SIDE_ALPHA + focus * 0.48 + pulse * 0.08, 0.0, 1.0))
 
 		var center_weight = abs((slot_idx - 2) + _carousel_progress)
 		var alpha = clamp(1.0 - center_weight * 0.22, 0.3, 1.0)
@@ -557,8 +650,67 @@ func _update_class_highlight():
 
 func _on_select_class_pressed():
 	var active_class: String = _get_active_class_name()
-	_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
-	print("[Lobby] Selected class: ", active_class)
+	_selected_class = _get_player_class_for_name(active_class)
+	if _selected_class:
+		var slime_scene_path := _get_slime_scene_path_for_class(active_class)
+		if not slime_scene_path.is_empty():
+			_selected_class.player_scene = load(slime_scene_path) as PackedScene
+		MultiplayerManager.player_class = _selected_class
+		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		print("[Lobby] Selected class: ", active_class, " with player_scene: ", _selected_class.player_scene)
+		# Broadcast class selection to other players
+		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
+			MultiplayerManager.send_match_state({
+				"type": "class_selected",
+				"user_id": MultiplayerManager.session.user_id,
+				"class_name": active_class
+			})
+	else:
+		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		print("[Lobby] Selected class: ", active_class)
+
+func _get_player_class_for_name(selected_name: String) -> PlayerClass:
+	var class_map := {
+		"Tank": preload("res://src/resources/classes/tank/guardian_class.gd"),
+		"Archer": preload("res://src/resources/classes/dps/ranger_class.gd"),
+		"Mage": preload("res://src/resources/classes/dps/mage_class.gd"),
+		"Healer": preload("res://src/resources/classes/support/cleric_class.gd"),
+		"Necromancer": preload("res://src/resources/classes/support/necromancer_class.gd"),
+	}
+	if class_map.has(selected_name):
+		return class_map[selected_name].new()
+	return null
+
+func _assign_random_slime_variants() -> void:
+	var available_variants: Array = SLIME_VARIANT_ORDER.duplicate()
+	available_variants.shuffle()
+	_class_slime_variants.clear()
+	for selected_name in _view.get_class_order():
+		if available_variants.is_empty():
+			available_variants = SLIME_VARIANT_ORDER.duplicate()
+			available_variants.shuffle()
+		_class_slime_variants[selected_name] = String(available_variants.pop_front())
+
+func _get_slime_variant_for_class(selected_name: String) -> String:
+	return String(_class_slime_variants.get(selected_name, "blue"))
+
+func _get_slime_scene_path_for_class(selected_name: String) -> String:
+	var variant := _get_slime_variant_for_class(selected_name)
+	return String(SLIME_SCENE_PATHS.get(variant, SLIME_SCENE_PATHS["blue"]))
+
+func _apply_preview_slime_to_sprite(sprite: AnimatedSprite2D, selected_name: String) -> void:
+	if sprite == null:
+		return
+	var material := sprite.material as ShaderMaterial
+	if material == null:
+		return
+	var variant := _get_slime_variant_for_class(selected_name)
+	var palette: Dictionary = SLIME_PREVIEW_COLORS.get(variant, SLIME_PREVIEW_COLORS["blue"])
+	material.set_shader_parameter("highlight_color", palette["highlight"])
+	material.set_shader_parameter("mid_color", palette["mid"])
+	material.set_shader_parameter("shadow_color", palette["shadow"])
+	material.set_shader_parameter("outline_color", palette["outline"])
+	material.set_shader_parameter("iris_color", palette["iris"])
 
 # ── Match state handling ─────────────────────────────────────────────────────
 func _on_match_state(match_state):
@@ -573,7 +725,12 @@ func _on_match_state(match_state):
 		var current_time = Time.get_ticks_msec()
 		if current_time - _last_state_log_time > 2000:
 			_last_state_log_time = current_time
-			print("[Lobby] State snapshot tick: ", JSON.parse_string(match_state.data).get("tick", "?") if match_state.data else "?")
+			var tick_value = "?"
+			if match_state.data:
+				var parsed_snapshot = JSON.parse_string(match_state.data)
+				if parsed_snapshot is Dictionary:
+					tick_value = parsed_snapshot.get("tick", "?")
+			print("[Lobby] State snapshot tick: ", tick_value)
 	
 	elif match_state.op_code != MultiplayerUtils.OP_STATE:
 		print("[Lobby] >>> MATCH STATE RECEIVED: op_code=", match_state.op_code, " data=", match_state.data)
@@ -648,6 +805,16 @@ func _on_match_state(match_state):
 		
 		"start_game":
 			pass
+		
+		"class_selected":
+			# Another player selected their class
+			var sender_id = data.get("user_id", "")
+			var selected_name = data.get("class_name", "")
+			if not sender_id.is_empty() and sender_id != MultiplayerManager.session.user_id:
+				var player_class = _get_player_class_for_name(selected_name)
+				if player_class:
+					MultiplayerManager.set_player_class(sender_id, player_class)
+					print("[Lobby] Player ", sender_id.substr(0, 8), " selected class: ", selected_name)
 
 func _on_start_pressed():
 	print("[Lobby] ========== START BUTTON PRESSED ==========")

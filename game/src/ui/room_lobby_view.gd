@@ -18,13 +18,48 @@ const PARTY_TEXT_PRIMARY := Color(0.25, 0.19, 0.12, 1.0)
 const PARTY_TEXT_SECONDARY := Color(0.46, 0.38, 0.28, 0.9)
 const PARTY_PLACEHOLDER_TEXT := Color(0.5, 0.42, 0.31, 0.78)
 
-const CLASS_ORDER := ["Knight", "Archer", "Mage", "Healer", "Tank"]
+const CLASS_ORDER := [
+	"Tank",
+	"Archer",
+	"Mage",
+	"Healer",
+	"Necromancer",
+]
 const CLASS_NAME_COLORS := {
-	"Knight": Color(0.95, 0.82, 0.35, 1.0),
+	"Tank": Color(0.25, 0.5, 0.75, 1.0),
 	"Archer": Color(0.75, 0.25, 0.2, 0.9),
-	"Mage": Color(0.7, 0.55, 0.9, 0.9),
+	"Mage": Color(0.75, 0.25, 0.2, 0.9),
 	"Healer": Color(0.2, 0.65, 0.35, 0.9),
-	"Tank": Color(0.25, 0.5, 0.75, 0.9),
+	"Necromancer": Color(0.2, 0.65, 0.35, 0.9),
+}
+const SUBCLASS_GROUPS := [
+	{"name": "tank", "classes": ["GuardianClass", "BerserkerClass", "PaladinClass"]},
+	{"name": "dps", "classes": ["AssassinClass", "RangerClass", "MageClass", "SamuraiClass"]},
+	{"name": "support", "classes": ["ClericClass", "BardClass", "AlchemistClass", "NecromancerClass"]},
+	{"name": "hybrid", "classes": ["SpellbladeClass", "ShadowKnightClass", "MonkClass"]},
+]
+const SUBCLASS_DESCRIPTIONS := {
+	"Guardian": "Frontline protector with high defense and steady control.",
+	"Berserker": "Aggressive bruiser that trades safety for raw damage.",
+	"Paladin": "Holy defender mixing durability with support utility.",
+	"Assassin": "Fast burst killer focused on crits and target deletion.",
+	"Ranger": "Mobile ranged hunter with safe, consistent damage.",
+	"Mage": "Glass-cannon caster with powerful spell burst.",
+	"Samurai": "Precision duelist with fast strikes and disciplined offense.",
+	"Cleric": "Healing specialist that keeps allies alive under pressure.",
+	"Bard": "Buffer and enabler who boosts team tempo and survivability.",
+	"Alchemist": "Utility support using potions, toxins, and battlefield tricks.",
+	"Necromancer": "Dark caster with drain, decay, and soul-harvest sustain.",
+	"Spellblade": "Hybrid fighter weaving melee attacks with arcane power.",
+	"ShadowKnight": "Dark frontliner blending defense, drain, and pressure.",
+	"Monk": "Balanced close-range combatant with speed and self-discipline.",
+}
+const MAIN_CLASS_TO_SUBCLASS_GROUP := {
+	"Tank": "tank",
+	"Archer": "dps",
+	"Mage": "dps",
+	"Healer": "support",
+	"Necromancer": "support",
 }
 const CLASS_PANEL_DATA := {
 	"Knight": {
@@ -54,6 +89,13 @@ const CLASS_PANEL_DATA := {
 		"talents": [
 			{"name": "Mercy Bloom", "desc": "Healing pulses grant allies a brief regeneration buff.", "accent": Color(0.44, 0.86, 0.55)},
 			{"name": "Sanctuary Veil", "desc": "Low-health allies gain a small protective barrier.", "accent": Color(0.56, 0.78, 0.95)},
+		],
+	},
+	"Necromancer": {
+		"stats": {"hp": "920", "atk": "286", "def": "78", "spd": "96", "crit": "11%", "evade": "6%", "power": 0.8, "rank": "A-Rank"},
+		"talents": [
+			{"name": "Soul Harvest", "desc": "Defeated enemies restore health and briefly amplify shadow damage.", "accent": Color(0.62, 0.42, 0.85)},
+			{"name": "Grave Swarm", "desc": "Vengeful spirits seek nearby enemies and keep pressure on clustered targets.", "accent": Color(0.38, 0.78, 0.62)},
 		],
 	},
 	"Tank": {
@@ -118,9 +160,9 @@ func setup_right_panels() -> void:
 		var title: Label = card.get_node_or_null("Margin/VBox/Label") as Label
 		var value: Label = card.get_node_or_null("Margin/VBox/Value") as Label
 		if is_instance_valid(title):
-			title.add_theme_color_override("font_color", PARTY_TEXT_SECONDARY)
+			title.remove_theme_color_override("font_color")
 		if is_instance_valid(value):
-			value.add_theme_color_override("font_color", PARTY_TEXT_PRIMARY)
+			value.remove_theme_color_override("font_color")
 
 func refresh_party_cards(player_entries: Dictionary) -> void:
 	if not is_instance_valid(_players_list):
@@ -160,8 +202,38 @@ func update_active_class_panels(active_class: String) -> void:
 		_stats_content.append_text("[center][b]" + active_class + "[/b][/center]")
 	if is_instance_valid(_subclass_content):
 		_subclass_content.clear()
-		_subclass_content.append_text("[center]" + active_class + " talents[/center]")
+		_subclass_content.visible = true
+		_subclass_content.append_text(_build_subclass_info_text(active_class))
+	if is_instance_valid(_talent_cards):
+		_talent_cards.visible = false
 	_update_class_panels(active_class)
+
+func _build_subclass_info_text(active_class: String) -> String:
+	var group_name: String = str(MAIN_CLASS_TO_SUBCLASS_GROUP.get(active_class, "")).strip_edges()
+	if group_name.is_empty():
+		return "No subclasses available."
+
+	var group_classes = []
+	for group in SUBCLASS_GROUPS:
+		if str(group.get("name", "")) == group_name:
+			group_classes = group.get("classes", [])
+			break
+
+	var active_class_resource_name = active_class.replace(" ", "") + "Class"
+	var visible_subclasses = []
+	for subclass_name in group_classes:
+		var subclass_resource_name = str(subclass_name)
+		if subclass_resource_name == active_class_resource_name:
+			continue
+		var subclass_display_name = subclass_resource_name.trim_suffix("Class")
+		var subclass_key = subclass_display_name.replace(" ", "")
+		var subclass_desc = str(SUBCLASS_DESCRIPTIONS.get(subclass_key, "Specialized path for this class group."))
+		visible_subclasses.append("[b]" + subclass_display_name + "[/b] - " + subclass_desc)
+
+	if visible_subclasses.is_empty():
+		return "No subclasses available."
+
+	return "\n\n".join(visible_subclasses)
 
 func _build_party_card(entry: Dictionary) -> Control:
 	var card = PanelContainer.new()
@@ -217,17 +289,17 @@ func _build_party_card(entry: Dictionary) -> Control:
 	var name_label = Label.new()
 	name_label.text = entry["ign"]
 	name_label.add_theme_font_size_override("font_size", 14)
-	name_label.add_theme_color_override("font_color", PARTY_TEXT_PRIMARY)
+	name_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.92))
 	text_col.add_child(name_label)
 
 	var meta_label = Label.new()
 	meta_label.text = "Host" if entry.get("is_host", false) else "Party Member"
 	meta_label.add_theme_font_size_override("font_size", 11)
-	meta_label.add_theme_color_override("font_color", PARTY_TEXT_SECONDARY)
+	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
 	text_col.add_child(meta_label)
 
 	var badge = Label.new()
-	badge.text = "★" if entry.get("is_host", false) else "•"
+	badge.text = "â˜…" if entry.get("is_host", false) else "â€¢"
 	badge.add_theme_font_size_override("font_size", 16)
 	badge.add_theme_color_override("font_color", entry.get("accent_color", PARTY_CARD_BORDER))
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -267,13 +339,13 @@ func _build_waiting_card(slot_number: int) -> Control:
 	var name_label = Label.new()
 	name_label.text = "Waiting for Player"
 	name_label.add_theme_font_size_override("font_size", 13)
-	name_label.add_theme_color_override("font_color", PARTY_PLACEHOLDER_TEXT)
+	name_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
 	text_col.add_child(name_label)
 
 	var meta_label = Label.new()
 	meta_label.text = "Open Slot %d" % slot_number
 	meta_label.add_theme_font_size_override("font_size", 11)
-	meta_label.add_theme_color_override("font_color", PARTY_PLACEHOLDER_TEXT * Color(1, 1, 1, 0.8))
+	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.52))
 	text_col.add_child(meta_label)
 
 	return card
@@ -288,7 +360,7 @@ func _get_class_panel_data(class_id: String) -> Dictionary:
 func _set_stat_card_value(label: Label, value: String, color: Color = PARTY_TEXT_PRIMARY) -> void:
 	if is_instance_valid(label):
 		label.text = value
-		label.add_theme_color_override("font_color", color)
+		label.remove_theme_color_override("font_color")
 
 func _rebuild_talent_cards(talents: Array) -> void:
 	if not is_instance_valid(_talent_cards):
@@ -317,24 +389,6 @@ func _rebuild_talent_cards(talents: Array) -> void:
 		row.add_theme_constant_override("separation", 10)
 		margin.add_child(row)
 
-		var icon_holder = Control.new()
-		icon_holder.custom_minimum_size = Vector2(28, 28)
-		row.add_child(icon_holder)
-
-		var icon_bg = ColorRect.new()
-		icon_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icon_bg.color = talent.get("accent", Color(0.76, 0.66, 0.28))
-		icon_holder.add_child(icon_bg)
-
-		var icon_label = Label.new()
-		icon_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icon_label.text = "✦"
-		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		icon_label.add_theme_font_size_override("font_size", 14)
-		icon_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-		icon_holder.add_child(icon_label)
-
 		var text_col = VBoxContainer.new()
 		text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text_col.add_theme_constant_override("separation", 3)
@@ -343,14 +397,14 @@ func _rebuild_talent_cards(talents: Array) -> void:
 		var title = Label.new()
 		title.text = talent.get("name", "Talent")
 		title.add_theme_font_size_override("font_size", 13)
-		title.add_theme_color_override("font_color", PARTY_TEXT_PRIMARY)
+		title.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
 		text_col.add_child(title)
 
 		var desc = Label.new()
 		desc.text = talent.get("desc", "")
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		desc.add_theme_font_size_override("font_size", 11)
-		desc.add_theme_color_override("font_color", PARTY_TEXT_SECONDARY)
+		desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.88))
 		text_col.add_child(desc)
 
 func _update_class_panels(class_id: String) -> void:
@@ -368,5 +422,6 @@ func _update_class_panels(class_id: String) -> void:
 		_power_fill.size_flags_stretch_ratio = float(stats.get("power", 0.45))
 	if is_instance_valid(_power_rank_label):
 		_power_rank_label.text = str(stats.get("rank", "C-Rank"))
-
-	_rebuild_talent_cards(panel_data.get("talents", []))
+	if is_instance_valid(_talent_cards):
+		for child in _talent_cards.get_children():
+			child.queue_free()

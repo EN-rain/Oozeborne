@@ -1,0 +1,151 @@
+[gd_scene format=3]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base3.png" id="idle_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base4.png" id="idle_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base5.png" id="idle_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base6.png" id="idle_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base7.png" id="idle_07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base8.png" id="idle_08"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base9.png" id="idle_09"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base10.png" id="idle_10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base1.png" id="walk_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base2.png" id="walk_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base3.png" id="walk_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base4.png" id="walk_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base5.png" id="walk_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base6.png" id="walk_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
+
+
+
+[ext_resource type="PackedScene" uid="uid://b6bpgalmnjwat" path="res://scenes/effects/damage_particles.tscn" id="20_dmgparticles"]
+[ext_resource type="Script" uid="uid://c1uffs06ybyl8" path="res://src/entities/player/player.gd" id="13_script"]
+[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://src/components/health.gd" id="14_health"]
+[ext_resource type="PackedScene" uid="uid://dq4o0gc3o18ko" path="res://scenes/entities/player/slash.tscn" id="16_slash"]
+[ext_resource type="Shader" uid="uid://gr33ix60db3n" path="res://assets/shaders/slime_color.gdshader" id="17_shader"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dark"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("dash_01")
+}],
+"loop": true,
+"name": &"dash",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("idle_01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_06")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_08")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_09")
+}, {
+"duration": 1.0,
+"texture": ExtResource("idle_10")
+}
+],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("idle_01")
+}],
+"loop": false,
+"name": &"took_damage",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("walk_01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("walk_06")
+}
+],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_slime"]
+shader = ExtResource("17_shader")
+shader_parameter/highlight_color = Color(0.541176, 0.541176, 0.619608, 1)
+shader_parameter/mid_color = Color(0.290196, 0.290196, 0.415686, 1)
+shader_parameter/shadow_color = Color(0.101961, 0.101961, 0.227451, 1)
+shader_parameter/outline_color = Color(0.035294, 0.035294, 0.109804, 1)
+shader_parameter/iris_color = Color(0.760784, 0.733333, 0.878431, 1)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_slime"]
+radius = 8.0
+height = 16.0
+
+[node name="SlimeDark" type="CharacterBody2D" groups=["player"]]
+y_sort_enabled = true
+script = ExtResource("13_script")
+slash_scene = ExtResource("16_slash")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+material = SubResource("ShaderMaterial_slime")
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_dark")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 4)
+shape = SubResource("CapsuleShape2D_slime")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(3, 3)
+
+[node name="Health" type="Node2D" parent="."]
+script = ExtResource("14_health")
+
+[node name="HitStunTimer" type="Timer" parent="."]
+
+[node name="Shadow" type="ColorRect" parent="."]
+z_index = -1
+offset_left = -12.0
+offset_top = -4.0
+offset_right = 12.0
+offset_bottom = 4.0
+color = Color(0, 0, 0, 0.3)
+
+[node name="DamageParticles" parent="." instance=ExtResource("20_dmgparticles")]
+position = Vector2(0, -8)

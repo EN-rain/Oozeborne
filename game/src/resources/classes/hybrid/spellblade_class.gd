@@ -8,6 +8,9 @@ func _init():
 	description = "A warrior who has mastered both steel and sorcery. Spellblades enchant their weapons with elemental magic."
 	lore = "Outcasts from both the Warrior Academy and Arcane Institute, Spellblades forged their own path."
 	
+	# Player scene - Purple slime for magic-melee hybrid
+	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.05       # +5% HP
 	modifiers_speed = 1.1     # +10% Speed

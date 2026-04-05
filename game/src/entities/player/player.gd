@@ -20,14 +20,13 @@ var attack_damage := 25
 @onready var dash_cooldown_timer: Timer = Timer.new()
 @onready var dash_particles: CPUParticles2D = $DashParticles
 @onready var dash_trail: CPUParticles2D = $DashTrail
+@onready var damage_particles: CPUParticles2D = $DamageParticles
 
 var is_local_player := true  # Set to false for remote players
 
 const FLIP_DEADZONE := 8.0
 var is_taking_damage := false
 var facing := 1
-var is_basic_attacking := false
-var attack_rotation := 0.0  # Rotation of current attack for multiplayer sync
 var knockback_velocity := Vector2.ZERO
 var can_move := true
 var is_dashing := false
@@ -87,14 +86,13 @@ func _physics_process(delta):
 		if Input.is_action_just_pressed("dash") and can_dash and not is_dashing and not is_taking_damage:
 			start_dash(input_dir)
 		
-		if Input.is_action_just_pressed("basic_attack"):
-			if not is_basic_attacking and not is_taking_damage and not is_dashing:
-				start_basic_attack()
+		if Input.is_action_just_pressed("basic_attack") and not is_taking_damage and not is_dashing:
+			start_basic_attack()
 	
 	if is_taking_damage:
 		return
 	
-	if is_basic_attacking or is_dashing:
+	if is_dashing:
 		return
 	
 	if velocity.length() > 0.0:
@@ -114,11 +112,7 @@ func _physics_process(delta):
 			player_sprite.flip_h = true
 
 func start_basic_attack():
-	is_basic_attacking = true
-	player_sprite.play("basic_attack")
-	
 	var dir := (get_global_mouse_position() - global_position).normalized()
-	attack_rotation = dir.angle()  # Store for multiplayer sync
 	var slash := slash_scene.instantiate()
 	get_tree().current_scene.add_child(slash)
 	slash.global_position = global_position + dir * 12
@@ -140,6 +134,8 @@ func start_dash(dir):
 	is_dashing = true
 	can_dash = false
 	dash_direction = dir.normalized()
+	if player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation("dash"):
+		player_sprite.play("dash")
 	
 	# Visual feedback - blue tint while dashing + particles
 	player_sprite.modulate = Color(1.2, 1.2, 1.5)
@@ -170,9 +166,7 @@ func set_ign(_ign: String):
 	pass
 
 func _on_animation_finished():
-	if player_sprite.animation == "basic_attack":
-		is_basic_attacking = false
-	elif player_sprite.animation == "took_damage":
+	if player_sprite.animation == "took_damage":
 		is_taking_damage = false
 
 #DAMAGE & KNOCKBACK-
@@ -192,11 +186,12 @@ func apply_damage(amount: int, source_position: Vector2, force: float):
 	# Spawn damage number
 	DamageNumbers.spawn_damage(global_position + Vector2(0, -20), amount, false, true)
 	
-	# Cancel any ongoing attack
-	is_basic_attacking = false
-	
 	is_taking_damage = true
 	player_sprite.play("took_damage")
+	
+	# Emit damage particles
+	if damage_particles:
+		damage_particles.emitting = true
 	
 	# Knockback
 	var dir := (global_position - source_position).normalized()

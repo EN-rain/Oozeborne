@@ -8,6 +8,9 @@ func _init():
 	description = "A fury-driven warrior who grows stronger as their blood flows. The lower your HP, the higher your damage."
 	lore = "Born from the frozen north, Berserkers embrace the rage within to devastate their foes."
 	
+	# Player scene - Red slime for aggressive classes
+	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.25       # +25% HP
 	modifiers_speed = 0.9     # -10% Speed

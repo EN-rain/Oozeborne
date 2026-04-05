@@ -8,6 +8,9 @@ func _init():
 	description = "A divine healer blessed by the gods. Clerics excel at keeping allies alive through powerful healing magic."
 	lore = "Servants of the Divine Temple, Clerics channel holy energy to mend wounds and protect the faithful."
 	
+	# Player scene - Green slime for healing classes
+	player_scene = preload("res://scenes/entities/player/slime_green.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.1        # +10% HP
 	modifiers_speed = 0.9     # -10% Speed

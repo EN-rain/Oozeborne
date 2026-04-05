@@ -8,6 +8,9 @@ func _init():
 	description = "A holy warrior blessed with divine power. Paladins combine solid defense with healing abilities."
 	lore = "Chosen by the divine light, Paladins stand as beacons of hope in the darkest of times."
 	
+	# Player scene - Gold slime for holy classes
+	player_scene = preload("res://scenes/entities/player/slime_gold.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.3        # +30% HP
 	modifiers_speed = 0.85    # -15% Speed

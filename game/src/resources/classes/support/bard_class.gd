@@ -8,6 +8,9 @@ func _init():
 	description = "A wandering minstrel whose songs inspire allies and demoralize enemies. Bards provide powerful aura buffs."
 	lore = "Graduates of the Bardic College, these performers weave magic into their melodies."
 	
+	# Player scene - Gold slime for performance classes
+	player_scene = preload("res://scenes/entities/player/slime_gold.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.05       # +5% HP
 	modifiers_speed = 1.15    # +15% Speed

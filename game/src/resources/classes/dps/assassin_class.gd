@@ -8,6 +8,9 @@ func _init():
 	description = "A shadow in the night. Assassins strike from the darkness, dealing devastating critical hits."
 	lore = "Masters of the silent kill, Assassins are trained in the forbidden arts of the Shadow Guild."
 	
+	# Player scene - Red slime for aggressive DPS
+	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 0.8        # -20% HP
 	modifiers_speed = 1.3     # +30% Speed

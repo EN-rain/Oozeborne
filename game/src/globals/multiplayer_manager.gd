@@ -14,13 +14,14 @@ var players: Dictionary = {}  # user_id -> {ign, is_host}
 var player_class: PlayerClass = null  # Selected main class
 var player_subclass: PlayerClass = null  # Selected subclass (unlocked at level 10)
 var player_level: int = 1  # Player level for subclass unlock
+var player_classes: Dictionary = {}  # user_id -> PlayerClass (for remote players)
 
 const SERVER_CONFIG_FILE = "server_config.cfg"
 const SERVER_CONFIG_SECTION = "server"
 const DEFAULT_SERVER_KEY = "defaultkey"
 const DEFAULT_SERVER_HOST = "127.0.0.1"
 const DEFAULT_SERVER_PORT = 7350
-const DEFAULT_SCHEME = "http"
+const DEFAULT_SCHEME = "https"
 const TIMEOUT = 10
 const ROOM_COLLECTION = "room_registry"
 const AUTH_SESSION_FILE = "user://auth_session.json"
@@ -50,6 +51,7 @@ func _reset_match_state() -> void:
 	is_host = false
 	match_phase = "lobby"
 	players.clear()
+	player_classes.clear()
 
 func _cleanup_socket_connection() -> void:
 	if socket != null:
@@ -120,7 +122,7 @@ func _save_auth_session() -> void:
 		"email": account_email,
 		"username": session.username if not session.username.is_empty() else player_ign
 	}
-	var auth_file = FileAccess.open(AUTH_SESSION_FILE, FileAccess.WRITE)
+	var auth_file = FileAccess.open_encrypted_with_pass(AUTH_SESSION_FILE, FileAccess.WRITE, OS.get_unique_id())
 	if auth_file == null:
 		push_warning("Failed to persist auth session")
 		return
@@ -134,7 +136,7 @@ func _load_saved_auth_session() -> Dictionary:
 	if not FileAccess.file_exists(AUTH_SESSION_FILE):
 		return {}
 
-	var auth_file = FileAccess.open(AUTH_SESSION_FILE, FileAccess.READ)
+	var auth_file = FileAccess.open_encrypted_with_pass(AUTH_SESSION_FILE, FileAccess.READ, OS.get_unique_id())
 	if auth_file == null:
 		return {}
 
@@ -267,7 +269,7 @@ func _resolve_server_config() -> Dictionary:
 	var project_config_path := ProjectSettings.globalize_path("res://" + SERVER_CONFIG_FILE)
 	_merge_server_config(resolved, project_config_path, "project_config")
 
-	if not OS.has_feature("editor"):
+	if OS.has_feature("debug"):
 		var external_config_path := OS.get_executable_path().get_base_dir().path_join(SERVER_CONFIG_FILE)
 		_merge_server_config(resolved, external_config_path, "external_release_config")
 
@@ -295,7 +297,8 @@ func connect_to_server(device_id: String = "") -> bool:
 	add_child(socket_adapter)
 	
 	# Create socket
-	socket = NakamaSocket.new(socket_adapter, _server_config["host"], _server_config["port"], "ws")
+	var socket_scheme = "wss" if _server_config["scheme"] == "https" else "ws"
+	socket = NakamaSocket.new(socket_adapter, _server_config["host"], _server_config["port"], socket_scheme)
 	
 	# Connect to server using session
 	await socket.connect_async(session)
@@ -475,6 +478,12 @@ func send_match_state(data: Dictionary):
 	# Always broadcast to entire match (null = all players)
 	# This is more reliable than targeting specific presences
 	socket.send_match_state_async(match_id, 0, json, null)
+
+func get_player_class(user_id: String) -> PlayerClass:
+	return player_classes.get(user_id, null)
+
+func set_player_class(user_id: String, player_class: PlayerClass) -> void:
+	player_classes[user_id] = player_class
 
 var _last_debug_print_time: int = 0  # Rate limit debug prints
 

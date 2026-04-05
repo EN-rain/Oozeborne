@@ -181,9 +181,6 @@ func get_interpolation_delay() -> float:
 # === INTERNAL HELPERS ===
 
 func _trigger_attack(player_data: Dictionary, attack_rotation: float) -> void:
-	var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
-	if sprite:
-		sprite.play("basic_attack")
 	player_data.pending_attack = {
 		"pos": player_data.node.global_position, 
 		"rotation": attack_rotation
@@ -221,10 +218,10 @@ func _update_player_animation(player_data: Dictionary, node: Node) -> void:
 	if player_data.is_attacking:
 		pass  # Attack animation already playing
 	elif player_data.server_velocity.length() > 5.0:
-		if sprite.animation != "walk" and sprite.animation != "basic_attack":
+		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
-		if sprite.animation != "idle" and sprite.animation != "basic_attack":
+		if sprite.animation != "idle":
 			sprite.play("idle")
 
 

@@ -33,6 +33,9 @@ class_name PlayerClass extends Resource
 @export var passive_xp_bonus: float = 0.0
 @export var passive_gold_bonus: float = 0.0
 
+@export_group("Player Scene", "player")
+@export var player_scene: PackedScene  ## The player scene to instantiate for this class (slime variant)
+
 @export_group("Starting Bonuses", "starting")
 @export var starting_level: int = 1
 @export var starting_xp_bonus: int = 0

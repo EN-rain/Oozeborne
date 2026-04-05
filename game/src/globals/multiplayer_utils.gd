@@ -116,9 +116,6 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	# Only trigger attack animation on rising edge (was false, now true)
 	if is_attacking and not was_attacking:
 		print("[MultiplayerUtils] Attack detected for remote player at ", player_data.node.global_position)
-		var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
-		if sprite:
-			sprite.play("basic_attack")
 		# Store attack info using player's VISUAL position and attack rotation
 		player_data.pending_attack = {"pos": player_data.node.global_position, "rotation": attack_rotation}
 	
@@ -305,24 +302,17 @@ func _send_input_updates(player_node: Node) -> void:
 		if player_node.get("facing") != null:
 			facing = player_node.facing
 		
-		# Get attack and dash state from player
+		# Attack slash sync is event-based now, so the input stream only needs dash state.
 		var is_attacking := false
 		var is_dashing := false
-		var attack_rotation := 0.0
-		if player_node.get("is_basic_attacking") != null:
-			is_attacking = player_node.is_basic_attacking
 		if player_node.get("is_dashing") != null:
 			is_dashing = player_node.is_dashing
-		if player_node.get("attack_rotation") != null:
-			attack_rotation = player_node.attack_rotation
 		
-		# Send input to server with facing and attack rotation
-		if is_attacking:
-			print("[MultiplayerUtils] Sending input with attack_rotation: ", attack_rotation)
+		# Send input to server with facing and dash state.
 		if not MultiplayerManager.is_socket_open():
 			print("[MultiplayerUtils] Stopping input updates - socket closed before send")
 			break
-		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation)
+		send_input(move_x, move_y, is_attacking, facing, is_dashing)
 		
 		# Wait for next input tick
 		await Engine.get_main_loop().create_timer(INPUT_RATE).timeout
@@ -553,11 +543,6 @@ func get_pending_attack(user_id: String) -> Dictionary:
 
 
 func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, is_attacking: bool) -> void:
-	if is_attacking:
-		if sprite.animation != "basic_attack":
-			sprite.play("basic_attack")
-		return
-
 	var target_animation := "walk" if server_velocity.length() > 5.0 else "idle"
 	if sprite.animation != target_animation:
 		sprite.play(target_animation)

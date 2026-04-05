@@ -8,6 +8,9 @@ func _init():
 	description = "A master of the blade. Samurai combine speed and precision with devastating quick-draw techniques."
 	lore = "Followers of the Way of the Sword, Samurai seek perfection in every strike."
 	
+	# Player scene - Red slime for warrior classes
+	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 0.85       # -15% HP
 	modifiers_speed = 1.15    # +15% Speed

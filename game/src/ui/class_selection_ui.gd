@@ -73,6 +73,7 @@ func _load_available_classes():
 		preload("res://src/resources/classes/support/cleric_class.gd"),
 		preload("res://src/resources/classes/support/bard_class.gd"),
 		preload("res://src/resources/classes/support/alchemist_class.gd"),
+		preload("res://src/resources/classes/support/necromancer_class.gd"),
 		preload("res://src/resources/classes/hybrid/spellblade_class.gd"),
 		preload("res://src/resources/classes/hybrid/shadow_knight_class.gd"),
 		preload("res://src/resources/classes/hybrid/monk_class.gd"),
@@ -160,7 +161,7 @@ func _get_class_role(player_class: PlayerClass) -> String:
 		return "tank"
 	elif class_type in ["AssassinClass", "RangerClass", "MageClass", "SamuraiClass"]:
 		return "dps"
-	elif class_type in ["ClericClass", "BardClass", "AlchemistClass"]:
+	elif class_type in ["ClericClass", "BardClass", "AlchemistClass", "NecromancerClass"]:
 		return "support"
 	elif class_type in ["SpellbladeClass", "ShadowKnightClass", "MonkClass"]:
 		return "hybrid"
@@ -238,7 +239,7 @@ func _class_matches_category(player_class: PlayerClass, category: String) -> boo
 		"dps":
 			return class_type in ["AssassinClass", "RangerClass", "MageClass", "SamuraiClass"]
 		"support":
-			return class_type in ["ClericClass", "BardClass", "AlchemistClass"]
+			return class_type in ["ClericClass", "BardClass", "AlchemistClass", "NecromancerClass"]
 		"hybrid":
 			return class_type in ["SpellbladeClass", "ShadowKnightClass", "MonkClass"]
 		_:

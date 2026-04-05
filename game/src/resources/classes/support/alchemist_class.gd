@@ -8,6 +8,9 @@ func _init():
 	description = "A master of potions and poisons. Alchemists debilitate enemies with various concoctions."
 	lore = "Members of the Alchemist Guild, they seek to unlock the secrets of transmutation."
 	
+	# Player scene - Green slime for utility classes
+	player_scene = preload("res://scenes/entities/player/slime_green.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 0.95       # -5% HP
 	modifiers_speed = 1.05    # +5% Speed

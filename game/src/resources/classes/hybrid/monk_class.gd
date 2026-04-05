@@ -8,6 +8,9 @@ func _init():
 	description = "A disciplined martial artist who fights with bare hands. Monks build combos for devastating finishers."
 	lore = "Students of the Hidden Monastery, Monks have trained their bodies to become living weapons."
 	
+	# Player scene - Red slime for martial artist classes
+	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
+	
 	# Stat modifiers
 	modifiers_hp = 1.1        # +10% HP
 	modifiers_speed = 1.25    # +25% Speed
