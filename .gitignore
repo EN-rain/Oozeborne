@@ -11,3 +11,6 @@ tools/cloudflared/
 
 # Game addons (large binaries)
 game/addons/
+
+# Build artifacts (regenerate from Godot)
+exports/
