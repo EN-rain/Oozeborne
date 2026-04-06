@@ -17,6 +17,10 @@ var current_state = State.IDLE
 @export var knockback_decay: float = 500.0
 @export var max_health: int = 50
 @export var xp_value: int = 10  ## XP awarded when killed
+@export var idle_move_interval: float = 3.0
+@export var idle_move_radius: float = 64.0
+@export var idle_move_speed_multiplier: float = 0.45
+@export var player_group_name: StringName = &"player"
 
 signal died(xp_reward: int)  ## Emitted when enemy dies, includes XP value
 
@@ -26,6 +30,9 @@ var knockback_velocity := Vector2.ZERO
 var is_taking_damage := false
 var is_dying := false
 var health: HealthComponent
+var _idle_move_timer: float = 0.0
+var _idle_target: Vector2 = Vector2.ZERO
+var _has_idle_target: bool = false
 
 func _ready():
 	# Create and initialize health component
@@ -47,8 +54,11 @@ func _ready():
 	sight_ray.enabled = true
 	sight_ray.collide_with_bodies = true
 	sight_ray.collide_with_areas = false
+	_reset_idle_roam()
 
 func _physics_process(delta):
+	if not is_dying:
+		_idle_move_timer -= delta
 	if not is_taking_damage and not is_dying:
 		match current_state:
 			State.IDLE:
@@ -64,8 +74,22 @@ func _physics_process(delta):
 
 # ---------------- STATES ----------------
 func _idle_state():
-	velocity = Vector2.ZERO
-	animated_sprite.play("idle")
+	if _idle_move_timer <= 0.0:
+		_pick_idle_target()
+	
+	if _has_idle_target:
+		var idle_direction := _idle_target - global_position
+		if idle_direction.length() > 6.0:
+			velocity = idle_direction.normalized() * speed * idle_move_speed_multiplier
+			animated_sprite.play("walk")
+			animated_sprite.flip_h = velocity.x < 0
+		else:
+			velocity = Vector2.ZERO
+			animated_sprite.play("idle")
+			_has_idle_target = false
+	else:
+		velocity = Vector2.ZERO
+		animated_sprite.play("idle")
 	
 	if player and has_line_of_sight():
 		change_state(State.CHASE)
@@ -87,7 +111,13 @@ func _chase_state():
 		animated_sprite.flip_h = direction.x < 0
 
 func change_state(new_state):
+	if current_state == new_state:
+		return
 	current_state = new_state
+	if new_state == State.IDLE:
+		_reset_idle_roam()
+	elif new_state == State.CHASE:
+		_has_idle_target = false
 
 # ---------------- DAMAGE ----------------
 func take_damage(amount: int):
@@ -127,8 +157,8 @@ func _on_attack_area_entered(body):
 	if not can_damage:
 		return
 	
-	if body.is_in_group("player") and body.has_method("apply_damage"):
-		body.apply_damage(contact_damage, global_position, knockback_force)
+	if _is_targetable_player(body) and body.has_method("apply_damage"):
+		body.apply_damage(contact_damage, global_position, knockback_force, "Blue Slime")
 		can_damage = false
 		damage_timer.start()
 
@@ -137,11 +167,11 @@ func _on_damage_timer_timeout():
 
 # ---------------- DETECTION ----------------
 func _on_detection_area_entered(body):
-	if body.is_in_group("player"):
+	if _is_targetable_player(body):
 		player = body
 
 func _on_detection_area_exited(body):
-	if body.is_in_group("player") and body == player:
+	if body == player:
 		player = null
 		change_state(State.IDLE)
 
@@ -154,6 +184,33 @@ func has_line_of_sight() -> bool:
 	sight_ray.force_raycast_update()
 	
 	if sight_ray.is_colliding():
-		return sight_ray.get_collider().is_in_group("player")
+		return _is_targetable_player(sight_ray.get_collider())
 	
 	return true
+
+
+func _is_targetable_player(body: Node) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	if not body.is_in_group(player_group_name):
+		return false
+	if body.has_method("is_targetable"):
+		return body.is_targetable()
+	return true
+
+
+func _reset_idle_roam() -> void:
+	_idle_move_timer = randf_range(0.4, idle_move_interval)
+	_has_idle_target = false
+
+
+func _pick_idle_target() -> void:
+	_idle_move_timer = idle_move_interval
+	var random_offset := Vector2(
+		randf_range(-idle_move_radius, idle_move_radius),
+		randf_range(-idle_move_radius, idle_move_radius)
+	)
+	if random_offset.length() < 8.0:
+		random_offset = Vector2.RIGHT.rotated(randf() * TAU) * 16.0
+	_idle_target = global_position + random_offset
+	_has_idle_target = true

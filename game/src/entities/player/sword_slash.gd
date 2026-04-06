@@ -3,6 +3,9 @@ extends Node2D
 var weapon_damage = 10
 var hit_enemies = []  # Track enemies already hit this swing
 
+@export var enemy_group_name: StringName = &"enemy"
+@export var projectile_group_name: StringName = &"projectile"
+
 func set_damage(damage: int) -> void:
 	weapon_damage = damage
 
@@ -24,12 +27,12 @@ func _on_hitbox_body_entered(body):
 		return
 	
 	# Check if it's an enemy with health
-	if body.is_in_group("enemy") and body.has_method("take_damage"):
+	if body.is_in_group(enemy_group_name) and body.has_method("take_damage"):
 		body.take_damage(weapon_damage)
 		hit_enemies.append(body)
 	
 	# Check if it's a projectile (arrow) that can be destroyed
-	if body.is_in_group("projectile") and body.has_method("take_damage"):
+	if body.is_in_group(projectile_group_name) and body.has_method("take_damage"):
 		body.take_damage(weapon_damage)
 		hit_enemies.append(body)
 
@@ -39,7 +42,7 @@ func _on_hitbox_area_entered(area):
 		return
 	
 	# Check if it's a projectile (arrow) that can be destroyed
-	if area.is_in_group("projectile") and area.has_method("take_damage"):
+	if area.is_in_group(projectile_group_name) and area.has_method("take_damage"):
 		area.take_damage(weapon_damage)
 		hit_enemies.append(area)
 

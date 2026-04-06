@@ -9,12 +9,11 @@ func _init():
 	lore = "Banished from sacred academies, Necromancers learned to bargain with death itself and turn lost souls into power."
 
 	# Player scene - Purple slime for dark magic classes
-	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
 	
 	# Stat modifiers
 	modifiers_hp = 0.85       # -15% HP
 	modifiers_speed = 0.95    # -5% Speed
-	modifiers_damage = 1.3    # +30% Damage
+	modifiers_damage = 1.22   # +22% Damage
 	modifiers_defense = 0.8   # -20% Defense
 	modifiers_attack_speed = 1.0
 	modifiers_crit_chance = 1.1  # +10% Crit Chance

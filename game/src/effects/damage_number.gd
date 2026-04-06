@@ -3,6 +3,8 @@ class_name DamageNumber
 
 ## DamageNumber - Floating damage text that rises and fades out
 
+@export var damage_number_scene: PackedScene
+
 @export var float_speed: float = 80.0
 @export var float_duration: float = 1.0
 @export var fade_start: float = 0.6
@@ -70,17 +72,3 @@ func _process(delta):
 	# Remove when done
 	if _elapsed >= float_duration:
 		queue_free()
-
-
-## Static function to spawn a damage number
-static func spawn(at_position: Vector2, damage: int, is_crit: bool = false, color: Color = Color.WHITE) -> void:
-	var scene = preload("res://scenes/effects/damage_number.tscn")
-	var instance = scene.instantiate()
-	
-	# Add to scene tree
-	var tree = Engine.get_main_loop()
-	if tree and tree.current_scene:
-		tree.current_scene.add_child(instance)
-	
-	instance.global_position = at_position
-	instance.setup(damage, is_crit, color)

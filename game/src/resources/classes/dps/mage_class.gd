@@ -9,14 +9,13 @@ func _init():
 	lore = "Scholars of the Arcane Academy, Mages have spent decades mastering the elemental forces."
 	
 	# Player scene - Purple slime for magic classes
-	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
 	
 	# Stat modifiers
-	modifiers_hp = 0.7        # -30% HP
+	modifiers_hp = 0.78       # -22% HP
 	modifiers_speed = 1.1     # +10% Speed
-	modifiers_damage = 1.5    # +50% Damage
-	modifiers_defense = 0.8   # -20% Defense
-	modifiers_attack_speed = 0.9    # -10% Attack Speed
+	modifiers_damage = 1.35   # +35% Damage
+	modifiers_defense = 0.82  # -18% Defense
+	modifiers_attack_speed = 0.95   # -5% Attack Speed
 	
 	# Special ability
 	ability_name = "Meteor Storm"

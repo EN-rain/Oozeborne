@@ -1,25 +1,28 @@
-[gd_scene format=3 uid="uid://bu8cpoti5dsrs"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base3.png" id="idle_03"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base4.png" id="idle_04"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base5.png" id="idle_05"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base6.png" id="idle_06"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base7.png" id="idle_07"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base8.png" id="idle_08"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base9.png" id="idle_09"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base10.png" id="idle_10"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base1.png" id="walk_01"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base2.png" id="walk_02"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base3.png" id="walk_03"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base4.png" id="walk_04"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base5.png" id="walk_05"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base6.png" id="walk_06"]
-[ext_resource type="Texture2D" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
-
+[gd_scene load_steps=22 format=3 uid="uid://bu8cpoti5dsrs"]
 
 [ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://src/ui/room_lobby.gd" id="1_roomlobby"]
 [ext_resource type="Texture2D" uid="uid://cmxlei5j5rtla" path="res://assets/bg/bg.png" id="2_2lpa5"]
+[ext_resource type="Script" uid="uid://bq3ksto6mdk5n" path="res://src/ui/room_lobby_title_controller.gd" id="2_titlecontroller"]
+[ext_resource type="Script" uid="uid://b3ngnxhbybi0o" path="res://src/ui/room_lobby_carousel_controller.gd" id="3_carouselcontroller"]
+[ext_resource type="Script" uid="uid://c50h1doi8ya5x" path="res://src/ui/room_lobby_chat_box.gd" id="4_chatbox"]
+[ext_resource type="Shader" path="res://assets/shaders/slime_color.gdshader" id="5_slime_shader"]
+[ext_resource type="Texture2D" uid="uid://bdkimgwowyxxh" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
+[ext_resource type="Texture2D" uid="uid://jenrhvjxo3sw" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
+[ext_resource type="Texture2D" uid="uid://trh7butoi32x" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
+[ext_resource type="Texture2D" uid="uid://cf1avwvfks8sk" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base3.png" id="idle_03"]
+[ext_resource type="Texture2D" uid="uid://b2mnwwg56qqv2" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base4.png" id="idle_04"]
+[ext_resource type="Texture2D" uid="uid://dvcj4btd2wdrq" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base5.png" id="idle_05"]
+[ext_resource type="Texture2D" uid="uid://b71rwhupmfht3" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base6.png" id="idle_06"]
+[ext_resource type="Texture2D" uid="uid://dunqj63xihhqh" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base7.png" id="idle_07"]
+[ext_resource type="Texture2D" uid="uid://r6dportqpc06" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base8.png" id="idle_08"]
+[ext_resource type="Texture2D" uid="uid://kon1ptxa3aqd" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base9.png" id="idle_09"]
+[ext_resource type="Texture2D" uid="uid://unxffn5mk3hc" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base10.png" id="idle_10"]
+[ext_resource type="Texture2D" uid="uid://cj7tvntsemo15" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base1.png" id="walk_01"]
+[ext_resource type="Texture2D" uid="uid://ywk8fvkuqhc6" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base2.png" id="walk_02"]
+[ext_resource type="Texture2D" uid="uid://byjhflene3557" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base3.png" id="walk_03"]
+[ext_resource type="Texture2D" uid="uid://sbsnrlscv1sw" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base4.png" id="walk_04"]
+[ext_resource type="Texture2D" uid="uid://cd4i5mj58lsoh" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base5.png" id="walk_05"]
+[ext_resource type="Texture2D" uid="uid://dpb2pq7llkl2w" path="res://assets/sprites/Player/Slime/combined/walk/slime-walk-base6.png" id="walk_06"]
 
 [sub_resource type="Shader" id="top_fade_shader"]
 code = "shader_type canvas_item;
@@ -395,6 +398,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_roomlobby")
+main_game_scene_path = "res://scenes/levels/main.tscn"
+main_menu_scene_path = "res://scenes/ui/main_menu.tscn"
+
+[node name="LobbyTitleController" type="Node" parent="." unique_id=63178772]
+script = ExtResource("2_titlecontroller")
+title_label_path = NodePath("../Label")
+title_edit_path = NodePath("../LobbyNameEdit")
+
+[node name="LobbyCarouselController" type="Node" parent="." unique_id=1857374201]
+script = ExtResource("3_carouselcontroller")
+slime_preview_shader = ExtResource("5_slime_shader")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1291819552]
 texture_filter = 1
@@ -479,7 +493,7 @@ texture_filter = 1
 position = Vector2(95, 131)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"walk"
+animation = &"idle"
 
 [node name="ClassName" type="Label" parent="Class2" unique_id=1529060361]
 layout_mode = 1
@@ -520,7 +534,7 @@ texture_filter = 1
 position = Vector2(112, 158)
 scale = Vector2(3.5, 3.5)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"walk"
+animation = &"idle"
 
 [node name="ClassName" type="Label" parent="Class3" unique_id=2039350518]
 layout_mode = 1
@@ -561,7 +575,7 @@ texture_filter = 1
 position = Vector2(95, 131)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"walk"
+animation = &"idle"
 
 [node name="ClassName" type="Label" parent="Class4" unique_id=662307875]
 layout_mode = 1
@@ -602,7 +616,7 @@ texture_filter = 1
 position = Vector2(112, 158)
 scale = Vector2(3.5, 3.5)
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"walk"
+animation = &"idle"
 
 [node name="ClassName" type="Label" parent="Class5" unique_id=468433618]
 layout_mode = 1
@@ -625,6 +639,7 @@ text = "Tank"
 horizontal_alignment = 1
 
 [node name="RoomCode" type="Button" parent="." unique_id=2109980078]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -640,6 +655,7 @@ theme_override_font_sizes/font_size = 16
 text = "ROOM-CODE"
 
 [node name="LeaveLobby" type="Button" parent="." unique_id=656760061]
+unique_name_in_owner = true
 layout_mode = 1
 offset_left = 18.0
 offset_top = 20.0
@@ -650,6 +666,7 @@ theme_override_font_sizes/font_size = 14
 text = "← Leave"
 
 [node name="StartGame" type="Button" parent="." unique_id=672953285]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -671,6 +688,7 @@ theme_override_styles/disabled = SubResource("btn_start_disabled")
 text = "▶ Start Game"
 
 [node name="ChatBox" type="PanelContainer" parent="." unique_id=955636777]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -681,6 +699,7 @@ offset_right = 320.0
 offset_bottom = -12.0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("chat_panel_style")
+script = ExtResource("4_chatbox")
 
 [node name="VBox" type="VBoxContainer" parent="ChatBox" unique_id=692326315]
 layout_mode = 2
@@ -693,6 +712,7 @@ theme_override_font_sizes/font_size = 12
 text = "💬 CHAT"
 
 [node name="ChatLog" type="RichTextLabel" parent="ChatBox/VBox" unique_id=1175713416]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/default_color = Color(0.94, 0.88, 0.74, 0.95)
@@ -705,6 +725,7 @@ layout_mode = 2
 theme_override_constants/separation = 6
 
 [node name="ChatInput" type="LineEdit" parent="ChatBox/VBox/InputRow" unique_id=1047771303]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.96, 0.9, 0.8, 1)
@@ -716,6 +737,7 @@ placeholder_text = "Type a message..."
 max_length = 200
 
 [node name="SendButton" type="Button" parent="ChatBox/VBox/InputRow" unique_id=1551862379]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
@@ -724,6 +746,7 @@ theme_override_styles/hover = SubResource("btn_send_hover")
 text = "Send"
 
 [node name="ClassStats" type="PanelContainer" parent="." unique_id=1896781710]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -917,6 +940,7 @@ theme_override_font_sizes/font_size = 25
 text = "5%"
 
 [node name="StatsContent" type="RichTextLabel" parent="ClassStats/StatsVBox" unique_id=539378620]
+unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/default_color = Color(1, 1, 1, 0.96)
@@ -925,6 +949,7 @@ bbcode_enabled = true
 text = "Select a class to view stats"
 
 [node name="LeftButton" type="Button" parent="." unique_id=142096212]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -945,6 +970,7 @@ theme_override_styles/hover = SubResource("btn_arrow_hover")
 text = "◀"
 
 [node name="RightButton" type="Button" parent="." unique_id=2078494455]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -965,6 +991,7 @@ theme_override_styles/hover = SubResource("btn_arrow_hover")
 text = "▶"
 
 [node name="Label" type="Label" parent="." unique_id=2103001564]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -999,6 +1026,7 @@ text = "🔒 Subclass unlocks at Level 10"
 horizontal_alignment = 1
 
 [node name="LobbyNameEdit" type="LineEdit" parent="." unique_id=806834103]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 5
@@ -1018,6 +1046,7 @@ alignment = 1
 max_length = 28
 
 [node name="SelectClass" type="Button" parent="." unique_id=1714175096]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -1038,6 +1067,7 @@ theme_override_styles/hover = SubResource("btn_select_hover")
 text = "✦ Select Class"
 
 [node name="Players" type="PanelContainer" parent="." unique_id=965899457]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -1054,12 +1084,14 @@ layout_mode = 2
 theme_override_constants/separation = 6
 
 [node name="PlayersTitle" type="Label" parent="Players/VBox" unique_id=1446825960]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 0.9)
 theme_override_font_sizes/font_size = 18
 text = "⚔ PLAYERS"
 
 [node name="PlayersList" type="VBoxContainer" parent="Players/VBox" unique_id=613267774]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 4
 
@@ -1076,6 +1108,7 @@ theme_override_font_sizes/font_size = 20
 text = "Waiting..."
 
 [node name="SubClassInfo" type="PanelContainer" parent="." unique_id=1992445129]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -1101,15 +1134,24 @@ theme_override_font_sizes/font_size = 14
 text = "Subclasses"
 
 [node name="TalentCards" type="VBoxContainer" parent="SubClassInfo/VBox" unique_id=1093695707]
+unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
 [node name="SubclassContent" type="RichTextLabel" parent="SubClassInfo/VBox" unique_id=206165252]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/default_color = Color(1, 1, 1, 0.96)
 theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
 text = "Select a class to see available subclasses."
+
+[connection signal="pressed" from="RoomCode" to="." method="_on_copy_code_pressed"]
+[connection signal="pressed" from="LeaveLobby" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="StartGame" to="." method="_on_start_pressed"]
+[connection signal="text_submitted" from="ChatBox/VBox/InputRow/ChatInput" to="ChatBox" method="_on_chat_submitted"]
+[connection signal="pressed" from="ChatBox/VBox/InputRow/SendButton" to="ChatBox" method="_on_send_pressed"]
+[connection signal="pressed" from="SelectClass" to="." method="_on_select_class_pressed"]

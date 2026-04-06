@@ -9,7 +9,6 @@ func _init():
 	lore = "Members of the Alchemist Guild, they seek to unlock the secrets of transmutation."
 	
 	# Player scene - Green slime for utility classes
-	player_scene = preload("res://scenes/entities/player/slime_green.tscn")
 	
 	# Stat modifiers
 	modifiers_hp = 0.95       # -5% HP

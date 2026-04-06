@@ -9,15 +9,14 @@ func _init():
 	lore = "Followers of the Way of the Sword, Samurai seek perfection in every strike."
 	
 	# Player scene - Red slime for warrior classes
-	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
 	
 	# Stat modifiers
 	modifiers_hp = 0.85       # -15% HP
 	modifiers_speed = 1.15    # +15% Speed
-	modifiers_damage = 1.3    # +30% Damage
+	modifiers_damage = 1.24   # +24% Damage
 	modifiers_defense = 0.85  # -15% Defense
-	modifiers_attack_speed = 1.25   # +25% Attack Speed
-	modifiers_crit_damage = 1.5     # +50% Crit Damage
+	modifiers_attack_speed = 1.2    # +20% Attack Speed
+	modifiers_crit_damage = 1.4     # +40% Crit Damage
 	
 	# Special ability
 	ability_name = "Iaijutsu"

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b2fhc13ouapkd"]
 
 [ext_resource type="Texture2D" uid="uid://biq0hy3wr1jd1" path="res://assets/sprites/Mobs/Plagued Lancer/attack01.png" id="1_0w26a"]
-[ext_resource type="Script" uid="uid://ouaeo0ohrfr0" path="res://src/entities/enemies/plagued_lancer.gd" id="1_6rj3g"]
+[ext_resource type="Script" path="res://src/entities/enemies/bt_enemy.gd" id="1_6rj3g"]
 [ext_resource type="Texture2D" uid="uid://jo1b1tj8wc82" path="res://assets/sprites/Mobs/Plagued Lancer/idle01.png" id="1_nfew5"]
 [ext_resource type="Texture2D" uid="uid://ckb0872rd3itj" path="res://assets/sprites/Mobs/Plagued Lancer/idle02.png" id="2_4nm55"]
 [ext_resource type="Texture2D" uid="uid://t7wnumi7mw0s" path="res://assets/sprites/Mobs/Plagued Lancer/attack02.png" id="2_6rj3g"]
@@ -25,6 +25,7 @@
 [ext_resource type="Texture2D" uid="uid://jqkaqwwceh3g" path="res://assets/sprites/Mobs/Plagued Lancer/walk04.png" id="27_ww2fq"]
 [ext_resource type="Texture2D" uid="uid://bbjg7yko6gir4" path="res://assets/sprites/Mobs/Plagued Lancer/walk05.png" id="28_yoavi"]
 [ext_resource type="Texture2D" uid="uid://b343gsfiopxgs" path="res://assets/sprites/Mobs/Plagued Lancer/walk06.png" id="29_tqndv"]
+[ext_resource type="BehaviorTree" path="res://resources/ai/lancer_bt.tres" id="30_bt"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_21161"]
 animations = [{
@@ -166,6 +167,19 @@ scale = Vector2(0.6, 0.6)
 collision_layer = 8
 collision_mask = 2
 script = ExtResource("1_6rj3g")
+behavior_tree = ExtResource("30_bt")
+attacker_display_name = "Plagued Lancer"
+speed = 60.0
+stop_distance = 10.0
+contact_damage = 10
+damage_cooldown = 1.0
+knockback_force = 300.0
+knockback_decay = 500.0
+max_health = 100
+xp_value = 25
+teleport_distance = 10.0
+blink_cooldown = 3.0
+melee_hit_timing = 0.5
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=624162675]
 texture_filter = 1
@@ -244,3 +258,6 @@ damping_max = 15.0
 scale_amount_min = 3.0
 scale_amount_max = 6.0
 color_ramp = SubResource("Gradient_vuln")
+
+[node name="BTPlayer" type="BTPlayer" parent="."]
+behavior_tree = ExtResource("30_bt")

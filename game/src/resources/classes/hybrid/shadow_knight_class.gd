@@ -9,13 +9,16 @@ func _init():
 	lore = "Once noble paladins, Shadow Knights made a pact with darkness to gain power at a terrible price."
 	
 	# Player scene - Purple slime for dark knight classes
-	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
+	
+	# Class identity - hybrid is a subclass
+	is_main_class = false
+	is_subclass = true
 	
 	# Stat modifiers
-	modifiers_hp = 1.2        # +20% HP
+	modifiers_hp = 1.15       # +15% HP
 	modifiers_speed = 1.05    # +5% Speed
-	modifiers_damage = 1.15   # +15% Damage
-	modifiers_defense = 0.95  # -5% Defense
+	modifiers_damage = 1.1    # +10% Damage
+	modifiers_defense = 0.98  # -2% Defense
 	modifiers_attack_speed = 1.0     # Normal Attack Speed
 	
 	# Special ability

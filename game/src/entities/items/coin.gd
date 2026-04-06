@@ -8,6 +8,7 @@ class_name Coin
 @export var attract_range: float = 50.0
 @export var collect_range: float = 20.0
 @export var lifetime: float = 30.0
+@export var player_group_name: StringName = &"player"
 
 var _elapsed: float = 0.0
 var _target_player: Node2D = null
@@ -24,7 +25,7 @@ func _ready():
 		collect_area.body_entered.connect(_on_body_entered)
 	
 	# Start animation
-	if sprite:
+	if sprite and sprite.sprite_frames != null and sprite.sprite_frames.has_animation("idle"):
 		sprite.play("idle")
 	
 	# Random initial velocity for scatter effect
@@ -62,7 +63,7 @@ func _find_nearby_player():
 	if _target_player != null:
 		return
 	
-	var players = get_tree().get_nodes_in_group("player")
+	var players = get_tree().get_nodes_in_group(player_group_name)
 	for player in players:
 		if is_instance_valid(player):
 			var dist = global_position.distance_to(player.global_position)
@@ -72,7 +73,7 @@ func _find_nearby_player():
 
 
 func _on_body_entered(body):
-	if body.is_in_group("player"):
+	if body.is_in_group(player_group_name):
 		_collect()
 
 

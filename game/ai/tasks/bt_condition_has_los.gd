@@ -16,7 +16,7 @@ func _tick(_delta: float) -> Status:
 	
 	if sight_ray.is_colliding():
 		var collider = sight_ray.get_collider()
-		if is_instance_valid(collider) and collider.is_in_group("player"):
+		if agent.has_method("is_targetable_player") and agent.is_targetable_player(collider):
 			return SUCCESS
 		return FAILURE
 	

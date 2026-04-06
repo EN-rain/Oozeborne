@@ -20,9 +20,10 @@
 
 
 [ext_resource type="PackedScene" uid="uid://b6bpgalmnjwat" path="res://scenes/effects/damage_particles.tscn" id="20_dmgparticles"]
+[ext_resource type="PackedScene" uid="uid://dq4o0gc3o18ko" path="res://scenes/effects/slash.tscn" id="21_slash"]
 [ext_resource type="Script" uid="uid://c1uffs06ybyl8" path="res://src/entities/player/player.gd" id="13_script"]
 [ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://src/components/health.gd" id="14_health"]
-[ext_resource type="PackedScene" uid="uid://dq4o0gc3o18ko" path="res://scenes/entities/player/slash.tscn" id="16_slash"]
+[ext_resource type="Script" path="res://src/components/player_death_sequence.gd" id="15_death_sequence"]
 [ext_resource type="Shader" uid="uid://gr33ix60db3n" path="res://assets/shaders/slime_color.gdshader" id="17_shader"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_brown"]
@@ -119,7 +120,7 @@ height = 16.0
 [node name="SlimeBrown" type="CharacterBody2D" groups=["player"]]
 y_sort_enabled = true
 script = ExtResource("13_script")
-slash_scene = ExtResource("16_slash")
+slash_effect_scene = ExtResource("21_slash")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 material = SubResource("ShaderMaterial_slime")
@@ -133,19 +134,24 @@ shape = SubResource("CapsuleShape2D_slime")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(3, 3)
+process_callback = 0
 
 [node name="Health" type="Node2D" parent="."]
 script = ExtResource("14_health")
 
+[node name="DeathSequence" type="Node2D" parent="."]
+script = ExtResource("15_death_sequence")
+death_explosion_scene = ExtResource("20_dmgparticles")
+
 [node name="HitStunTimer" type="Timer" parent="."]
 
-[node name="Shadow" type="ColorRect" parent="."]
-z_index = -1
-offset_left = -12.0
-offset_top = -4.0
-offset_right = 12.0
-offset_bottom = 4.0
-color = Color(0, 0, 0, 0.3)
 
 [node name="DamageParticles" parent="." instance=ExtResource("20_dmgparticles")]
 position = Vector2(0, -8)
+
+[node name="DashParticles" type="CPUParticles2D" parent="."]
+emitting = false
+
+[node name="DashTrail" type="CPUParticles2D" parent="."]
+emitting = false
+

@@ -6,6 +6,10 @@ class_name BTActionChase
 @export var stop_distance_var: StringName = &"stop_distance"
 
 func _tick(_delta: float) -> Status:
+	if agent.get("is_attacking"):
+		agent.velocity = Vector2.ZERO
+		return RUNNING
+
 	var player = agent.get("player")
 	if player == null or not is_instance_valid(player):
 		return FAILURE

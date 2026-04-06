@@ -1,23 +1,35 @@
-[gd_scene format=3 uid="uid://gf1yox3vwbbf"]
+[gd_scene load_steps=9 format=3 uid="uid://dlwfu5d1pq3y7"]
 
-[ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="1_0wfyh"]
-[ext_resource type="Script" uid="uid://jx31lxl2ga28" path="res://src/systems/game/main.gd" id="1_tbgi4"]
-[ext_resource type="PackedScene" uid="uid://k1m6v7rtimha" path="res://scenes/ui/main_ui.tscn" id="2_sugp2"]
-[ext_resource type="PackedScene" uid="uid://dq4o0gc3o18ko" path="res://scenes/entities/player/slash.tscn" id="3_b6bv0"]
-[ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="3_sugp2"]
-[ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="8_pause"]
+[ext_resource type="Script" path="res://src/systems/game/main.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="2_env"]
+[ext_resource type="PackedScene" uid="uid://xhxwepnhhfr8" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
+[ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
+[ext_resource type="PackedScene" path="res://scenes/entities/enemies/blue_slime.tscn" id="6_commonmob"]
+[ext_resource type="PackedScene" path="res://scenes/entities/enemies/plagued_lancer.tscn" id="7_lancer"]
+[ext_resource type="PackedScene" path="res://scenes/entities/enemies/archer.tscn" id="8_archer"]
 
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true
-script = ExtResource("1_tbgi4")
-player_scene = ExtResource("3_sugp2")
-sword_slash_scene = ExtResource("3_b6bv0")
+script = ExtResource("1_main")
+player_scene = ExtResource("4_player")
+common_mob_scene = ExtResource("6_commonmob")
+elite_lancer_scene = ExtResource("7_lancer")
+elite_archer_scene = ExtResource("8_archer")
 
-[node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("1_0wfyh")]
+[node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
 
-[node name="UI" parent="." unique_id=1617366584 instance=ExtResource("2_sugp2")]
+[node name="HUD" parent="." unique_id=1617366584 instance=ExtResource("3_hud")]
 
-[node name="Player" parent="." unique_id=734413701 instance=ExtResource("3_sugp2")]
+[node name="PauseMenu" parent="." unique_id=1429287246 instance=ExtResource("5_pause")]
+visible = false
+
+[node name="Player" parent="." unique_id=734413701 instance=ExtResource("4_player")]
 position = Vector2(61.782185, 3.4233246)
 
-[node name="PauseMenu" parent="." unique_id=1429287246 instance=ExtResource("8_pause")]
+[node name="PingTimer" type="Timer" parent="." unique_id=1766112053]
+unique_name_in_owner = true
+
+[node name="SpawnPoint" type="Marker2D" parent="." unique_id=1157932121]
+unique_name_in_owner = true
+position = Vector2(67.346375, -39.783676)

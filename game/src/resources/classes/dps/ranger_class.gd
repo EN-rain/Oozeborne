@@ -9,7 +9,6 @@ func _init():
 	lore = "Guardians of the wilderness, Rangers have sworn to protect the forests from those who would harm them."
 	
 	# Player scene - Green slime for nature classes
-	player_scene = preload("res://scenes/entities/player/slime_green.tscn")
 	
 	# Stat modifiers
 	modifiers_hp = 0.9        # -10% HP

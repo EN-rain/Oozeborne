@@ -66,6 +66,18 @@ tracks/4/keys = {
 "update": 1,
 "values": [false]
 }
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("../HitBox/CollisionShape2D:position")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-14.5, -20.5)]
+}
 
 [sub_resource type="Animation" id="Animation_ur7pv"]
 resource_name = "slash_anim"
@@ -122,10 +134,22 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("../HitBox/CollisionShape2D:disabled")
+tracks/4/path = NodePath("../HitBox/CollisionShape2D:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.10168521, 0.1552322, 0.2040405, 0.30506098, 0.40305692),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(8, 0), Vector2(17, 0), Vector2(29, 0), Vector2(39, 0), Vector2(52, 0)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("../HitBox/CollisionShape2D:disabled")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
 "times": PackedFloat32Array(0, 0.6),
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
@@ -138,8 +162,8 @@ _data = {
 &"slash_anim": SubResource("Animation_ur7pv")
 }
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_3v2ag"]
-size = Vector2(83, 32)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dcbvk"]
+size = Vector2(39.5, 48.75)
 
 [node name="Slash" type="Node2D" unique_id=1580068680]
 script = ExtResource("1_3c2nd")
@@ -159,8 +183,7 @@ collision_layer = 8
 collision_mask = 9
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox" unique_id=12619295]
-position = Vector2(28.5, 0)
-shape = SubResource("RectangleShape2D_3v2ag")
+position = Vector2(-14.5, -20.5)
+shape = SubResource("RectangleShape2D_dcbvk")
 
 [connection signal="animation_finished" from="SlashEffect/SlashAnim" to="." method="_on_slash_anim_animation_finished"]
-[connection signal="body_entered" from="HitBox" to="." method="_on_area_2d_body_entered"]

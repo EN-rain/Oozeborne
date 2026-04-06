@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://df851q5qve0ln"]
 
-[ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://src/ui/death_menu.gd" id="1_nt7q6"]
+[ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://src/ui/hud_ui.gd" id="1_hudui"]
 
 ; ── Health bar: background ────────────────────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="hp_bg"]
@@ -156,8 +156,8 @@ corner_radius_bottom_left = 4
 ; Scene tree
 ; =============================================================================
 
-[node name="Ui" type="CanvasLayer" unique_id=958867226]
-script = ExtResource("1_nt7q6")
+[node name="HUD" type="CanvasLayer" unique_id=958867226]
+script = ExtResource("1_hudui")
 
 ; ── In-game HUD ───────────────────────────────────────────────────────────────
 [node name="Control" type="Control" parent="." unique_id=1230823350]

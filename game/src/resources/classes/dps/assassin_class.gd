@@ -9,16 +9,15 @@ func _init():
 	lore = "Masters of the silent kill, Assassins are trained in the forbidden arts of the Shadow Guild."
 	
 	# Player scene - Red slime for aggressive DPS
-	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
 	
 	# Stat modifiers
-	modifiers_hp = 0.8        # -20% HP
-	modifiers_speed = 1.3     # +30% Speed
-	modifiers_damage = 1.35   # +35% Damage
-	modifiers_defense = 0.75  # -25% Defense
-	modifiers_attack_speed = 1.2    # +20% Attack Speed
-	modifiers_crit_chance = 1.5     # +50% Crit Chance
-	modifiers_crit_damage = 2.0     # +100% Crit Damage (2x total)
+	modifiers_hp = 0.82       # -18% HP
+	modifiers_speed = 1.22    # +22% Speed
+	modifiers_damage = 1.28   # +28% Damage
+	modifiers_defense = 0.8   # -20% Defense
+	modifiers_attack_speed = 1.18   # +18% Attack Speed
+	modifiers_crit_chance = 1.35    # +35% Crit Chance
+	modifiers_crit_damage = 1.7     # +70% Crit Damage
 	
 	# Special ability
 	ability_name = "Shadow Step"

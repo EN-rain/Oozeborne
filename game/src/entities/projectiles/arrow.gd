@@ -8,6 +8,7 @@ extends Area2D
 @export var homing_duration: float = 1.0  # Homing turns off after this timer
 @export var slow_chance: float = 0.5  # 50% chance to apply slow
 @export var slow_duration: float = 3.0  # 3 seconds slow
+@export var player_group_name: StringName = &"player"
 
 var direction: Vector2 = Vector2.RIGHT
 var has_hit := false
@@ -29,7 +30,7 @@ func _ready():
 	start_position = global_position
 	
 	# Find player in scene
-	var players = get_tree().get_nodes_in_group("player")
+	var players = get_tree().get_nodes_in_group(player_group_name)
 	if players.size() > 0:
 		player = players[0]
 	
@@ -48,6 +49,9 @@ func _physics_process(delta):
 	
 	# Homing timer
 	homing_timer += delta
+
+	if player != null and player.has_method("is_targetable") and not player.is_targetable():
+		player = null
 	
 	# Apply homing if active (within duration window)
 	if player and is_instance_valid(player) and homing_timer >= homing_delay and homing_timer < homing_delay + homing_duration:
@@ -68,9 +72,9 @@ func _on_body_entered(body):
 	if has_hit:
 		return
 	
-	if body.is_in_group("player") and body.has_method("apply_damage"):
+	if body.is_in_group(player_group_name) and body.has_method("apply_damage"):
 		has_hit = true
-		body.apply_damage(damage, global_position, 150.0)
+		body.apply_damage(damage, global_position, 150.0, "Archer")
 		
 		# Apply slow debuff if this is a slow arrow
 		if is_slow_arrow:

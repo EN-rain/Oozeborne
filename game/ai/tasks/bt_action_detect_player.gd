@@ -10,7 +10,7 @@ func _tick(_delta: float) -> Status:
 	# Check for overlapping bodies in player group
 	var bodies = detection_area.get_overlapping_bodies()
 	for body in bodies:
-		if body.is_in_group("player"):
+		if agent.has_method("is_targetable_player") and agent.is_targetable_player(body):
 			agent.player = body
 			return SUCCESS
 	

@@ -3,12 +3,9 @@ class_name ShopUI
 
 ## ShopUI - Shop panel for purchasing items
 
-@onready var close_button: Button = $Panel/VBox/Header/CloseButton
-@onready var tabs: TabContainer = $Panel/VBox/TabContainer
-@onready var coins_label: Label = $Panel/VBox/Header/CoinsLabel
-
-var _selected_item: ShopItem = null
-var _selected_category: String = "consumables"
+@onready var close_button: Button = %CloseButton
+@onready var tabs: TabContainer = %TabContainer
+@onready var coins_label: Label = %CoinsLabel
 
 # Category grids
 var consumables_grid: GridContainer
@@ -48,7 +45,6 @@ func _create_item_grid(parent: Control) -> GridContainer:
 
 
 func _connect_signals():
-	close_button.pressed.connect(_on_close_pressed)
 	CoinManager.coins_changed.connect(_on_coins_changed)
 	ShopManager.item_purchased.connect(_on_item_purchased)
 
@@ -154,12 +150,12 @@ func _on_buy_pressed(item: ShopItem):
 	ShopManager.purchase_item(item)
 
 
-func _on_item_purchased(item: ShopItem, success: bool):
+func _on_item_purchased(_item: ShopItem, success: bool):
 	if success:
 		_refresh_shop()
 
 
-func _on_coins_changed(total: int):
+func _on_coins_changed(_total: int):
 	_update_coins_display()
 	_refresh_shop()
 

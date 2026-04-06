@@ -4,3 +4,4 @@
 /build/
 /exports/
 *.tmp
+/addons/godot_mcp_server/

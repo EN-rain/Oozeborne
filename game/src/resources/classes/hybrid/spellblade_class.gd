@@ -9,14 +9,17 @@ func _init():
 	lore = "Outcasts from both the Warrior Academy and Arcane Institute, Spellblades forged their own path."
 	
 	# Player scene - Purple slime for magic-melee hybrid
-	player_scene = preload("res://scenes/entities/player/slime_purple.tscn")
+	
+	# Class identity - hybrid is a subclass
+	is_main_class = false
+	is_subclass = true
 	
 	# Stat modifiers
 	modifiers_hp = 1.05       # +5% HP
-	modifiers_speed = 1.1     # +10% Speed
-	modifiers_damage = 1.25   # +25% Damage
-	modifiers_defense = 0.9   # -10% Defense
-	modifiers_attack_speed = 1.1     # +10% Attack Speed
+	modifiers_speed = 1.08    # +8% Speed
+	modifiers_damage = 1.18   # +18% Damage
+	modifiers_defense = 0.94  # -6% Defense
+	modifiers_attack_speed = 1.08    # +8% Attack Speed
 	
 	# Special ability
 	ability_name = "Elemental Infusion"

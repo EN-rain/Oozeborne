@@ -3,6 +3,10 @@ class_name BTActionIdle
 ## Play idle animation and stop movement
 
 func _tick(_delta: float) -> Status:
+	if agent.get("is_attacking"):
+		agent.velocity = Vector2.ZERO
+		return RUNNING
+
 	agent.velocity = Vector2.ZERO
 	
 	var animated_sprite = agent.get_node_or_null("AnimatedSprite2D")

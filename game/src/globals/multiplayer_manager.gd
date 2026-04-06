@@ -10,11 +10,14 @@ var room_code: String = ""  # 9-char alphanumeric display code
 var lobby_name: String = ""
 var is_host: bool = false
 var match_phase: String = "lobby"
+var player_slime_variant: String = "blue"
 var players: Dictionary = {}  # user_id -> {ign, is_host}
 var player_class: PlayerClass = null  # Selected main class
 var player_subclass: PlayerClass = null  # Selected subclass (unlocked at level 10)
+var subclass_choice_made: bool = false  # Subclass can only be selected once
 var player_level: int = 1  # Player level for subclass unlock
 var player_classes: Dictionary = {}  # user_id -> PlayerClass (for remote players)
+var player_subclasses: Dictionary = {}  # user_id -> PlayerClass (for remote players)
 
 const SERVER_CONFIG_FILE = "server_config.cfg"
 const SERVER_CONFIG_SECTION = "server"
@@ -22,7 +25,7 @@ const DEFAULT_SERVER_KEY = "defaultkey"
 const DEFAULT_SERVER_HOST = "127.0.0.1"
 const DEFAULT_SERVER_PORT = 7350
 const DEFAULT_SCHEME = "https"
-const TIMEOUT = 10
+const TIMEOUT = 20
 const ROOM_COLLECTION = "room_registry"
 const AUTH_SESSION_FILE = "user://auth_session.json"
 
@@ -52,6 +55,15 @@ func _reset_match_state() -> void:
 	match_phase = "lobby"
 	players.clear()
 	player_classes.clear()
+	player_subclasses.clear()
+	player_class = null
+	player_subclass = null
+	subclass_choice_made = false
+	player_level = 1
+
+
+func resolve_player_scene() -> PackedScene:
+	return load(SlimePaletteRegistry.get_scene_path(player_slime_variant)) as PackedScene
 
 func _cleanup_socket_connection() -> void:
 	if socket != null:
@@ -152,10 +164,38 @@ func get_last_auth_error(session_result: NakamaSession) -> String:
 	if session_result == null:
 		return "Authentication failed"
 	if session_result.is_exception():
-		return str(session_result.get_exception().message)
+		var raw_error := str(session_result.get_exception().message)
+		if raw_error.to_lower().contains("http request failed"):
+			return "Cannot reach auth server at %s. Check server availability and server_config.cfg." % get_server_endpoint_summary()
+		return raw_error
 	if not session_result.is_valid():
 		return "Authentication failed"
 	return ""
+
+func _derive_registration_username(email: String, username: String) -> String:
+	var normalized_username := username.strip_edges()
+	if not normalized_username.is_empty():
+		return normalized_username
+
+	var email_prefix := email.strip_edges().to_lower().get_slice("@", 0)
+	var sanitized := ""
+	for i in range(email_prefix.length()):
+		var ch := email_prefix[i]
+		var is_letter := (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9")
+		if is_letter:
+			sanitized += ch
+		elif ch == "_" or ch == "-":
+			sanitized += ch
+		else:
+			sanitized += "_"
+
+	while sanitized.begins_with("_"):
+		sanitized = sanitized.substr(1)
+	while sanitized.ends_with("_"):
+		sanitized = sanitized.substr(0, sanitized.length() - 1)
+	if sanitized.is_empty():
+		sanitized = "player"
+	return sanitized.left(24)
 
 func authenticate_email(email: String, password: String, username: String = "", create_account: bool = false) -> Dictionary:
 	_ensure_client()
@@ -164,6 +204,7 @@ func authenticate_email(email: String, password: String, username: String = "", 
 	var auth_session: NakamaSession
 
 	if create_account:
+		normalized_username = _derive_registration_username(normalized_email, normalized_username)
 		auth_session = await client.authenticate_email_async(normalized_email, password, normalized_username, true, null)
 	else:
 		auth_session = await client.authenticate_email_async(normalized_email, password, null, false, null)
@@ -477,13 +518,19 @@ func send_match_state(data: Dictionary):
 	
 	# Always broadcast to entire match (null = all players)
 	# This is more reliable than targeting specific presences
-	socket.send_match_state_async(match_id, 0, json, null)
+	socket.send_match_state_async(match_id, NetworkMessaging.OP_MESSAGE, json, null)
 
 func get_player_class(user_id: String) -> PlayerClass:
 	return player_classes.get(user_id, null)
 
-func set_player_class(user_id: String, player_class: PlayerClass) -> void:
-	player_classes[user_id] = player_class
+func set_player_class(user_id: String, assigned_class: PlayerClass) -> void:
+	player_classes[user_id] = assigned_class
+
+func get_player_subclass(user_id: String) -> PlayerClass:
+	return player_subclasses.get(user_id, null)
+
+func set_player_subclass(user_id: String, assigned_subclass: PlayerClass) -> void:
+	player_subclasses[user_id] = assigned_subclass
 
 var _last_debug_print_time: int = 0  # Rate limit debug prints
 

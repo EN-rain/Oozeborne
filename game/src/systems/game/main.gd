@@ -1,16 +1,30 @@
 extends Node2D
 
 @onready var player = $Player
-@onready var ui = $UI
+@onready var ui = $HUD
+@onready var spawn_point: Marker2D = %SpawnPoint
 
 @export var player_scene: PackedScene
-@export var sword_slash_scene: PackedScene
 
-var mob_spawner: Node  # MobSpawner instance
+@export var common_mob_scene: PackedScene
+@export var elite_lancer_scene: PackedScene
+@export var elite_archer_scene: PackedScene
+
+var mob_spawner: MobSpawner
+var round_manager: RoundManager
+
+const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
+const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
+const DEBUG_STATS_LABEL_NODE_PATH := "Control/DebugStatsLabel"
+
+var _solo_class_selection_ui: ClassSelectionUI = null
+var _solo_class_locked: bool = false
+var _subclass_overlay_layer: CanvasLayer = null
+var _subclass_overlay_panel: PanelContainer = null
 
 # FPS/Ping display
 var _fps_label: Label
-var _ping_timer: Timer
+@onready var _ping_timer: Timer = %PingTimer
 
 func _process(_delta):
 	# Update FPS display every frame
@@ -20,7 +34,7 @@ func _process(_delta):
 		var interp_delay = int(MultiplayerUtils.get_interpolation_delay() * 1000)
 		var pending = MultiplayerUtils.get_pending_input_count()
 		_fps_label.text = "FPS: %d | MS: %d | Interp: %dms | Pending: %d" % [fps, ping_ms, interp_delay, pending]
-
+	
 func _physics_process(delta):
 	# Interpolate remote players positions in physics process to align with movement timeline
 	MultiplayerUtils.interpolate_remote_players(delta)
@@ -33,22 +47,29 @@ func _ready():
 	# Replace local player with class-specific scene if available
 	_replace_local_player_with_class_scene()
 	
-	# Start near the expected authoritative spawn instead of forcing every client to the same point.
-	player.global_position = Vector2(360, 300) if MultiplayerManager.is_host else Vector2(440, 300)
+	# Use authored spawn point when available, fallback to legacy host/client spawn.
+	player.global_position = _get_local_spawn_position()
+	_play_local_spawn_intro()
 	
-	ui.set_player(player)
+	_bind_local_player(player)
 	spawn_players()
 	
+	# Use scene-defined camera setup.
+	_setup_player_camera()
+
+	round_manager = RoundManager.new()
+	add_child(round_manager)
+	
 	# Initialize mob spawner
-	mob_spawner = preload("res://src/systems/game/mob_spawner.gd").new()
-	mob_spawner.common_mob_scene = preload("res://scenes/entities/enemies/blue_slime.tscn")
-	mob_spawner.elite_mob_lancer_scene = preload("res://scenes/entities/enemies/plagued_lancer.tscn")
-	mob_spawner.elite_mob_archer_scene = preload("res://scenes/entities/enemies/archer.tscn")
+	mob_spawner = MobSpawner.new()
+	mob_spawner.common_mob_scene = common_mob_scene
+	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
+	mob_spawner.elite_mob_archer_scene = elite_archer_scene
 	mob_spawner.initialize(self, player)
+	mob_spawner.set_round_manager(round_manager)
 	mob_spawner.mob_spawned.connect(_on_mob_spawned)
 	mob_spawner.mob_died.connect(_on_mob_died)
 	add_child(mob_spawner)
-	mob_spawner.spawn_initial_mobs()
 	
 	# Create FPS/Ping display
 	_create_fps_display()
@@ -68,42 +89,139 @@ func _ready():
 		MultiplayerUtils.start_input_update_loop(player)
 		# Announce our presence in game
 		MultiplayerUtils.send_player_info(MultiplayerManager.player_ign, MultiplayerManager.is_host)
+	
+	if _should_show_solo_class_selection():
+		_show_solo_class_selection_overlay()
+	else:
+		mob_spawner.spawn_initial_mobs()
+
+	if not LevelSystem.level_up.is_connected(_on_level_up):
+		LevelSystem.level_up.connect(_on_level_up)
+
+	_maybe_prompt_subclass_selection()
+
+
+func _bind_local_player(target_player: Node) -> void:
+	player = target_player
+	ui.set_player(player)
+	call_deferred("_setup_player_camera")
+	if mob_spawner != null:
+		mob_spawner.initialize(self, player)
+	if MultiplayerManager.socket:
+		MultiplayerUtils.set_local_player(player)
+
+
+func _setup_player_camera() -> void:
+	if not is_instance_valid(player):
+		push_warning("[Main] Cannot setup camera - player not valid")
+		return
+
+	var existing_camera := player.get_node_or_null("Camera2D") as Camera2D
+	if existing_camera == null:
+		push_warning("[Main] Player scene is missing Camera2D. Add one in the player scene.")
+		return
+
+	existing_camera.make_current()
+	print("[Main] Using scene Camera2D on player")
+
+
+func _play_local_spawn_intro() -> void:
+	if not is_instance_valid(player):
+		return
+	player.modulate = Color(1, 1, 1, 0)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(player, "modulate:a", 1.0, LOCAL_PLAYER_SPAWN_FADE_TIME)
 
 func _replace_local_player_with_class_scene():
 	# Replace the default player with the class-specific slime scene
 	var player_class: PlayerClass = MultiplayerManager.player_class
 	if player_class and player_class.player_scene:
-		var old_player = player
-		var new_player = player_class.player_scene.instantiate()
-		new_player.global_position = old_player.global_position
-		new_player.name = old_player.name
-		new_player.is_local_player = true
-		# Copy IGN if available
-		if old_player.has_method("get_ign") and new_player.has_method("set_ign"):
-			new_player.set_ign(old_player.get_ign())
-		old_player.queue_free()
-		add_child(new_player)
-		player = new_player
-		print("[Main] Replaced player with class scene: ", player_class.display_name)
+		_apply_local_player_class(player_class)
+
+
+func _get_local_spawn_position() -> Vector2:
+	if spawn_point != null:
+		return spawn_point.global_position
+	return Vector2(360, 300) if MultiplayerManager.is_host else Vector2(440, 300)
+
+
+func _apply_local_player_class(player_class: PlayerClass) -> void:
+	if player_class == null or player_class.player_scene == null or not is_instance_valid(player):
+		return
+	if player.scene_file_path == player_class.player_scene.resource_path:
+		return
+	
+	var old_player = player
+	var new_player = player_class.player_scene.instantiate()
+	new_player.global_position = old_player.global_position
+	new_player.name = old_player.name
+	new_player.is_local_player = true
+	new_player.modulate = old_player.modulate
+	if old_player.has_method("get_ign") and new_player.has_method("set_ign"):
+		new_player.set_ign(old_player.get_ign())
+	add_child(new_player)
+	old_player.queue_free()
+	_bind_local_player(new_player)
+	print("[Main] Replaced player with class scene: ", player_class.display_name)
+
+
+func _should_show_solo_class_selection() -> bool:
+	return MultiplayerManager.socket == null and MultiplayerManager.player_class == null
+
+
+func _show_solo_class_selection_overlay() -> void:
+	_solo_class_selection_ui = ui.get_node_or_null(SOLO_CLASS_SELECTION_NODE_PATH) as ClassSelectionUI
+	if _solo_class_selection_ui == null:
+		push_warning("[Main] Missing UI node: %s" % SOLO_CLASS_SELECTION_NODE_PATH)
+		return
+	
+	_solo_class_selection_ui.auto_start_solo_game = false
+	_solo_class_selection_ui.set_player_level(MultiplayerManager.player_level)
+	if not _solo_class_selection_ui.class_selected.is_connected(_on_solo_class_selected):
+		_solo_class_selection_ui.class_selected.connect(_on_solo_class_selected)
+	_solo_class_selection_ui.visible = true
+	
+	_solo_class_locked = true
+	player.set_physics_process(false)
+
+
+func _on_solo_class_selected(selected_class: PlayerClass, _selected_subclass: PlayerClass) -> void:
+	selected_class.player_scene = MultiplayerManager.resolve_player_scene()
+	MultiplayerManager.player_class = selected_class
+	MultiplayerManager.player_subclass = null
+	MultiplayerManager.subclass_choice_made = false
+	_apply_local_player_class(selected_class)
+	_finish_solo_class_selection()
+
+
+func _finish_solo_class_selection() -> void:
+	_solo_class_locked = false
+	if is_instance_valid(player):
+		player.set_physics_process(true)
+	if is_instance_valid(_solo_class_selection_ui):
+		_solo_class_selection_ui.visible = false
+	_solo_class_selection_ui = null
+	call_deferred("_start_initial_mob_spawns")
+
+
+func _start_initial_mob_spawns() -> void:
+	if mob_spawner == null or not is_instance_valid(player):
+		return
+	_setup_player_camera()
+	mob_spawner.initialize(self, player)
+	mob_spawner.spawn_initial_mobs()
 
 func _create_fps_display():
-	# Create CanvasLayer for overlay
-	var canvas = CanvasLayer.new()
-	canvas.layer = 100  # On top of everything
-	add_child(canvas)
+	_fps_label = ui.get_node_or_null(DEBUG_STATS_LABEL_NODE_PATH) as Label
+	if _fps_label == null:
+		push_warning("[Main] Missing UI node: %s" % DEBUG_STATS_LABEL_NODE_PATH)
+	else:
+		_fps_label.visible = true
 	
-	# Create FPS/Ping label
-	_fps_label = Label.new()
-	_fps_label.position = Vector2(DisplayServer.window_get_size().x - 150, 10)  # Top right
-	_fps_label.add_theme_font_size_override("font_size", 14)
-	canvas.add_child(_fps_label)
-	
-	# Create timer for ping updates
-	_ping_timer = Timer.new()
-	_ping_timer.wait_time = 1.0  # Update every second
-	_ping_timer.timeout.connect(_on_ping_timeout)
-	add_child(_ping_timer)
-	_ping_timer.start()
+	if _ping_timer and not _ping_timer.timeout.is_connected(_on_ping_timeout):
+		_ping_timer.timeout.connect(_on_ping_timeout)
+		_ping_timer.start()
 
 func _on_ping_timeout():
 	if MultiplayerManager.socket and MultiplayerManager.match_id:
@@ -213,6 +331,19 @@ func _on_match_state(match_state):
 			# Someone requested player info, send ours
 			MultiplayerUtils.send_player_info(MultiplayerManager.player_ign, MultiplayerManager.is_host)
 
+		"subclass_selected":
+			var subclass_sender_id := str(data.get("user_id", ""))
+			if subclass_sender_id.is_empty() or MultiplayerUtils.is_local_player(subclass_sender_id):
+				return
+			var subclass_id := str(data.get("subclass_id", ""))
+			var subclass_res := ClassManager.create_class_instance(subclass_id)
+			if subclass_res != null:
+				MultiplayerManager.set_player_subclass(subclass_sender_id, subclass_res)
+				if MultiplayerUtils.has_remote_player(subclass_sender_id):
+					var remote_node = MultiplayerUtils.get_remote_player_node(subclass_sender_id)
+					if remote_node != null and remote_node.has_method("apply_subclass_modifiers"):
+						remote_node.apply_subclass_modifiers(subclass_res)
+
 func spawn_players():
 	# Spawn all connected players, filtering out empty keys
 	for user_id in MultiplayerManager.players:
@@ -260,6 +391,9 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 			remote_player.name = player_info.ign
 			if remote_player.has_method("set_ign"):
 				remote_player.set_ign(player_info.ign)
+		var remote_subclass: PlayerClass = MultiplayerManager.get_player_subclass(user_id)
+		if remote_subclass != null and remote_player.has_method("apply_subclass_modifiers"):
+			remote_player.apply_subclass_modifiers(remote_subclass)
 		add_child(remote_player)
 		# Register with MultiplayerUtils for interpolation
 		MultiplayerUtils.register_remote_player(user_id, remote_player, spawn_pos, has_initial_pos)
@@ -268,7 +402,7 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		_apply_authoritative_player_info(user_id, player_info.get("ign", ""), player_info.get("is_host", false))
 
 func _spawn_remote_attack(user_id: String, pos: Vector2, rotation_angle: float):
-	# Spawn sword slash for remote player
+	# Spawn slash particles for remote player
 	if not MultiplayerUtils.has_remote_player(user_id):
 		return
 	
@@ -279,23 +413,29 @@ func _spawn_remote_attack(user_id: String, pos: Vector2, rotation_angle: float):
 	if is_instance_valid(remote_player) and remote_player.has_method("play_attack_animation"):
 		remote_player.play_attack_animation()
 	
-	_spawn_remote_slash(pos, rotation_angle)
+	if is_instance_valid(remote_player) and remote_player.has_method("emit_attack_particles_at"):
+		remote_player.emit_attack_particles_at(pos, rotation_angle)
+
+
+func _find_remote_player_near_position(pos: Vector2, max_distance: float = 64.0) -> Node:
+	var best_node: Node = null
+	var best_distance_sq: float = max_distance * max_distance
+	for data in MultiplayerUtils.get_remote_players().values():
+		var node: Node2D = data.get("node") as Node2D
+		if node == null or not is_instance_valid(node):
+			continue
+		var dist_sq: float = node.global_position.distance_squared_to(pos)
+		if dist_sq <= best_distance_sq:
+			best_distance_sq = dist_sq
+			best_node = node
+	return best_node
+
 
 func _spawn_remote_slash(pos: Vector2, rotation_angle: float):
-	if sword_slash_scene == null:
-		push_error("[Main] sword_slash_scene is NULL! Assign it in the inspector.")
-		return
-	var slash = sword_slash_scene.instantiate()
-	print("[Main] Slash at pos: ", pos, " rotation: ", rotation_angle, " (", rad_to_deg(rotation_angle), " degrees)")
-	
-	# Calculate direction from rotation angle
-	var dir = Vector2(cos(rotation_angle), sin(rotation_angle))
-	print("[Main] Direction vector: ", dir)
-	
-	# Position slash in front of player (same offset as local player)
-	slash.global_position = pos + dir * 12
-	slash.rotation = rotation_angle
-	add_child(slash)
+	# Legacy name retained for compatibility with pending-attack flow.
+	var remote_node := _find_remote_player_near_position(pos)
+	if remote_node != null and remote_node.has_method("emit_attack_particles_at"):
+		remote_node.emit_attack_particles_at(pos, rotation_angle)
 
 func send_attack(pos: Vector2, rotation_angle: float):
 	# Send attack to other players
@@ -345,6 +485,8 @@ func _remove_player_minimap_indicator(user_id: String):
 	ui.unregister_remote_player(user_id)
 
 func _on_mob_spawned(mob):
+	if round_manager != null:
+		round_manager.register_mob(mob)
 	ui.register_slime(mob)
 
 func _on_mob_died(_mob, score_value: int, xp_value: int):
@@ -357,6 +499,117 @@ func _on_mob_died(_mob, score_value: int, xp_value: int):
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
 	print("[Main] Player joined signal received for: ", username)
 	_spawn_player_for_user(user_id)
+
+
+func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
+	if not is_instance_valid(player):
+		return
+	if entity_id != player.get_instance_id():
+		return
+	MultiplayerManager.player_level = new_level
+	_maybe_prompt_subclass_selection()
+
+
+func _maybe_prompt_subclass_selection() -> void:
+	if not is_instance_valid(player):
+		return
+	if MultiplayerManager.subclass_choice_made:
+		return
+	if MultiplayerManager.player_subclass != null:
+		return
+	if MultiplayerManager.player_class == null:
+		return
+	if LevelSystem.get_level(player) < 10:
+		return
+	if _subclass_overlay_layer != null and is_instance_valid(_subclass_overlay_layer):
+		return
+
+	var choices := ClassManager.get_subclasses_for_main_class(MultiplayerManager.player_class)
+	if choices.is_empty():
+		return
+
+	_show_subclass_selection_overlay(choices)
+
+
+func _show_subclass_selection_overlay(choices: Array[PlayerClass]) -> void:
+	_subclass_overlay_layer = CanvasLayer.new()
+	_subclass_overlay_layer.layer = 90
+	add_child(_subclass_overlay_layer)
+
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_subclass_overlay_layer.add_child(root)
+
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0, 0, 0, 0.5)
+	root.add_child(backdrop)
+
+	_subclass_overlay_panel = PanelContainer.new()
+	_subclass_overlay_panel.custom_minimum_size = Vector2(520, 360)
+	_subclass_overlay_panel.position = Vector2(
+		(DisplayServer.window_get_size().x - _subclass_overlay_panel.custom_minimum_size.x) * 0.5,
+		(DisplayServer.window_get_size().y - _subclass_overlay_panel.custom_minimum_size.y) * 0.5
+	)
+	root.add_child(_subclass_overlay_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	_subclass_overlay_panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Subclass Unlocked (Level 10)"
+	title.add_theme_font_size_override("font_size", 24)
+	vbox.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "Choose one subclass. This choice is permanent for this run."
+	subtitle.add_theme_font_size_override("font_size", 14)
+	vbox.add_child(subtitle)
+
+	for subclass in choices:
+		var button := Button.new()
+		button.text = "%s - %s" % [subclass.display_name, subclass.description]
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.custom_minimum_size = Vector2(0, 54)
+		button.pressed.connect(_on_subclass_choice_selected.bind(subclass))
+		vbox.add_child(button)
+
+
+func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
+	if subclass == null:
+		return
+	MultiplayerManager.player_subclass = subclass
+	MultiplayerManager.subclass_choice_made = true
+	if MultiplayerManager.session != null:
+		MultiplayerManager.set_player_subclass(MultiplayerManager.session.user_id, subclass)
+	if is_instance_valid(player) and player.has_method("apply_subclass_modifiers"):
+		player.apply_subclass_modifiers(subclass)
+	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty() and MultiplayerManager.session != null:
+		MultiplayerManager.send_match_state({
+			"type": "subclass_selected",
+			"user_id": MultiplayerManager.session.user_id,
+			"subclass_id": ClassManager.get_class_id(subclass)
+		})
+	_clear_subclass_selection_overlay()
+	print("[Main] Subclass selected: ", subclass.display_name)
+
+
+func _clear_subclass_selection_overlay() -> void:
+	if _subclass_overlay_panel != null and is_instance_valid(_subclass_overlay_panel):
+		_subclass_overlay_panel.queue_free()
+	_subclass_overlay_panel = null
+	if _subclass_overlay_layer != null and is_instance_valid(_subclass_overlay_layer):
+		_subclass_overlay_layer.queue_free()
+	_subclass_overlay_layer = null
 
 
 ## Handle server state snapshot (op code 2)
@@ -443,7 +696,8 @@ func _handle_player_join(data: Dictionary) -> void:
 	var ign = data.get("ign", "Unknown")
 	var is_host_flag = data.get("is_host", false)
 	var pos_data = data.get("pos", {})
-	var spawn_pos = Vector2(pos_data.get("x", 400), pos_data.get("y", 300))
+	var fallback_spawn := _get_local_spawn_position()
+	var spawn_pos = Vector2(pos_data.get("x", fallback_spawn.x), pos_data.get("y", fallback_spawn.y))
 	
 	var existing_info = MultiplayerManager.players.get(user_id, {})
 	MultiplayerManager.players[user_id] = {
@@ -458,7 +712,7 @@ func _handle_player_join(data: Dictionary) -> void:
 		_apply_authoritative_player_info(user_id, ign, is_host_flag)
 
 
-func _apply_authoritative_player_info(user_id: String, ign: String, is_host_flag: bool) -> void:
+func _apply_authoritative_player_info(user_id: String, ign: String, _is_host_flag: bool) -> void:
 	if user_id.is_empty() or ign.is_empty():
 		return
 

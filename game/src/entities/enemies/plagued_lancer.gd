@@ -22,11 +22,16 @@ var current_state = State.IDLE
 @export var teleport_distance: float = 10.0  # Reduced from 20 to get closer for attack
 @export var blink_cooldown: float = 3.0  # Reduced from 15 for testing
 @export var max_health: int = 100
+@export var xp_value: int = 25
 @export var vulnerability_duration: float = 3.0  # Duration of vulnerability after teleport
+@export var idle_move_interval: float = 3.0
+@export var idle_move_radius: float = 72.0
+@export var idle_move_speed_multiplier: float = 0.4
+@export var player_group_name: StringName = &"player"
 
 const TELEPORT_FADE_TIME := 0.3
 const INITIAL_TELEPORT_OFFSET := 20.0  # Reduced from 100 to teleport closer
-const ATTACK_HIT_DELAY := 0.3
+const ATTACK_HIT_DELAY := 2
 
 var player: CharacterBody2D = null
 var can_damage := true
@@ -44,6 +49,9 @@ var last_debug_state := ""
 var lancer_id := 0  # Unique ID for each lancer instance
 var player_in_detection_range := false
 var health: HealthComponent
+var _idle_move_timer: float = 0.0
+var _idle_target: Vector2 = Vector2.ZERO
+var _has_idle_target: bool = false
 
 func _ready():
 	# Assign unique ID for debugging
@@ -74,8 +82,11 @@ func _ready():
 	
 	teleport_particles.emitting = false
 	vulnerability_particles.emitting = false
+	_reset_idle_roam()
 
 func _physics_process(delta):
+	if not is_dying:
+		_idle_move_timer -= delta
 	# Failsafe: reset stuck animation flags if animation isn't playing
 	if is_taking_damage and animated_sprite.animation != "took_damage":
 		is_taking_damage = false
@@ -97,8 +108,22 @@ func _physics_process(delta):
 
 # ---------------- STATES ----------------
 func _idle_state():
-	velocity = Vector2.ZERO
-	animated_sprite.play("idle")
+	if _idle_move_timer <= 0.0:
+		_pick_idle_target()
+	
+	if _has_idle_target:
+		var idle_direction := _idle_target - global_position
+		if idle_direction.length() > 6.0:
+			velocity = idle_direction.normalized() * speed * idle_move_speed_multiplier
+			animated_sprite.play("walk")
+			animated_sprite.flip_h = velocity.x < 0
+		else:
+			velocity = Vector2.ZERO
+			animated_sprite.play("idle")
+			_has_idle_target = false
+	else:
+		velocity = Vector2.ZERO
+		animated_sprite.play("idle")
 	
 	# Transition back to CHASE if we have a valid player and line of sight
 	# (don't require player_in_detection_range - it may have briefly gone false after a blink)
@@ -139,7 +164,13 @@ func _chase_state():
 		animated_sprite.flip_h = direction.x < 0
 
 func change_state(new_state):
+	if current_state == new_state:
+		return
 	current_state = new_state
+	if new_state == State.IDLE:
+		_reset_idle_roam()
+	elif new_state == State.CHASE:
+		_has_idle_target = false
 
 # ---------------- DAMAGE ----------------
 func take_damage(amount: int):
@@ -181,7 +212,7 @@ func die():
 
 # ---------------- ATTACK ----------------
 func _on_attack_area_entered(body):
-	if body.is_in_group("player") and not is_teleporting:
+	if _is_targetable_player(body) and not is_teleporting:
 		start_attack(body)
 
 func start_attack(body: CharacterBody2D):
@@ -200,7 +231,7 @@ func start_attack(body: CharacterBody2D):
 		return
 	
 	if can_damage and body.has_method("apply_damage"):
-		body.apply_damage(contact_damage, global_position, knockback_force)
+		body.apply_damage(contact_damage, global_position, knockback_force, "Plagued Lancer")
 		can_damage = false
 		damage_timer.start()
 
@@ -209,7 +240,7 @@ func _on_damage_timer_timeout():
 
 # ---------------- DETECTION ----------------
 func _on_detection_area_entered(body):
-	if body.is_in_group("player"):
+	if _is_targetable_player(body):
 		player = body
 		player_in_detection_range = true
 		
@@ -218,7 +249,7 @@ func _on_detection_area_entered(body):
 			initial_teleport()
 
 func _on_detection_area_exited(body):
-	if body.is_in_group("player") and body == player:
+	if body == player:
 		player_in_detection_range = false
 		# Do NOT null out player here - after a blink the player may briefly
 		# exit the detection area, and clearing player causes a permanent lock.
@@ -368,7 +399,7 @@ func has_line_of_sight() -> bool:
 	
 	if sight_ray.is_colliding():
 		var collider = sight_ray.get_collider()
-		return is_instance_valid(collider) and collider.is_in_group("player")
+		return _is_targetable_player(collider)
 	
 	return true
 
@@ -376,7 +407,17 @@ func _is_action_locked() -> bool:
 	return is_taking_damage or is_dying or is_attacking or is_teleporting or is_blinking
 
 func _has_valid_player() -> bool:
-	return is_instance_valid(player)
+	return _is_targetable_player(player)
+
+
+func _is_targetable_player(body: Node) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	if not body.is_in_group(player_group_name):
+		return false
+	if body.has_method("is_targetable"):
+		return body.is_targetable()
+	return true
 
 func _fade_sprite_alpha(target_alpha: float, duration: float) -> void:
 	# Kill any existing tween to prevent overlap
@@ -387,3 +428,20 @@ func _fade_sprite_alpha(target_alpha: float, duration: float) -> void:
 	fade_tween.tween_property(animated_sprite, "modulate:a", target_alpha, duration)
 	await fade_tween.finished
 	fade_tween = null
+
+
+func _reset_idle_roam() -> void:
+	_idle_move_timer = randf_range(0.4, idle_move_interval)
+	_has_idle_target = false
+
+
+func _pick_idle_target() -> void:
+	_idle_move_timer = idle_move_interval
+	var random_offset := Vector2(
+		randf_range(-idle_move_radius, idle_move_radius),
+		randf_range(-idle_move_radius, idle_move_radius)
+	)
+	if random_offset.length() < 8.0:
+		random_offset = Vector2.RIGHT.rotated(randf() * TAU) * 20.0
+	_idle_target = global_position + random_offset
+	_has_idle_target = true

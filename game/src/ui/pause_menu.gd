@@ -1,20 +1,16 @@
 extends CanvasLayer
 
-@onready var pause_panel: Panel = $PausePanel
-@onready var overlay: ColorRect = $Overlay
-@onready var resume_button: Button = $PausePanel/VBoxContainer/ResumeButton
-@onready var restart_button: Button = $PausePanel/VBoxContainer/RestartButton
-@onready var menu_button: Button = $PausePanel/VBoxContainer/MenuButton
+@onready var pause_panel: Panel = %PausePanel
+@onready var overlay: ColorRect = %Overlay
+@onready var resume_button: Button = %ResumeButton
+@onready var restart_button: Button = %RestartButton
+@onready var menu_button: Button = %MenuButton
 
-const MAIN_MENU_SCENE = "res://scenes/ui/main_menu.tscn"
+@export_file("*.tscn") var main_menu_scene_path: String
 
 func _ready():
 	pause_panel.hide()
 	overlay.hide()
-	
-	resume_button.pressed.connect(_on_resume_pressed)
-	restart_button.pressed.connect(_on_restart_pressed)
-	menu_button.pressed.connect(_on_menu_pressed)
 
 func _input(event):
 	if event.is_action_pressed("pause"):
@@ -46,4 +42,4 @@ func _on_restart_pressed():
 func _on_menu_pressed():
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+	get_tree().change_scene_to_file(main_menu_scene_path)

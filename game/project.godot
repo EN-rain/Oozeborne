@@ -18,16 +18,20 @@ config/icon="res://assets/icon.svg"
 [autoload]
 
 Nakama="*uid://bmf6nk0fuaur8"
-MultiplayerManager="*uid://duda8ksv6mu8v"
+MultiplayerManager="*res://src/globals/multiplayer_manager.gd"
 RemotePlayerManager="*res://src/globals/remote_player_manager.gd"
 ClientPrediction="*res://src/globals/client_prediction.gd"
 NetworkMessaging="*res://src/globals/network_messaging.gd"
 MultiplayerUtils="*res://src/globals/multiplayer_utils.gd"
+PlayerSkillManager="*res://src/globals/player_skill_manager.gd"
 StatusEffectManager="*res://src/globals/status_effect_manager.gd"
 LevelSystem="*res://src/globals/level_system.gd"
-DamageNumbers="*res://src/globals/damage_number_manager.gd"
-CoinManager="*res://src/globals/coin_manager.gd"
+DamageNumbers="*res://scenes/autoload/damage_numbers.tscn"
+CoinManager="*res://scenes/autoload/coin_manager.tscn"
 ShopManager="*res://src/globals/shop_manager.gd"
+SlimePaletteRegistry="*res://src/globals/slime_palette_registry.gd"
+ClassManager="*res://scenes/autoload/class_manager.tscn"
+McpInteractionServer="*res://src/globals/mcp_interaction_server.gd"
 
 [display]
 
@@ -37,7 +41,7 @@ window/size/borderless=true
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/com.heroiclabs.nakama/plugin.cfg", "res://addons/godot_mcp/plugin.cfg")
+enabled=PackedStringArray("res://addons/com.heroiclabs.nakama/plugin.cfg")
 
 [global_group]
 

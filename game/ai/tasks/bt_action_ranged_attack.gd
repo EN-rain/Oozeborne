@@ -6,6 +6,9 @@ class_name BTActionRangedAttack
 @export var arrow_speed_var: StringName = &"arrow_speed"
 
 func _tick(_delta: float) -> Status:
+	if agent.get("is_attacking"):
+		return RUNNING
+
 	var player = agent.get("player")
 	if player == null or not is_instance_valid(player):
 		return FAILURE
@@ -18,33 +21,15 @@ func _tick(_delta: float) -> Status:
 	if arrow_scene == null:
 		return FAILURE
 	
-	# Start attack animation
-	var animated_sprite = agent.get_node_or_null("AnimatedSprite2D")
-	if animated_sprite:
-		animated_sprite.play("attack")
-	
-	agent.is_attacking = true
-	agent.can_attack = false
-	
 	# Calculate predicted position
 	var predicted_pos = _predict_player_position(player)
 	var direction = (predicted_pos - agent.global_position).normalized()
-	
-	# Spawn arrow
-	var arrow = arrow_scene.instantiate()
-	agent.get_tree().current_scene.add_child(arrow)
-	arrow.global_position = agent.global_position
-	arrow.direction = direction
-	arrow.speed = blackboard.get_var(arrow_speed_var, 200.0)
-	arrow.rotation = direction.angle()
-	
-	# Start cooldown
-	var cooldown_timer = agent.get_node_or_null("AttackCooldownTimer")
-	if cooldown_timer:
-		cooldown_timer.start()
-	
-	agent.is_attacking = false
-	return SUCCESS
+	var projectile_speed: float = blackboard.get_var(arrow_speed_var, 200.0)
+
+	if agent.has_method("begin_ranged_attack") and agent.begin_ranged_attack(direction, projectile_speed):
+		return RUNNING
+
+	return FAILURE
 
 
 func _predict_player_position(player: Node) -> Vector2:

@@ -155,10 +155,10 @@ func _apply_current_stats(entity_id: int) -> void:
 	# Apply health (update max health in health component)
 	if player.has_node("Health"):
 		var health_comp = player.get_node("Health")
+		var previous_max_health: int = max(health_comp.max_health, 1)
+		var previous_health_ratio: float = health_comp.current_health / float(previous_max_health)
 		health_comp.max_health = stats.max_health
-		# Heal to full on level up, or keep current health ratio
-		var health_ratio = health_comp.current_health / float(health_comp.max_health) if health_comp.max_health > 0 else 1.0
-		health_comp.current_health = int(stats.max_health * health_ratio)
+		health_comp.current_health = int(stats.max_health * clamp(previous_health_ratio, 0.0, 1.0))
 		health_comp.health_changed.emit(health_comp.current_health, health_comp.max_health)
 	
 	# Store attack damage for use by attack system
@@ -166,5 +166,9 @@ func _apply_current_stats(entity_id: int) -> void:
 		player.set_meta("attack_damage", stats.attack_damage)
 	else:
 		player.attack_damage = stats.attack_damage
+
+	# Reapply class/subclass multipliers after raw level stats are written.
+	if player.has_method("reapply_class_modifiers_after_level_sync"):
+		player.reapply_class_modifiers_after_level_sync(stats)
 	
 	stats_updated.emit(entity_id, stats)

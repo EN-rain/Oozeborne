@@ -18,26 +18,13 @@ const PARTY_TEXT_PRIMARY := Color(0.25, 0.19, 0.12, 1.0)
 const PARTY_TEXT_SECONDARY := Color(0.46, 0.38, 0.28, 0.9)
 const PARTY_PLACEHOLDER_TEXT := Color(0.5, 0.42, 0.31, 0.78)
 
-const CLASS_ORDER := [
-	"Tank",
-	"Archer",
-	"Mage",
-	"Healer",
-	"Necromancer",
-]
 const CLASS_NAME_COLORS := {
 	"Tank": Color(0.25, 0.5, 0.75, 1.0),
-	"Archer": Color(0.75, 0.25, 0.2, 0.9),
-	"Mage": Color(0.75, 0.25, 0.2, 0.9),
-	"Healer": Color(0.2, 0.65, 0.35, 0.9),
-	"Necromancer": Color(0.2, 0.65, 0.35, 0.9),
+	"DPS": Color(0.75, 0.25, 0.2, 0.9),
+	"Support": Color(0.2, 0.65, 0.35, 0.9),
+	"Hybrid": Color(0.58, 0.4, 0.82, 0.9),
+	"Controller": Color(0.22, 0.66, 0.74, 0.9),
 }
-const SUBCLASS_GROUPS := [
-	{"name": "tank", "classes": ["GuardianClass", "BerserkerClass", "PaladinClass"]},
-	{"name": "dps", "classes": ["AssassinClass", "RangerClass", "MageClass", "SamuraiClass"]},
-	{"name": "support", "classes": ["ClericClass", "BardClass", "AlchemistClass", "NecromancerClass"]},
-	{"name": "hybrid", "classes": ["SpellbladeClass", "ShadowKnightClass", "MonkClass"]},
-]
 const SUBCLASS_DESCRIPTIONS := {
 	"Guardian": "Frontline protector with high defense and steady control.",
 	"Berserker": "Aggressive bruiser that trades safety for raw damage.",
@@ -53,49 +40,31 @@ const SUBCLASS_DESCRIPTIONS := {
 	"Spellblade": "Hybrid fighter weaving melee attacks with arcane power.",
 	"ShadowKnight": "Dark frontliner blending defense, drain, and pressure.",
 	"Monk": "Balanced close-range combatant with speed and self-discipline.",
-}
-const MAIN_CLASS_TO_SUBCLASS_GROUP := {
-	"Tank": "tank",
-	"Archer": "dps",
-	"Mage": "dps",
-	"Healer": "support",
-	"Necromancer": "support",
+	"Chronomancer": "Time specialist that slows and desynchronizes enemy tempo.",
+	"Warden": "Zone defender that roots and controls movement lanes.",
+	"Hexbinder": "Curse caster that suppresses enemy output and scaling.",
+	"Stormcaller": "Displacement controller using chained shocks and knockback.",
 }
 const CLASS_PANEL_DATA := {
-	"Knight": {
-		"stats": {"hp": "1,450", "atk": "245", "def": "180", "spd": "95", "crit": "15%", "evade": "5%", "power": 0.78, "rank": "A-Rank"},
-		"talents": [
-			{"name": "Bulwark Crest", "desc": "Gain +20% defense while protecting nearby allies.", "accent": Color(0.98, 0.81, 0.22)},
-			{"name": "Shield Rush", "desc": "Dash crashes into enemies and briefly stuns them.", "accent": Color(0.62, 0.55, 0.95)},
-		],
-	},
-	"Mage": {
-		"stats": {"hp": "980", "atk": "320", "def": "82", "spd": "108", "crit": "22%", "evade": "7%", "power": 0.84, "rank": "S-Rank"},
-		"talents": [
-			{"name": "Solar Flare", "desc": "Abilities apply burn, dealing bonus damage over time.", "accent": Color(0.98, 0.73, 0.18)},
-			{"name": "Aegis Stance", "desc": "Convert a portion of damage taken into a temporary ward.", "accent": Color(0.65, 0.58, 0.98)},
-			{"name": "Dawn Dash", "desc": "Dodges leave a streak of light that damages enemies.", "accent": Color(0.95, 0.62, 0.82)},
-		],
-	},
-	"Archer": {
+	"DPS": {
 		"stats": {"hp": "1,080", "atk": "268", "def": "104", "spd": "128", "crit": "19%", "evade": "12%", "power": 0.74, "rank": "A-Rank"},
 		"talents": [
 			{"name": "Falcon Mark", "desc": "Critical hits mark enemies to take bonus team damage.", "accent": Color(0.38, 0.78, 0.58)},
 			{"name": "Volley Step", "desc": "Attacking after a dodge fires an extra piercing arrow.", "accent": Color(0.33, 0.67, 0.95)},
 		],
 	},
-	"Healer": {
+	"Support": {
 		"stats": {"hp": "1,220", "atk": "175", "def": "126", "spd": "101", "crit": "9%", "evade": "8%", "power": 0.68, "rank": "B-Rank"},
 		"talents": [
 			{"name": "Mercy Bloom", "desc": "Healing pulses grant allies a brief regeneration buff.", "accent": Color(0.44, 0.86, 0.55)},
 			{"name": "Sanctuary Veil", "desc": "Low-health allies gain a small protective barrier.", "accent": Color(0.56, 0.78, 0.95)},
 		],
 	},
-	"Necromancer": {
-		"stats": {"hp": "920", "atk": "286", "def": "78", "spd": "96", "crit": "11%", "evade": "6%", "power": 0.8, "rank": "A-Rank"},
+	"Hybrid": {
+		"stats": {"hp": "1,150", "atk": "235", "def": "118", "spd": "112", "crit": "14%", "evade": "9%", "power": 0.77, "rank": "A-Rank"},
 		"talents": [
-			{"name": "Soul Harvest", "desc": "Defeated enemies restore health and briefly amplify shadow damage.", "accent": Color(0.62, 0.42, 0.85)},
-			{"name": "Grave Swarm", "desc": "Vengeful spirits seek nearby enemies and keep pressure on clustered targets.", "accent": Color(0.38, 0.78, 0.62)},
+			{"name": "Adaptive Combo", "desc": "Alternating mobility and offense grants stacking bonus output.", "accent": Color(0.62, 0.42, 0.85)},
+			{"name": "Stance Echo", "desc": "Skill use alternates defensive and offensive aftereffects.", "accent": Color(0.38, 0.78, 0.62)},
 		],
 	},
 	"Tank": {
@@ -103,6 +72,13 @@ const CLASS_PANEL_DATA := {
 		"talents": [
 			{"name": "Iron Bastion", "desc": "Standing still builds armor and reflects minor damage.", "accent": Color(0.95, 0.74, 0.32)},
 			{"name": "Groundbreaker", "desc": "Heavy strikes create shockwaves that slow enemies.", "accent": Color(0.75, 0.62, 0.42)},
+		],
+	},
+	"Controller": {
+		"stats": {"hp": "1,040", "atk": "248", "def": "102", "spd": "114", "crit": "13%", "evade": "10%", "power": 0.79, "rank": "A-Rank"},
+		"talents": [
+			{"name": "Control Field", "desc": "Control zones apply slow and damage suppression.", "accent": Color(0.28, 0.78, 0.83)},
+			{"name": "Tempo Lock", "desc": "Controlled targets take increased ability damage.", "accent": Color(0.56, 0.75, 0.94)},
 		],
 	},
 }
@@ -139,7 +115,7 @@ func _init(refs: Dictionary) -> void:
 	_stat_cards = refs["stat_cards"]
 
 func get_class_order() -> Array:
-	return CLASS_ORDER
+	return ClassManager.get_main_class_display_order()
 
 func get_class_name_color(class_id: String) -> Color:
 	return CLASS_NAME_COLORS.get(class_id, PARTY_TEXT_PRIMARY)
@@ -209,23 +185,16 @@ func update_active_class_panels(active_class: String) -> void:
 	_update_class_panels(active_class)
 
 func _build_subclass_info_text(active_class: String) -> String:
-	var group_name: String = str(MAIN_CLASS_TO_SUBCLASS_GROUP.get(active_class, "")).strip_edges()
-	if group_name.is_empty():
+	var main_class_id := ClassManager.display_name_to_class_id(active_class)
+	if main_class_id.is_empty():
 		return "No subclasses available."
 
-	var group_classes = []
-	for group in SUBCLASS_GROUPS:
-		if str(group.get("name", "")) == group_name:
-			group_classes = group.get("classes", [])
-			break
-
-	var active_class_resource_name = active_class.replace(" ", "") + "Class"
 	var visible_subclasses = []
-	for subclass_name in group_classes:
-		var subclass_resource_name = str(subclass_name)
-		if subclass_resource_name == active_class_resource_name:
+	for subclass_id in ClassManager.get_subclass_ids_for_main_id(main_class_id):
+		var subclass_instance := ClassManager.get_class_by_id(subclass_id)
+		if subclass_instance == null:
 			continue
-		var subclass_display_name = subclass_resource_name.trim_suffix("Class")
+		var subclass_display_name := subclass_instance.display_name
 		var subclass_key = subclass_display_name.replace(" ", "")
 		var subclass_desc = str(SUBCLASS_DESCRIPTIONS.get(subclass_key, "Specialized path for this class group."))
 		visible_subclasses.append("[b]" + subclass_display_name + "[/b] - " + subclass_desc)
@@ -299,7 +268,7 @@ func _build_party_card(entry: Dictionary) -> Control:
 	text_col.add_child(meta_label)
 
 	var badge = Label.new()
-	badge.text = "â˜…" if entry.get("is_host", false) else "â€¢"
+	badge.text = "*" if entry.get("is_host", false) else "-"
 	badge.add_theme_font_size_override("font_size", 16)
 	badge.add_theme_color_override("font_color", entry.get("accent_color", PARTY_CARD_BORDER))
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -357,7 +326,7 @@ func _get_class_panel_data(class_id: String) -> Dictionary:
 	}
 	return CLASS_PANEL_DATA.get(class_id, fallback)
 
-func _set_stat_card_value(label: Label, value: String, color: Color = PARTY_TEXT_PRIMARY) -> void:
+func _set_stat_card_value(label: Label, value: String, _color: Color = PARTY_TEXT_PRIMARY) -> void:
 	if is_instance_valid(label):
 		label.text = value
 		label.remove_theme_color_override("font_color")

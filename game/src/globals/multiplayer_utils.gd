@@ -1,13 +1,13 @@
 extends Node
 ## MultiplayerUtils - Reusable multiplayer functions for Nakama-based games
 ## Autoload this script to access multiplayer utilities from any scene
-
 ## Op codes for authoritative match
-const OP_INPUT = 1        ## Client -> Server: input state
-const OP_STATE = 2        ## Server -> Client: state snapshot
-const OP_PLAYER_JOIN = 3  ## Server -> Client: player joined
-const OP_PLAYER_LEAVE = 4 ## Server -> Client: player left
-const OP_START_GAME = 5   ## Host -> Server -> Clients: start game
+const OP_MESSAGE = NetworkMessaging.OP_MESSAGE
+const OP_INPUT = NetworkMessaging.OP_INPUT
+const OP_STATE = NetworkMessaging.OP_STATE
+const OP_PLAYER_JOIN = NetworkMessaging.OP_PLAYER_JOIN
+const OP_PLAYER_LEAVE = NetworkMessaging.OP_PLAYER_LEAVE
+const OP_START_GAME = NetworkMessaging.OP_START_GAME
 
 ## Remote player data with position buffering and extrapolation
 ## { user_id: { "node": Player, "positions": [{pos, timestamp, velocity}], 
@@ -497,6 +497,10 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	if not is_instance_valid(player_node):
 		return
 	
+	# Skip reconciliation during death sequence
+	if player_node.get("is_death_sequence_active") and player_node.is_death_sequence_active:
+		return
+	
 	# Remove acknowledged inputs from pending queue
 	while _pending_inputs.size() > 0 and _pending_inputs[0].seq <= server_seq:
 		_pending_inputs.pop_front()
@@ -542,7 +546,7 @@ func get_pending_attack(user_id: String) -> Dictionary:
 	return {}
 
 
-func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, is_attacking: bool) -> void:
+func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, _is_attacking: bool) -> void:
 	var target_animation := "walk" if server_velocity.length() > 5.0 else "idle"
 	if sprite.animation != target_animation:
 		sprite.play(target_animation)

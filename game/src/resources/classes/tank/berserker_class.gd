@@ -9,14 +9,13 @@ func _init():
 	lore = "Born from the frozen north, Berserkers embrace the rage within to devastate their foes."
 	
 	# Player scene - Red slime for aggressive classes
-	player_scene = preload("res://scenes/entities/player/slime_red.tscn")
 	
 	# Stat modifiers
-	modifiers_hp = 1.25       # +25% HP
-	modifiers_speed = 0.9     # -10% Speed
-	modifiers_damage = 1.4    # +40% Damage
-	modifiers_defense = 0.7   # -30% Defense
-	modifiers_attack_speed = 1.2   # +20% Attack Speed
+	modifiers_hp = 1.18       # +18% HP
+	modifiers_speed = 0.92    # -8% Speed
+	modifiers_damage = 1.26   # +26% Damage
+	modifiers_defense = 0.78  # -22% Defense
+	modifiers_attack_speed = 1.14  # +14% Attack Speed
 	
 	# Special ability
 	ability_name = "Blood Rage"

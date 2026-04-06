@@ -9,14 +9,13 @@ func _init():
 	lore = "Trained in the ancient arts of protection, Guardians have sworn to shield the weak from harm."
 	
 	# Player scene - Blue slime for tank classes
-	player_scene = preload("res://scenes/entities/player/slime_blue.tscn")
 	
 	# Stat modifiers
-	modifiers_hp = 1.5        # +50% HP
-	modifiers_speed = 0.8     # -20% Speed
+	modifiers_hp = 1.35       # +35% HP
+	modifiers_speed = 0.85    # -15% Speed
 	modifiers_damage = 0.9    # -10% Damage
-	modifiers_defense = 1.4   # +40% Defense
-	modifiers_attack_speed = 0.85  # -15% Attack Speed
+	modifiers_defense = 1.3   # +30% Defense
+	modifiers_attack_speed = 0.9   # -10% Attack Speed
 	
 	# Special ability
 	ability_name = "Shield Wall"

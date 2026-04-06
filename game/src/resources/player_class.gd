@@ -8,6 +8,8 @@ class_name PlayerClass extends Resource
 @export var description: String = "A balanced fighter with no specializations."
 @export_multiline var lore: String = ""
 @export var icon: Texture2D
+@export var is_main_class: bool = true
+@export var is_subclass: bool = false
 
 @export_group("Stat Modifiers", "modifiers")
 @export_range(0.5, 2.0) var modifiers_hp: float = 1.0

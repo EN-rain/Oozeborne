@@ -10,19 +10,13 @@ extends Control
 @onready var status_label: Label = %StatusLabel
 @onready var quit_button: Button = %QuitButton
 
-const AUTH_MENU_SCENE = "res://scenes/ui/auth_menu.tscn"
-const MAIN_GAME_SCENE = "res://scenes/levels/main.tscn"
-const ROOM_LOBBY_SCENE = "res://scenes/ui/room_lobby.tscn"
+@export_file("*.tscn") var auth_menu_scene_path: String
+@export_file("*.tscn") var main_game_scene_path: String
+@export_file("*.tscn") var room_lobby_scene_path: String
 
 var _menu_busy: bool = false
 
 func _ready() -> void:
-	logout_button.pressed.connect(_on_logout_pressed)
-	start_button.pressed.connect(_on_start_pressed)
-	host_button.pressed.connect(_on_host_pressed)
-	connect_button.pressed.connect(_on_connect_pressed)
-	quit_button.pressed.connect(_on_quit_pressed)
-
 	if ign_input.text.strip_edges().is_empty():
 		ign_input.text = MultiplayerManager.player_ign if not MultiplayerManager.player_ign.is_empty() else "Player" + str(randi_range(1000, 9999))
 
@@ -67,7 +61,7 @@ func _go_to_auth_menu() -> void:
 func _deferred_go_to_auth_menu() -> void:
 	if not is_inside_tree():
 		return
-	get_tree().change_scene_to_file(AUTH_MENU_SCENE)
+	get_tree().change_scene_to_file(auth_menu_scene_path)
 
 func _on_logout_pressed() -> void:
 	_set_menu_busy(true)
@@ -76,8 +70,13 @@ func _on_logout_pressed() -> void:
 	_go_to_auth_menu()
 
 func _on_start_pressed() -> void:
+	_set_menu_busy(true)
+	_set_status("Preparing solo run...", Color(0.4, 0.65, 0.9))
+	await MultiplayerManager.disconnect_server()
 	MultiplayerManager.player_ign = _get_ign()
-	get_tree().change_scene_to_file(MAIN_GAME_SCENE)
+	MultiplayerManager.player_class = null
+	MultiplayerManager.player_subclass = null
+	get_tree().change_scene_to_file(main_game_scene_path)
 
 func _on_host_pressed() -> void:
 	_set_menu_busy(true)
@@ -91,7 +90,7 @@ func _on_host_pressed() -> void:
 		_set_status("Creating room on " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.7, 0.55, 0.95))
 		var room_id = await MultiplayerManager.create_room()
 		if not room_id.is_empty():
-			get_tree().change_scene_to_file(ROOM_LOBBY_SCENE)
+			get_tree().change_scene_to_file(room_lobby_scene_path)
 		else:
 			_set_status("Failed to create room", Color(0.9, 0.4, 0.4))
 	else:
@@ -115,7 +114,7 @@ func _on_connect_pressed() -> void:
 		_set_status("Joining via " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.2, 0.8, 0.55))
 		var joined = await MultiplayerManager.join_room(room_code)
 		if joined:
-			get_tree().change_scene_to_file(ROOM_LOBBY_SCENE)
+			get_tree().change_scene_to_file(room_lobby_scene_path)
 		else:
 			_set_status("Failed to join room", Color(0.9, 0.4, 0.4))
 	else:

@@ -3,6 +3,7 @@ extends Node
 ## Autoload this script for network communication utilities
 
 ## Op codes for authoritative match
+const OP_MESSAGE = 0      ## Generic JSON message (broadcast/custom)
 const OP_INPUT = 1        ## Client -> Server: input state
 const OP_STATE = 2        ## Server -> Client: state snapshot
 const OP_PLAYER_JOIN = 3  ## Server -> Client: player joined

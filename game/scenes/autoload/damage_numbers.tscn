@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/globals/damage_number_manager.gd" id="1_damage_numbers"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="2_damage_number_scene"]
+
+[node name="DamageNumbers" type="Node"]
+script = ExtResource("1_damage_numbers")
+damage_number_scene = ExtResource("2_damage_number_scene")

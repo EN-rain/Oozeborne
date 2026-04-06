@@ -3,7 +3,7 @@ extends Node
 ## DamageNumberManager - Singleton for spawning damage numbers
 ## Add to AutoLoad as "DamageNumbers"
 
-const DAMAGE_NUMBER_SCENE = preload("res://scenes/effects/damage_number.tscn")
+@export var damage_number_scene: PackedScene
 
 # Colors for different damage types
 const COLOR_NORMAL := Color.WHITE
@@ -14,7 +14,9 @@ const COLOR_ENEMY_DAMAGE := Color(1.0, 1.0, 1.0)  # White for enemy damage
 
 
 func spawn_damage(at_position: Vector2, damage: int, is_crit: bool = false, is_player: bool = false) -> void:
-	var instance = DAMAGE_NUMBER_SCENE.instantiate()
+	var instance = _create_damage_number_instance()
+	if instance == null:
+		return
 	get_tree().current_scene.add_child(instance)
 	instance.global_position = at_position
 	
@@ -23,14 +25,18 @@ func spawn_damage(at_position: Vector2, damage: int, is_crit: bool = false, is_p
 
 
 func spawn_heal(at_position: Vector2, amount: int) -> void:
-	var instance = DAMAGE_NUMBER_SCENE.instantiate()
+	var instance = _create_damage_number_instance()
+	if instance == null:
+		return
 	get_tree().current_scene.add_child(instance)
 	instance.global_position = at_position
 	instance.setup(-amount, false, COLOR_HEAL)  # Negative = heal
 
 
 func spawn_custom(at_position: Vector2, text: String, color: Color = Color.WHITE, font_size: int = 20) -> void:
-	var instance = DAMAGE_NUMBER_SCENE.instantiate()
+	var instance = _create_damage_number_instance()
+	if instance == null:
+		return
 	get_tree().current_scene.add_child(instance)
 	instance.global_position = at_position
 	
@@ -40,3 +46,10 @@ func spawn_custom(at_position: Vector2, text: String, color: Color = Color.WHITE
 		label.text = text
 		label.add_theme_font_size_override("font_size", font_size)
 		label.add_theme_color_override("font_color", color)
+
+
+func _create_damage_number_instance() -> Node:
+	if damage_number_scene == null:
+		push_error("[DamageNumbers] damage_number_scene is not assigned.")
+		return null
+	return damage_number_scene.instantiate()

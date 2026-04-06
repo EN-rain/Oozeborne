@@ -9,13 +9,12 @@ func _init():
 	lore = "Chosen by the divine light, Paladins stand as beacons of hope in the darkest of times."
 	
 	# Player scene - Gold slime for holy classes
-	player_scene = preload("res://scenes/entities/player/slime_gold.tscn")
 	
 	# Stat modifiers
-	modifiers_hp = 1.3        # +30% HP
-	modifiers_speed = 0.85    # -15% Speed
-	modifiers_damage = 1.1    # +10% Damage
-	modifiers_defense = 1.25  # +25% Defense
+	modifiers_hp = 1.22       # +22% HP
+	modifiers_speed = 0.9     # -10% Speed
+	modifiers_damage = 1.05   # +5% Damage
+	modifiers_defense = 1.18  # +18% Defense
 	modifiers_attack_speed = 0.9    # -10% Attack Speed
 	
 	# Special ability

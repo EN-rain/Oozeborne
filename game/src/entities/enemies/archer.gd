@@ -13,11 +13,16 @@ var current_state = State.IDLE
 @export var attack_distance: float = 150.0
 @export var stop_distance: float = 120.0
 @export var max_health: int = 30
+@export var xp_value: int = 25
 @export var attack_cooldown: float = 2.0
 @export var arrow_scene: PackedScene
 @export var arrow_speed: float = 200.0
 @export var prediction_lookback: int = 3  # Frames to look back for velocity smoothing
 @export var max_prediction_distance: float = 300.0  # Cap prediction distance
+@export var idle_move_interval: float = 3.0
+@export var idle_move_radius: float = 96.0
+@export var idle_move_speed_multiplier: float = 0.35
+@export var player_group_name: StringName = &"player"
 
 var player: CharacterBody2D = null
 var health: HealthComponent
@@ -28,6 +33,9 @@ var can_attack := true
 var player_in_detection_range := false
 var player_velocity_samples: Array[Vector2] = []
 var last_player_position: Vector2 = Vector2.ZERO
+var _idle_move_timer: float = 0.0
+var _idle_target: Vector2 = Vector2.ZERO
+var _has_idle_target: bool = false
 
 func _ready():
 	health = HealthComponent.new()
@@ -49,8 +57,11 @@ func _ready():
 	attack_cooldown_timer.wait_time = attack_cooldown
 	attack_cooldown_timer.one_shot = true
 	attack_cooldown_timer.timeout.connect(_on_attack_cooldown_timeout)
+	_reset_idle_roam()
 
-func _physics_process(delta):
+func _physics_process(_delta):
+	if not is_dying:
+		_idle_move_timer -= _delta
 	if is_taking_damage and animated_sprite.animation != "took_damage":
 		is_taking_damage = false
 	
@@ -77,8 +88,22 @@ func _physics_process(delta):
 
 # ---------------- STATES ----------------
 func _idle_state():
-	velocity = Vector2.ZERO
-	animated_sprite.play("idle")
+	if _idle_move_timer <= 0.0:
+		_pick_idle_target()
+	
+	if _has_idle_target:
+		var idle_direction := _idle_target - global_position
+		if idle_direction.length() > 6.0:
+			animated_sprite.play("walk")
+			velocity = idle_direction.normalized() * speed * idle_move_speed_multiplier
+			animated_sprite.flip_h = velocity.x < 0
+		else:
+			velocity = Vector2.ZERO
+			animated_sprite.play("idle")
+			_has_idle_target = false
+	else:
+		velocity = Vector2.ZERO
+		animated_sprite.play("idle")
 	
 	if player and player_in_detection_range and has_line_of_sight():
 		change_state(State.CHASE)
@@ -124,7 +149,13 @@ func _attacking_state():
 	# Wait for animation to finish
 
 func change_state(new_state):
+	if current_state == new_state:
+		return
 	current_state = new_state
+	if new_state == State.IDLE:
+		_reset_idle_roam()
+	elif new_state == State.CHASE or new_state == State.ATTACKING:
+		_has_idle_target = false
 
 # ---------------- ATTACK ----------------
 func start_attack():
@@ -210,11 +241,11 @@ func _on_attack_cooldown_timeout():
 	can_attack = true
 
 func _on_attack_range_entered(body):
-	if body.is_in_group("player") and can_attack and current_state == State.CHASE:
+	if _is_targetable_player(body) and can_attack and current_state == State.CHASE:
 		change_state(State.ATTACKING)
 		start_attack()
 
-func _on_attack_range_exited(body):
+func _on_attack_range_exited(_body):
 	pass  # Handled in chase state
 
 # ---------------- DAMAGE ----------------
@@ -257,12 +288,12 @@ func die():
 
 # ---------------- DETECTION ----------------
 func _on_detection_area_entered(body):
-	if body.is_in_group("player"):
+	if _is_targetable_player(body):
 		player = body
 		player_in_detection_range = true
 
 func _on_detection_area_exited(body):
-	if body.is_in_group("player") and body == player:
+	if body == player:
 		player_in_detection_range = false
 		player = null
 		change_state(State.IDLE)
@@ -276,6 +307,33 @@ func has_line_of_sight() -> bool:
 	sight_ray.force_raycast_update()
 	
 	if sight_ray.is_colliding():
-		return sight_ray.get_collider().is_in_group("player")
+		return _is_targetable_player(sight_ray.get_collider())
 	
 	return true
+
+
+func _is_targetable_player(body: Node) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	if not body.is_in_group(player_group_name):
+		return false
+	if body.has_method("is_targetable"):
+		return body.is_targetable()
+	return true
+
+
+func _reset_idle_roam() -> void:
+	_idle_move_timer = randf_range(0.4, idle_move_interval)
+	_has_idle_target = false
+
+
+func _pick_idle_target() -> void:
+	_idle_move_timer = idle_move_interval
+	var random_offset := Vector2(
+		randf_range(-idle_move_radius, idle_move_radius),
+		randf_range(-idle_move_radius, idle_move_radius)
+	)
+	if random_offset.length() < 8.0:
+		random_offset = Vector2.RIGHT.rotated(randf() * TAU) * 20.0
+	_idle_target = global_position + random_offset
+	_has_idle_target = true
