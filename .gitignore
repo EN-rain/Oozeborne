@@ -1,9 +1,3 @@
-# Sensitive server configuration (contains real credentials)
-exports/
-
-# Allow config template only
-!exports/config.template.cfg
-
 # Server secrets
 main_server/.cookie
 
