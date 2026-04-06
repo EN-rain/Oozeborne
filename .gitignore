@@ -8,3 +8,6 @@ main_server/ssh-key-*.key.pub
 # Cloudflare (removed - use external tunnel)
 main_server/cloudflared/
 tools/cloudflared/
+
+# Game addons (large binaries)
+game/addons/
