@@ -4,3 +4,7 @@ main_server/.cookie
 # SSH keys (private and public)
 main_server/ssh-key-*.key
 main_server/ssh-key-*.key.pub
+
+# Cloudflare (removed - use external tunnel)
+main_server/cloudflared/
+tools/cloudflared/
