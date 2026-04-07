@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://shopui001"]
 
-[ext_resource type="Script" uid="uid://jkdbjm8hvkn3" path="res://src/ui/shop_ui.gd" id="1_shopui"]
+[ext_resource type="Script" uid="uid://jkdbjm8hvkn3" path="res://scripts/ui/shop_ui.gd" id="1_shopui"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 20.0

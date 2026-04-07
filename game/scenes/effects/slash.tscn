@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dq4o0gc3o18ko"]
 
-[ext_resource type="Script" uid="uid://bm77gut57f8vo" path="res://src/entities/player/sword_slash.gd" id="1_3c2nd"]
+[ext_resource type="Script" uid="uid://bm77gut57f8vo" path="res://scripts/entities/player/sword_slash.gd" id="1_3c2nd"]
 [ext_resource type="Texture2D" uid="uid://b5qbc1uqtbp2a" path="res://assets/sprites/Player/Weapon/Slash Effect.png" id="2_fg1j7"]
 
 [sub_resource type="Animation" id="Animation_y4r1p"]

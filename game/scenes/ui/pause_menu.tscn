@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ndd30h5ijflg"]
 
-[ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://src/ui/pause_menu.gd" id="1_pausemenu"]
+[ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://scripts/ui/pause_menu.gd" id="1_pausemenu"]
 
 ; ── Pause panel (dungeon stone dialog box) ────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="panel_style"]

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dusnie8pqikhu"]
 
-[ext_resource type="Script" uid="uid://dxsx5rup00enf" path="res://src/entities/projectiles/arrow.gd" id="1_2v6ga"]
+[ext_resource type="Script" uid="uid://dxsx5rup00enf" path="res://scripts/entities/projectiles/arrow.gd" id="1_2v6ga"]
 [ext_resource type="Texture2D" uid="uid://b7njd1psv1jfl" path="res://assets/sprites/Mobs/Archer/Arrow01(32x32).png" id="2_t7fbb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2v6ga"]

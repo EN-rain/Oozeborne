@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://2k0ri6y3u4g5"]
 
 [ext_resource type="Texture2D" uid="uid://qch7sy6h3uqx" path="res://assets/sprites/Mobs/Blue Slime/spr_Blue_slime_idle.png" id="1_dix13"]
-[ext_resource type="Script" path="res://src/entities/enemies/bt_enemy.gd" id="1_pwh17"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_enemy.gd" id="1_pwh17"]
 [ext_resource type="Texture2D" uid="uid://b0gavstg3m5po" path="res://assets/sprites/Mobs/Blue Slime/spr_Blue_slime_death.png" id="2_xfb3o"]
 [ext_resource type="Texture2D" uid="uid://nde75fswc0hn" path="res://assets/sprites/Mobs/Blue Slime/spr_Blue_slime_hurt.png" id="3_7qf5q"]
 [ext_resource type="Texture2D" uid="uid://dhev0t71pqt7l" path="res://assets/sprites/Mobs/Blue Slime/spr_Blue_slime_walk.png" id="3_ds7cs"]
-[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://src/components/health.gd" id="5_7qf5q"]
-[ext_resource type="BehaviorTree" path="res://resources/ai/slime_bt.tres" id="6_bt"]
+[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health.gd" id="5_7qf5q"]
+[ext_resource type="BehaviorTree" path="res://scripts/entities/enemies/mob_behavior_tree/slime/slime_bt.tres" id="6_bt"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_74rww"]
 atlas = ExtResource("2_xfb3o")

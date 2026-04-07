@@ -1,6 +1,6 @@
 [gd_scene load_steps=9 format=3 uid="uid://dlwfu5d1pq3y7"]
 
-[ext_resource type="Script" path="res://src/systems/game/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/systems/game/main.gd" id="1_main"]
 [ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="2_env"]
 [ext_resource type="PackedScene" uid="uid://xhxwepnhhfr8" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]

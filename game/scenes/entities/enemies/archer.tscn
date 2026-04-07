@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://b4ucijbuciv4j"]
 
 [ext_resource type="Texture2D" uid="uid://cwhbeblcl6hxk" path="res://assets/sprites/Mobs/Archer/Soldier-Attack03.png" id="1_jggnj"]
-[ext_resource type="Script" path="res://src/entities/enemies/archer.gd" id="1_orquw"]
+[ext_resource type="BehaviorTree" path="res://scripts/entities/enemies/mob_behavior_tree/archer/archer_bt.tres" id="30_bt"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/archer/archer.gd" id="1_orquw"]
 [ext_resource type="PackedScene" uid="uid://dusnie8pqikhu" path="res://scenes/entities/projectiles/arrow.tscn" id="3_cctdm"]
 [ext_resource type="Texture2D" uid="uid://cwcoajhmup11r" path="res://assets/sprites/Mobs/Archer/Soldier-Death.png" id="3_d71b8"]
 [ext_resource type="Texture2D" uid="uid://dn2ficws0agqe" path="res://assets/sprites/Mobs/Archer/Soldier-Idle.png" id="3_ejvcm"]
 [ext_resource type="Texture2D" uid="uid://b1pwi5fn7nxge" path="res://assets/sprites/Mobs/Archer/Soldier-Walk.png" id="4_c85qa"]
-[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://src/components/health.gd" id="4_cctdm"]
+[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health.gd" id="4_cctdm"]
 [ext_resource type="Texture2D" uid="uid://dcm2veuov3m7x" path="res://assets/sprites/Mobs/Archer/Soldier-Hurt.png" id="5_mak8i"]
 [sub_resource type="AtlasTexture" id="AtlasTexture_b0l3x"]
 atlas = ExtResource("1_jggnj")

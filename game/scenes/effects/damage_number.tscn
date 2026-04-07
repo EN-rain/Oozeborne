@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://damagenum001"]
 
-[ext_resource type="Script" path="res://src/effects/damage_number.gd" id="1_dmgnum"]
+[ext_resource type="Script" path="res://scripts/effects/damage_number.gd" id="1_dmgnum"]
 
 [sub_resource type="LabelSettings" id="label_settings"]
 font_size = 22

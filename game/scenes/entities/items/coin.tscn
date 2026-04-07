@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://coin001"]
 
-[ext_resource type="Script" path="res://src/entities/items/coin.gd" id="1_coin"]
+[ext_resource type="Script" path="res://scripts/entities/items/coin.gd" id="1_coin"]
 
 [sub_resource type="CircleShape2D" id="collect_shape"]
 radius = 15.0

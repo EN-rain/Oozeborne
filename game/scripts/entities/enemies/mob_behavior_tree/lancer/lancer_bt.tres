@@ -1,0 +1,58 @@
+[gd_resource type="BehaviorTree" format=3 uid="uid://dj6tdoi25iut4"]
+
+[ext_resource type="Script" uid="uid://sw5y78nqr2lo" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_detect_player.gd" id="1_detect"]
+[ext_resource type="Script" uid="uid://dk8b1l1cndea8" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_condition_has_los.gd" id="2_los"]
+[ext_resource type="Script" uid="uid://dqlrceqcrg7f2" path="res://scripts/entities/enemies/mob_behavior_tree/lancer/bt_condition_can_blink.gd" id="3_can_blink"]
+[ext_resource type="Script" uid="uid://dfds61bhv825d" path="res://scripts/entities/enemies/mob_behavior_tree/lancer/bt_action_teleport_behind.gd" id="4_teleport"]
+[ext_resource type="Script" uid="uid://dndvoxvljkqtf" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_melee_attack.gd" id="5_attack"]
+[ext_resource type="Script" uid="uid://hnah1g7xpyls" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_chase.gd" id="6_chase"]
+[ext_resource type="Script" uid="uid://38bgutxdnisg" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_idle.gd" id="7_idle"]
+[ext_resource type="Script" uid="uid://b8x0gr62bcyy4" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_condition_in_attack_range.gd" id="8_in_range"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_8hut7"]
+
+[sub_resource type="BTAction" id="BTAction_detect"]
+script = ExtResource("1_detect")
+
+[sub_resource type="BTCondition" id="BTCondition_los"]
+script = ExtResource("2_los")
+
+[sub_resource type="BTCondition" id="BTCondition_can_blink"]
+script = ExtResource("3_can_blink")
+
+[sub_resource type="BTAction" id="BTAction_teleport"]
+script = ExtResource("4_teleport")
+
+[sub_resource type="BTAction" id="BTAction_attack"]
+script = ExtResource("5_attack")
+
+[sub_resource type="BTSequence" id="BTSequence_blink_attack"]
+children = [SubResource("BTCondition_can_blink"), SubResource("BTAction_teleport"), SubResource("BTAction_attack")]
+
+[sub_resource type="BTCondition" id="BTCondition_in_range"]
+script = ExtResource("8_in_range")
+
+[sub_resource type="BTAction" id="BTAction_7yx3v"]
+script = ExtResource("5_attack")
+
+[sub_resource type="BTSequence" id="BTSequence_direct_attack"]
+children = [SubResource("BTCondition_in_range"), SubResource("BTAction_7yx3v")]
+
+[sub_resource type="BTAction" id="BTAction_chase"]
+script = ExtResource("6_chase")
+
+[sub_resource type="BTSelector" id="BTSelector_action"]
+children = [SubResource("BTSequence_blink_attack"), SubResource("BTSequence_direct_attack"), SubResource("BTAction_chase")]
+
+[sub_resource type="BTSequence" id="BTSequence_combat"]
+children = [SubResource("BTAction_detect"), SubResource("BTCondition_los"), SubResource("BTSelector_action")]
+
+[sub_resource type="BTAction" id="BTAction_idle"]
+script = ExtResource("7_idle")
+
+[sub_resource type="BTSelector" id="BTSelector_lancer"]
+children = [SubResource("BTSequence_combat"), SubResource("BTAction_idle")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_8hut7")
+root_task = SubResource("BTSelector_lancer")
