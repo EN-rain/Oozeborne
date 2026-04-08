@@ -173,6 +173,15 @@ func get_slotted_skill(slot_index: int) -> String:
 	return str(_state.action_bar[slot_index])
 
 
+func get_learned_skill_ids() -> PackedStringArray:
+	var learned: PackedStringArray = []
+	for skill_id in (_state.invested as Dictionary).keys():
+		if int(_state.invested[skill_id]) > 0:
+			learned.append(str(skill_id))
+	learned.sort()
+	return learned
+
+
 func clear_slot(slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= ACTION_BAR_SIZE:
 		return
@@ -264,22 +273,21 @@ func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
 	_sync_local_player_ref()
 	if entity_id != _local_player_entity_id:
 		return
-	var expected_total = _calculate_total_sp_for_level(new_level)
-	var delta = max(expected_total - int(_state.total_sp_earned), 0)
-	if delta <= 0:
-		return
-	_state.total_sp_earned = expected_total
-	_state.sp_available = min(_state.sp_available + delta, MAX_SP)
-	sp_changed.emit(_state.sp_available, _state.total_sp_earned)
-	persist_to_disk()
+	if _sync_sp_from_level(new_level):
+		persist_to_disk()
 
 
 func _on_stats_updated(entity_id: int, _stats: Dictionary) -> void:
 	_sync_local_player_ref()
 	if entity_id != _local_player_entity_id:
 		return
+	var level_changed: bool = false
+	if _local_player != null and is_instance_valid(_local_player):
+		level_changed = _sync_sp_from_level(LevelSystem.get_level(_local_player))
 	if _local_player != null and is_instance_valid(_local_player):
 		_apply_stat_skills(_local_player)
+	if level_changed:
+		persist_to_disk()
 
 
 func _apply_stat_skills(player: Node) -> void:
@@ -353,6 +361,7 @@ func _sync_local_player_ref() -> void:
 	_local_player_entity_id = _local_player.get_instance_id() if _local_player != null and is_instance_valid(_local_player) else 0
 	if _local_player == null or not is_instance_valid(_local_player):
 		return
+	_sync_sp_from_level(LevelSystem.get_level(_local_player))
 	_apply_stat_skills(_local_player)
 	if registry != null:
 		for skill_id in (_state.invested as Dictionary).keys():
@@ -438,6 +447,35 @@ func _calculate_total_sp_for_level(level: int) -> int:
 	var resolved_level = max(level, 0)
 	var bonus_steps = int(floor(float(resolved_level) / 10.0))
 	return mini((resolved_level * 2) + (bonus_steps * 5), MAX_SP)
+
+
+func _sync_sp_from_level(level: int) -> bool:
+	var expected_total: int = _calculate_total_sp_for_level(level)
+	var spent_total: int = _calculate_total_sp_spent()
+	var next_available: int = clampi(expected_total - spent_total, 0, MAX_SP)
+	if expected_total == int(_state.total_sp_earned) and next_available == int(_state.sp_available):
+		return false
+	_state.total_sp_earned = expected_total
+	_state.sp_available = next_available
+	sp_changed.emit(_state.sp_available, _state.total_sp_earned)
+	return true
+
+
+func _calculate_total_sp_spent() -> int:
+	var registry = _registry()
+	var total: int = 0
+	for skill_id_variant in (_state.invested as Dictionary).keys():
+		var skill_id: String = str(skill_id_variant)
+		var level: int = int(_state.invested[skill_id_variant])
+		if level <= 0:
+			continue
+		var per_level_cost: int = 1
+		if registry != null:
+			var skill = registry.get_skill(skill_id)
+			if skill != null:
+				per_level_cost = max(int(skill.sp_cost_per_level), 1)
+		total += level * per_level_cost
+	return total
 
 
 func _accumulate_rule(rule: Dictionary, level: int, property_percent_bonuses: Dictionary, property_flat_bonuses: Dictionary, meta_totals: Dictionary) -> void:

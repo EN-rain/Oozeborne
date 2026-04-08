@@ -43,6 +43,7 @@ horizontal_alignment = 1
 [node name="AuthTabs" type="TabContainer" parent="MarginContainer/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
+clip_contents = true
 current_tab = 0
 
 [node name="LoginTab" type="VBoxContainer" parent="MarginContainer/Center/VBox/AuthTabs"]
@@ -123,6 +124,7 @@ autowrap_mode = 2
 
 [connection signal="pressed" from="MarginContainer/Center/VBox/AuthTabs/LoginTab/LoginButton" to="." method="_on_login_pressed"]
 [connection signal="pressed" from="MarginContainer/Center/VBox/AuthTabs/RegisterTab/RegisterButton" to="." method="_on_register_pressed"]
+[connection signal="tab_changed" from="MarginContainer/Center/VBox/AuthTabs" to="." method="_on_auth_tab_changed"]
 [connection signal="text_changed" from="MarginContainer/Center/VBox/AuthTabs/LoginTab/LoginEmailInput" to="." method="_mark_auth_interacted"]
 [connection signal="text_changed" from="MarginContainer/Center/VBox/AuthTabs/LoginTab/LoginPasswordInput" to="." method="_mark_auth_interacted"]
 [connection signal="text_changed" from="MarginContainer/Center/VBox/AuthTabs/RegisterTab/RegisterEmailInput" to="." method="_mark_auth_interacted"]
@@ -133,3 +135,4 @@ autowrap_mode = 2
 [connection signal="text_submitted" from="MarginContainer/Center/VBox/AuthTabs/RegisterTab/RegisterEmailInput" to="." method="_on_register_submitted"]
 [connection signal="text_submitted" from="MarginContainer/Center/VBox/AuthTabs/RegisterTab/RegisterPasswordInput" to="." method="_on_register_submitted"]
 [connection signal="text_submitted" from="MarginContainer/Center/VBox/AuthTabs/RegisterTab/RegisterConfirmInput" to="." method="_on_register_submitted"]
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_finished"]

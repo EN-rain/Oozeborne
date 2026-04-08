@@ -20,8 +20,8 @@ signal class_selected(p_class, sub_class)
 @onready var ability_label: Label = %AbilityLabel
 @onready var passive_label: Label = %PassiveLabel
 @onready var select_button: Button = %SelectButton
-@onready var right_panel: PanelContainer = $RightPanel
-@onready var subclasses_subtitle_label: Label = $RightPanel/VBox/SubtitleLabel
+@onready var right_panel: PanelContainer = %RightPanel
+@onready var subclasses_subtitle_label: Label = %SubtitleLabel
 
 var available_main_classes: Array[PlayerClass] = []
 var selected_class: PlayerClass = null
@@ -34,6 +34,18 @@ const DEFAULT_MAIN_BUTTON_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 const HOVERED_MAIN_BUTTON_COLOR := Color(1.08, 1.05, 0.92, 1.0)
 const ACTIVE_MAIN_BUTTON_COLOR := Color(1.18, 1.1, 0.88, 1.0)
 const SUBCLASS_HINT := "Subclasses unlock in-game at Level 10"
+
+@export var default_main_button_color: Color = DEFAULT_MAIN_BUTTON_COLOR
+@export var hovered_main_button_color: Color = HOVERED_MAIN_BUTTON_COLOR
+@export var active_main_button_color: Color = ACTIVE_MAIN_BUTTON_COLOR
+@export var subclass_hint_text: String = SUBCLASS_HINT
+@export var confirm_button_format: String = "Confirm %s"
+@export var starting_text: String = "Starting..."
+@export var selected_button_format: String = "%s Selected!"
+@export var stats_prefix: String = "Stats: "
+@export var base_values_text: String = "Base values"
+@export var ability_prefix: String = "Ability: "
+@export var passive_prefix: String = "Passive: "
 
 
 func _ready() -> void:
@@ -84,7 +96,7 @@ func _on_main_class_button_pressed(player_class: PlayerClass, btn: Button) -> vo
 	_update_class_info(selected_class)
 	_refresh_main_class_button_visuals()
 	select_button.disabled = false
-	select_button.text = "Confirm " + player_class.display_name
+	select_button.text = confirm_button_format % player_class.display_name
 
 
 func _on_main_class_hovered(player_class: PlayerClass, btn: Button) -> void:
@@ -107,11 +119,11 @@ func _refresh_main_class_button_visuals() -> void:
 		if button == null:
 			continue
 		if button == _active_main_class_button:
-			button.modulate = ACTIVE_MAIN_BUTTON_COLOR
+			button.modulate = active_main_button_color
 		elif button == _hovered_main_class_button:
-			button.modulate = HOVERED_MAIN_BUTTON_COLOR
+			button.modulate = hovered_main_button_color
 		else:
-			button.modulate = DEFAULT_MAIN_BUTTON_COLOR
+			button.modulate = default_main_button_color
 
 
 func _set_subclass_panel_visible(panel_visible: bool) -> void:
@@ -121,7 +133,7 @@ func _set_subclass_panel_visible(panel_visible: bool) -> void:
 	if subclasses_vbox != null:
 		subclasses_vbox.visible = panel_visible
 	if subclasses_subtitle_label != null:
-		subclasses_subtitle_label.text = SUBCLASS_HINT
+		subclasses_subtitle_label.text = subclass_hint_text
 
 
 func _populate_subclass_preview(main_class: PlayerClass) -> void:
@@ -165,19 +177,24 @@ func _update_class_info(target_class: PlayerClass) -> void:
 	if target_class.modifiers_crit_chance != 1.0:
 		stats_parts.append("CRIT %+.0f%%" % [(target_class.modifiers_crit_chance - 1.0) * 100])
 
-	stats_label.text = "Stats: " + (" | ".join(stats_parts) if stats_parts.size() > 0 else "Base values")
-	ability_label.text = "Ability: " + target_class.ability_name + "\n" + target_class.ability_description if target_class.ability_name else ""
-	passive_label.text = "Passive: " + target_class.passive_name + "\n" + target_class.passive_description if target_class.passive_name else ""
+	stats_label.text = stats_prefix + (" | ".join(stats_parts) if stats_parts.size() > 0 else base_values_text)
+	ability_label.text = ability_prefix + target_class.ability_name + "\n" + target_class.ability_description if target_class.ability_name else ""
+	passive_label.text = passive_prefix + target_class.passive_name + "\n" + target_class.passive_description if target_class.passive_name else ""
 
 
 func _on_select_pressed() -> void:
 	if selected_class == null:
 		return
 	await _on_select_pressed_for_class(selected_class)
-	await get_tree().create_timer(1.0).timeout
+	var tree := get_tree()
+	if tree == null:
+		return
+	await tree.create_timer(1.0).timeout
+	if not is_inside_tree():
+		return
 	if is_instance_valid(select_button):
 		select_button.disabled = false
-		select_button.text = "Confirm " + selected_class.display_name
+		select_button.text = confirm_button_format % selected_class.display_name
 
 
 func set_player_level(level: int) -> void:
@@ -209,11 +226,11 @@ func _on_select_pressed_for_class(player_class: PlayerClass) -> void:
 	class_selected.emit(selected_class, null)
 
 	if auto_start_solo_game:
-		select_button.text = "Starting..."
+		select_button.text = starting_text
 		select_button.disabled = true
 		await get_tree().process_frame
 		get_tree().change_scene_to_file(solo_game_scene_path)
 		return
 
-	select_button.text = selected_class.display_name + " Selected!"
+	select_button.text = selected_button_format % selected_class.display_name
 	select_button.disabled = true

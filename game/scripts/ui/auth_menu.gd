@@ -15,6 +15,23 @@ extends Control
 @onready var status_label: Label = %StatusLabel
 
 @export_file("*.tscn") var main_menu_scene_path: String
+@export var login_tab_title: String = "Login"
+@export var register_tab_title: String = "Register"
+@export var default_status_color: Color = Color(0.62, 0.66, 0.8, 0.85)
+@export var checking_saved_session_text: String = "Checking saved session..."
+@export var checking_saved_session_color: Color = Color(0.55, 0.75, 0.95)
+@export var saved_session_restored_text: String = "Saved session restored. You can sign in or continue."
+@export var sign_in_prompt_text: String = "Sign in or create an account"
+@export var success_status_color: Color = Color(0.4, 0.78, 0.55)
+@export var error_status_color: Color = Color(0.9, 0.4, 0.4)
+@export var signing_in_text: String = "Signing in..."
+@export var login_success_text: String = "Login successful. Entering main menu..."
+@export var creating_account_text: String = "Creating account..."
+@export var create_account_status_color: Color = Color(0.7, 0.55, 0.95)
+@export var account_created_text: String = "Account created. Please sign in."
+@export var invalid_email_text: String = "Enter a valid email address"
+@export var password_too_short_text: String = "Password must be at least 6 characters"
+@export var passwords_mismatch_text: String = "Passwords do not match"
 
 var _busy: bool = false
 var _auth_interacted: bool = false
@@ -24,9 +41,7 @@ var _pending_scene_change: bool = false
 
 func _ready() -> void:
 	_last_tab_index = auth_tabs.current_tab
-	auth_tabs.tab_changed.connect(_on_auth_tab_changed)
 	_setup_animation_player()
-	animation_player.animation_finished.connect(_on_animation_finished)
 	_prepare_auth_tabs()
 	call_deferred("_attempt_restore_session")
 
@@ -36,9 +51,8 @@ func _mark_auth_interacted(_text: String = "") -> void:
 
 
 func _prepare_auth_tabs() -> void:
-	auth_tabs.clip_contents = true
-	auth_tabs.set_tab_title(0, "Login")
-	auth_tabs.set_tab_title(1, "Register")
+	auth_tabs.set_tab_title(0, login_tab_title)
+	auth_tabs.set_tab_title(1, register_tab_title)
 	_pending_scene_change = false
 	auth_card.modulate = Color.WHITE
 	auth_card.scale = Vector2.ONE
@@ -126,7 +140,7 @@ func _set_busy(busy: bool) -> void:
 	register_confirm_input.editable = not busy
 
 
-func _set_status(text: String, color: Color = Color(0.62, 0.66, 0.8, 0.85)) -> void:
+func _set_status(text: String, color: Color = default_status_color) -> void:
 	status_label.text = text
 	status_label.add_theme_color_override("font_color", color)
 
@@ -161,9 +175,9 @@ func _validate_login_fields() -> Dictionary:
 	var email := login_email_input.text.strip_edges().to_lower()
 	var password := login_password_input.text
 	if email.is_empty() or not email.contains("@"):
-		return {"valid": false, "error": "Enter a valid email address"}
+		return {"valid": false, "error": invalid_email_text}
 	if password.length() < 6:
-		return {"valid": false, "error": "Password must be at least 6 characters"}
+		return {"valid": false, "error": password_too_short_text}
 	return {"valid": true, "email": email, "password": password}
 
 
@@ -172,11 +186,11 @@ func _validate_register_fields() -> Dictionary:
 	var password := register_password_input.text
 	var confirm_password := register_confirm_input.text
 	if email.is_empty() or not email.contains("@"):
-		return {"valid": false, "error": "Enter a valid email address"}
+		return {"valid": false, "error": invalid_email_text}
 	if password.length() < 6:
-		return {"valid": false, "error": "Password must be at least 6 characters"}
+		return {"valid": false, "error": password_too_short_text}
 	if password != confirm_password:
-		return {"valid": false, "error": "Passwords do not match"}
+		return {"valid": false, "error": passwords_mismatch_text}
 	return {"valid": true, "email": email, "password": password}
 
 
@@ -215,18 +229,18 @@ func _attempt_restore_session() -> void:
 		_go_to_main_menu()
 		return
 	
-	_set_status("Checking saved session...", Color(0.55, 0.75, 0.95))
+	_set_status(checking_saved_session_text, checking_saved_session_color)
 	var restore_result = await MultiplayerManager.restore_saved_session()
 	if _auth_interacted:
 		if restore_result.get("success", false):
-			_set_status("Saved session restored. You can sign in or continue.", Color(0.4, 0.78, 0.55))
+			_set_status(saved_session_restored_text, success_status_color)
 		else:
-			_set_status("Sign in or create an account", Color(0.62, 0.66, 0.8, 0.85))
+			_set_status(sign_in_prompt_text, default_status_color)
 		return
 	if restore_result.get("success", false):
 		_go_to_main_menu()
 	else:
-		_set_status("Sign in or create an account", Color(0.62, 0.66, 0.8, 0.85))
+		_set_status(sign_in_prompt_text, default_status_color)
 
 
 func _on_login_submitted(_text: String) -> void:
@@ -241,29 +255,29 @@ func _on_login_pressed() -> void:
 	_mark_auth_interacted()
 	var validation = _validate_login_fields()
 	if not validation.get("valid", false):
-		_set_status(validation.get("error", "Invalid login data"), Color(0.9, 0.4, 0.4))
+		_set_status(validation.get("error", "Invalid login data"), error_status_color)
 		return
 	
 	_set_busy(true)
-	_set_status("Signing in...", Color(0.55, 0.75, 0.95))
+	_set_status(signing_in_text, checking_saved_session_color)
 	var login_result = await MultiplayerManager.login_with_email(validation["email"], validation["password"])
 	if login_result.get("success", false):
-		_set_status("Login successful. Entering main menu...", Color(0.4, 0.78, 0.55))
+		_set_status(login_success_text, success_status_color)
 		_go_to_main_menu_with_transition()
 	else:
 		_set_busy(false)
-		_set_status(login_result.get("error", "Login failed"), Color(0.9, 0.4, 0.4))
+		_set_status(login_result.get("error", "Login failed"), error_status_color)
 
 
 func _on_register_pressed() -> void:
 	_mark_auth_interacted()
 	var validation = _validate_register_fields()
 	if not validation.get("valid", false):
-		_set_status(validation.get("error", "Invalid registration data"), Color(0.9, 0.4, 0.4))
+		_set_status(validation.get("error", "Invalid registration data"), error_status_color)
 		return
 	
 	_set_busy(true)
-	_set_status("Creating account...", Color(0.7, 0.55, 0.95))
+	_set_status(creating_account_text, create_account_status_color)
 	var register_result = await MultiplayerManager.register_with_email(validation["email"], validation["password"], "")
 	_set_busy(false)
 	if register_result.get("success", false):
@@ -273,6 +287,6 @@ func _on_register_pressed() -> void:
 		register_confirm_input.text = ""
 		auth_tabs.current_tab = 0
 		login_password_input.grab_focus()
-		_set_status("Account created. Please sign in.", Color(0.4, 0.78, 0.55))
+		_set_status(account_created_text, success_status_color)
 	else:
-		_set_status(register_result.get("error", "Registration failed"), Color(0.9, 0.4, 0.4))
+		_set_status(register_result.get("error", "Registration failed"), error_status_color)

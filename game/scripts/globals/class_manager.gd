@@ -174,7 +174,7 @@ func _assign_class_icon(instance: PlayerClass, class_id: String) -> void:
 	if instance == null or class_id.is_empty():
 		return
 
-	var icon_path := "%s/%s/icon.png" % [CLASS_ICON_ROOT, class_id]
+	var icon_path := "%s/%s/%s_icon.png" % [CLASS_ICON_ROOT, class_id, class_id]
 	if not ResourceLoader.exists(icon_path):
 		return
 

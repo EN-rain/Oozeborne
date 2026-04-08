@@ -4,35 +4,26 @@ extends PanelContainer
 ## Allows modifying level, spawning mobs, and changing class
 
 signal closed
+const MAX_DEBUG_LEVEL := 100
+const MAX_SPAWN_COUNT := 50
 
-@onready var close_button: Button = $VBoxContainer/Header/CloseButton
-@onready var level_spinbox: SpinBox = $VBoxContainer/LevelSection/LevelSpinbox
-@onready var set_level_button: Button = $VBoxContainer/LevelSection/SetLevelButton
-@onready var spawn_common_button: Button = $VBoxContainer/SpawnSection/SpawnCommonButton
-@onready var spawn_elite_button: Button = $VBoxContainer/SpawnSection/SpawnEliteButton
-@onready var spawn_count_spinbox: SpinBox = $VBoxContainer/SpawnSection/SpawnCountSpinbox
-@onready var class_option: OptionButton = $VBoxContainer/ClassSection/ClassOption
-@onready var apply_class_button: Button = $VBoxContainer/ClassSection/ApplyClassButton
+@onready var close_button: Button = %CloseButton
+@onready var level_input: LineEdit = %LevelInput
+@onready var set_level_button: Button = %SetLevelButton
+@onready var max_level_button: Button = %MaxLevelButton
+@onready var reset_level_button: Button = %ResetLevelButton
+@onready var spawn_common_button: Button = %SpawnCommonButton
+@onready var spawn_elite_button: Button = %SpawnEliteButton
+@onready var spawn_count_input: LineEdit = %SpawnCountInput
+@onready var class_option: OptionButton = %ClassOption
+@onready var apply_class_button: Button = %ApplyClassButton
 
 var _player_ref: CharacterBody2D = null
 var _mob_spawner_ref: MobSpawner = null
 
 func _ready() -> void:
-	_setup_signals()
 	_populate_class_options()
 	hide()
-
-func _setup_signals() -> void:
-	if close_button:
-		close_button.pressed.connect(_on_close_pressed)
-	if set_level_button:
-		set_level_button.pressed.connect(_on_set_level_pressed)
-	if spawn_common_button:
-		spawn_common_button.pressed.connect(_on_spawn_common_pressed)
-	if spawn_elite_button:
-		spawn_elite_button.pressed.connect(_on_spawn_elite_pressed)
-	if apply_class_button:
-		apply_class_button.pressed.connect(_on_apply_class_pressed)
 
 func _populate_class_options() -> void:
 	if class_option == null:
@@ -54,16 +45,18 @@ func _populate_class_options() -> void:
 
 func set_player(player: CharacterBody2D) -> void:
 	_player_ref = player
-	if level_spinbox and _player_ref:
-		level_spinbox.value = LevelSystem.get_level(_player_ref)
+	if level_input and _player_ref:
+		level_input.text = str(_sanitize_level(LevelSystem.get_level(_player_ref)))
 
 func set_mob_spawner(spawner: MobSpawner) -> void:
 	_mob_spawner_ref = spawner
 
 func open() -> void:
 	show()
-	if _player_ref and level_spinbox:
-		level_spinbox.value = LevelSystem.get_level(_player_ref)
+	if _player_ref and level_input:
+		level_input.text = str(_sanitize_level(LevelSystem.get_level(_player_ref)))
+	if close_button != null:
+		close_button.grab_focus.call_deferred()
 
 func close() -> void:
 	hide()
@@ -72,18 +65,43 @@ func close() -> void:
 func _on_close_pressed() -> void:
 	close()
 
+func _on_level_input_submitted(_text: String) -> void:
+	_on_set_level_pressed()
+
 func _on_set_level_pressed() -> void:
-	if _player_ref == null or level_spinbox == null:
+	if _player_ref == null or level_input == null:
 		return
-	var target_level := int(level_spinbox.value)
+	var target_level := _parse_level_input()
+	level_input.text = str(target_level)
 	LevelSystem.set_level(_player_ref, target_level)
 	print("[DevTools] Set player level to %d" % target_level)
+
+func _on_max_level_pressed() -> void:
+	if _player_ref == null or level_input == null:
+		return
+	level_input.text = str(MAX_DEBUG_LEVEL)
+	LevelSystem.set_level(_player_ref, MAX_DEBUG_LEVEL)
+	print("[DevTools] Set player level to %d" % MAX_DEBUG_LEVEL)
+
+func _on_reset_level_pressed() -> void:
+	if _player_ref == null or level_input == null:
+		return
+	level_input.text = "1"
+	LevelSystem.set_level(_player_ref, 1)
+	print("[DevTools] Reset player level to 1")
+
+func _on_spawn_count_input_submitted(_text: String) -> void:
+	if spawn_count_input == null:
+		return
+	spawn_count_input.text = str(_parse_spawn_count())
 
 func _on_spawn_common_pressed() -> void:
 	if _mob_spawner_ref == null:
 		push_warning("[DevTools] MobSpawner not set, cannot spawn mobs")
 		return
-	var count := int(spawn_count_spinbox.value) if spawn_count_spinbox else 1
+	var count := _parse_spawn_count()
+	if spawn_count_input != null:
+		spawn_count_input.text = str(count)
 	for i in range(count):
 		_mob_spawner_ref.spawn_common_mob()
 	print("[DevTools] Spawned %d common mobs" % count)
@@ -92,7 +110,9 @@ func _on_spawn_elite_pressed() -> void:
 	if _mob_spawner_ref == null:
 		push_warning("[DevTools] MobSpawner not set, cannot spawn mobs")
 		return
-	var count := int(spawn_count_spinbox.value) if spawn_count_spinbox else 1
+	var count := _parse_spawn_count()
+	if spawn_count_input != null:
+		spawn_count_input.text = str(count)
 	for i in range(count):
 		_mob_spawner_ref.spawn_elite_mob()
 	print("[DevTools] Spawned %d elite mobs" % count)
@@ -133,3 +153,25 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and visible:
 		close()
 		get_viewport().set_input_as_handled()
+
+
+func _parse_level_input() -> int:
+	if level_input == null:
+		return 1
+	var parsed_level := 1
+	if level_input.text.is_valid_int():
+		parsed_level = int(level_input.text)
+	return _sanitize_level(parsed_level)
+
+
+func _sanitize_level(level: int) -> int:
+	return clampi(level, 1, MAX_DEBUG_LEVEL)
+
+
+func _parse_spawn_count() -> int:
+	if spawn_count_input == null:
+		return 1
+	var parsed_count := 1
+	if spawn_count_input.text.is_valid_int():
+		parsed_count = int(spawn_count_input.text)
+	return clampi(parsed_count, 1, MAX_SPAWN_COUNT)

@@ -1,28 +1,22 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cxeae6px2odmc"]
 
-[ext_resource type="PackedScene" path="res://scenes/levels/environment.tscn" id="2_env"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
-[ext_resource type="PackedScene" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
-[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
+[ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="2_env"]
+[ext_resource type="PackedScene" uid="uid://xhxwepnhhfr8" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
+[ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
 
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true
 
-[node name="Environment" type="Node2D" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
-y_sort_enabled = true
+[node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=1617366584 instance=ExtResource("3_hud")]
+[node name="HUD" parent="." unique_id=1617366584 instance=ExtResource("3_hud")]
 
-[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1429287246 instance=ExtResource("5_pause")]
-process_mode = 3
-layer = 100
+[node name="PauseMenu" parent="." unique_id=1429287246 instance=ExtResource("5_pause")]
 visible = false
-metadata/_edit_use_anchors_ = true
 
-[node name="Player" type="CharacterBody2D" parent="." unique_id=734413701 groups=["player"] instance=ExtResource("4_player")]
-y_sort_enabled = true
+[node name="Player" parent="." unique_id=734413701 instance=ExtResource("4_player")]
 position = Vector2(61.782185, 3.4233246)
-scale = Vector2(0.4, 0.4)
 
 [node name="PingTimer" type="Timer" parent="." unique_id=1766112053]
 unique_name_in_owner = true
@@ -32,9 +26,9 @@ unique_name_in_owner = true
 position = Vector2(67.346375, -39.783676)
 
 [node name="SubclassOverlayLayer" type="CanvasLayer" parent="." unique_id=1512673001]
-visible = false
-layer = 90
 unique_name_in_owner = true
+layer = 90
+visible = false
 
 [node name="SubclassOverlayRoot" type="Control" parent="SubclassOverlayLayer" unique_id=331412890]
 layout_mode = 3

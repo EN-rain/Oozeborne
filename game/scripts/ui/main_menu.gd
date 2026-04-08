@@ -13,13 +13,36 @@ extends Control
 @export_file("*.tscn") var auth_menu_scene_path: String
 @export_file("*.tscn") var main_game_scene_path: String
 @export_file("*.tscn") var room_lobby_scene_path: String
+@export var default_player_name_prefix: String = "Player"
+@export var offline_account_name: String = "Offline"
+@export var account_label_format: String = "Account: %s"
+@export var default_status_color: Color = Color(0.6, 0.62, 0.75, 0.7)
+@export var signed_in_status_text: String = "Signed in. Multiplayer ready."
+@export var signed_in_status_color: Color = Color(0.2, 0.8, 0.55)
+@export var offline_status_text: String = "Offline mode. Multiplayer requires sign-in."
+@export var offline_status_color: Color = Color(0.9, 0.7, 0.3)
+@export var preparing_solo_run_text: String = "Preparing solo run..."
+@export var preparing_solo_run_color: Color = Color(0.4, 0.65, 0.9)
+@export var connecting_status_text: String = "Connecting..."
+@export var host_connecting_color: Color = Color(0.7, 0.55, 0.95)
+@export var guest_connecting_color: Color = Color(0.2, 0.8, 0.55)
+@export var creating_room_format: String = "Creating room on %s..."
+@export var joining_room_format: String = "Joining via %s..."
+@export var room_code_required_text: String = "Enter a room code first"
+@export var warning_status_color: Color = Color(0.9, 0.7, 0.3)
+@export var create_room_failed_text: String = "Failed to create room"
+@export var join_room_failed_text: String = "Failed to join room"
+@export var connection_failed_format: String = "Connection failed: %s"
+@export var error_status_color: Color = Color(0.9, 0.4, 0.4)
 
 var _menu_busy: bool = false
 
 func _ready() -> void:
 	if ign_input.text.strip_edges().is_empty():
-		ign_input.text = MultiplayerManager.player_ign if not MultiplayerManager.player_ign.is_empty() else "Player" + str(randi_range(1000, 9999))
+		ign_input.text = MultiplayerManager.player_ign if not MultiplayerManager.player_ign.is_empty() else default_player_name_prefix + str(randi_range(1000, 9999))
 
+	if start_button != null:
+		start_button.grab_focus.call_deferred()
 	_update_auth_ui()
 
 func _input(event: InputEvent) -> void:
@@ -27,7 +50,7 @@ func _input(event: InputEvent) -> void:
 		get_tree().quit()
 		get_viewport().set_input_as_handled()
 
-func _set_status(text: String, color: Color = Color(0.6, 0.62, 0.75, 0.7)) -> void:
+func _set_status(text: String, color: Color = default_status_color) -> void:
 	status_label.text = text
 	status_label.add_theme_color_override("font_color", color)
 
@@ -35,29 +58,30 @@ func _set_menu_busy(busy: bool) -> void:
 	_menu_busy = busy
 	_update_auth_ui()
 
+
 func _update_auth_ui() -> void:
 	var authenticated = MultiplayerManager.is_authenticated()
 	var account_name = MultiplayerManager.player_ign
 	if account_name.is_empty() and MultiplayerManager.session != null:
 		account_name = MultiplayerManager.session.username
 	if account_name.is_empty():
-		account_name = "Offline"
+		account_name = offline_account_name
 
-	account_label.text = "Account: %s" % account_name
+	account_label.text = account_label_format % account_name
 	logout_button.disabled = _menu_busy or not authenticated
 	start_button.disabled = _menu_busy
 	host_button.disabled = _menu_busy or not authenticated
 	connect_button.disabled = _menu_busy or not authenticated
 
 	if authenticated:
-		_set_status("Signed in. Multiplayer ready.", Color(0.2, 0.8, 0.55))
+		_set_status(signed_in_status_text, signed_in_status_color)
 	else:
-		_set_status("Offline mode. Multiplayer requires sign-in.", Color(0.9, 0.7, 0.3))
+		_set_status(offline_status_text, offline_status_color)
 
 func _get_ign() -> String:
 	var ign = ign_input.text.strip_edges()
 	if ign.is_empty():
-		ign = "Player" + str(randi_range(1000, 9999))
+		ign = default_player_name_prefix + str(randi_range(1000, 9999))
 	return ign
 
 func _go_to_auth_menu() -> void:
@@ -74,9 +98,24 @@ func _on_logout_pressed() -> void:
 	_set_menu_busy(false)
 	_go_to_auth_menu()
 
+
+func _on_ign_submitted(_text: String) -> void:
+	MultiplayerManager.player_ign = _get_ign()
+	if ign_input != null:
+		ign_input.release_focus()
+	if start_button != null and not start_button.disabled:
+		start_button.grab_focus()
+
+
+func _on_code_submitted(_text: String) -> void:
+	if code_input != null:
+		code_input.release_focus()
+	if connect_button != null and not connect_button.disabled:
+		connect_button.grab_focus()
+
 func _on_start_pressed() -> void:
 	_set_menu_busy(true)
-	_set_status("Preparing solo run...", Color(0.4, 0.65, 0.9))
+	_set_status(preparing_solo_run_text, preparing_solo_run_color)
 	await MultiplayerManager.disconnect_server()
 	MultiplayerManager.player_ign = _get_ign()
 	MultiplayerManager.player_class = null
@@ -85,45 +124,45 @@ func _on_start_pressed() -> void:
 
 func _on_host_pressed() -> void:
 	_set_menu_busy(true)
-	_set_status("Connecting...", Color(0.7, 0.55, 0.95))
+	_set_status(connecting_status_text, host_connecting_color)
 	await MultiplayerManager.disconnect_server()
 
 	var ign = _get_ign()
 	MultiplayerManager.player_ign = ign
 	var connected = await MultiplayerManager.connect_to_server("host_" + str(Time.get_unix_time_from_system()))
 	if connected:
-		_set_status("Creating room on " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.7, 0.55, 0.95))
+		_set_status(creating_room_format % MultiplayerManager.get_server_endpoint_summary(), host_connecting_color)
 		var room_id = await MultiplayerManager.create_room()
 		if not room_id.is_empty():
 			get_tree().change_scene_to_file(room_lobby_scene_path)
 		else:
-			_set_status("Failed to create room", Color(0.9, 0.4, 0.4))
+			_set_status(create_room_failed_text, error_status_color)
 	else:
-		_set_status("Connection failed: " + MultiplayerManager.get_server_endpoint_summary(), Color(0.9, 0.4, 0.4))
+		_set_status(connection_failed_format % MultiplayerManager.get_server_endpoint_summary(), error_status_color)
 	_set_menu_busy(false)
 
 func _on_connect_pressed() -> void:
 	var room_code = code_input.text.strip_edges()
 	if room_code.is_empty():
-		_set_status("Enter a room code first", Color(0.9, 0.7, 0.3))
+		_set_status(room_code_required_text, warning_status_color)
 		return
 
 	_set_menu_busy(true)
-	_set_status("Connecting...", Color(0.2, 0.8, 0.55))
+	_set_status(connecting_status_text, guest_connecting_color)
 	await MultiplayerManager.disconnect_server()
 
 	var ign = _get_ign()
 	MultiplayerManager.player_ign = ign
 	var connected = await MultiplayerManager.connect_to_server("guest_" + str(Time.get_unix_time_from_system()))
 	if connected:
-		_set_status("Joining via " + MultiplayerManager.get_server_endpoint_summary() + "...", Color(0.2, 0.8, 0.55))
+		_set_status(joining_room_format % MultiplayerManager.get_server_endpoint_summary(), guest_connecting_color)
 		var joined = await MultiplayerManager.join_room(room_code)
 		if joined:
 			get_tree().change_scene_to_file(room_lobby_scene_path)
 		else:
-			_set_status("Failed to join room", Color(0.9, 0.4, 0.4))
+			_set_status(join_room_failed_text, error_status_color)
 	else:
-		_set_status("Connection failed: " + MultiplayerManager.get_server_endpoint_summary(), Color(0.9, 0.4, 0.4))
+		_set_status(connection_failed_format % MultiplayerManager.get_server_endpoint_summary(), error_status_color)
 	_set_menu_busy(false)
 
 func _on_quit_pressed() -> void:

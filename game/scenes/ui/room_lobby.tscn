@@ -402,11 +402,13 @@ main_game_scene_path = "res://scenes/levels/main.tscn"
 main_menu_scene_path = "res://scenes/ui/main_menu.tscn"
 
 [node name="LobbyTitleController" type="Node" parent="." unique_id=63178772]
+unique_name_in_owner = true
 script = ExtResource("2_titlecontroller")
 title_label_path = NodePath("../Label")
 title_edit_path = NodePath("../LobbyNameEdit")
 
 [node name="LobbyCarouselController" type="Node" parent="." unique_id=1857374201]
+unique_name_in_owner = true
 script = ExtResource("3_carouselcontroller")
 slime_preview_shader = ExtResource("5_slime_shader")
 
@@ -434,6 +436,7 @@ grow_vertical = 0
 mouse_filter = 2
 
 [node name="Class1" type="Control" parent="." unique_id=1818136206]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -446,6 +449,7 @@ offset_right = 128.0
 offset_bottom = 125.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class1" unique_id=10125792]
 texture_filter = 1
@@ -467,6 +471,7 @@ offset_right = 92.0
 offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
 theme_override_constants/outline_size = 6
@@ -475,6 +480,7 @@ text = "Knight"
 horizontal_alignment = 1
 
 [node name="Class2" type="Control" parent="." unique_id=1302152310]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -487,6 +493,7 @@ offset_right = 599.5
 offset_bottom = 66.25
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class2" unique_id=1309769611]
 texture_filter = 1
@@ -508,6 +515,7 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -516,6 +524,7 @@ text = "Mage"
 horizontal_alignment = 1
 
 [node name="Class3" type="Control" parent="." unique_id=1985456576]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -528,6 +537,7 @@ offset_right = 393.0
 offset_bottom = 101.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class3" unique_id=800642479]
 texture_filter = 1
@@ -549,6 +559,7 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -557,6 +568,7 @@ text = "Archer"
 horizontal_alignment = 1
 
 [node name="Class4" type="Control" parent="." unique_id=435685204]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -569,6 +581,7 @@ offset_right = -417.5
 offset_bottom = 66.25
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class4" unique_id=1922354205]
 texture_filter = 1
@@ -590,6 +603,7 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -598,6 +612,7 @@ text = "Healer"
 horizontal_alignment = 1
 
 [node name="Class5" type="Control" parent="." unique_id=2070190401]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -610,6 +625,7 @@ offset_right = -156.0
 offset_bottom = 101.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Class5" unique_id=544639271]
 texture_filter = 1
@@ -631,6 +647,7 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -778,6 +795,7 @@ theme_override_constants/v_separation = 10
 columns = 3
 
 [node name="HPCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=481353661]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -799,12 +817,14 @@ theme_override_font_sizes/font_size = 13
 text = "HP"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1853932290]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
 text = "1,450"
 
 [node name="AttackCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=241978345]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -826,12 +846,14 @@ theme_override_font_sizes/font_size = 13
 text = "ATTACK"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1790935392]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
 text = "245"
 
 [node name="DefenseCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=29212680]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -853,12 +875,14 @@ theme_override_font_sizes/font_size = 13
 text = "DEFENSE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=338114341]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
 text = "180"
 
 [node name="SpeedCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=1015956863]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -880,12 +904,14 @@ theme_override_font_sizes/font_size = 13
 text = "SPEED"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1146953593]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
 text = "95"
 
 [node name="CritCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=877540963]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -907,12 +933,14 @@ theme_override_font_sizes/font_size = 13
 text = "CRIT RATE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=1412280641]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
 text = "15%"
 
 [node name="EvadeCard" type="PanelContainer" parent="ClassStats/StatsVBox/StatsCards" unique_id=522968690]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("stats_card_transparent")
@@ -934,6 +962,7 @@ theme_override_font_sizes/font_size = 13
 text = "EVADE"
 
 [node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1932028259]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 25
@@ -947,6 +976,28 @@ theme_override_colors/default_color = Color(1, 1, 1, 0.96)
 theme_override_font_sizes/normal_font_size = 13
 bbcode_enabled = true
 text = "Select a class to view stats"
+
+[node name="PowerRow" type="HBoxContainer" parent="ClassStats/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PowerTrack" type="PanelContainer" parent="ClassStats/StatsVBox/PowerRow"]
+size_flags_horizontal = 3
+layout_mode = 2
+
+[node name="PowerFill" type="ColorRect" parent="ClassStats/StatsVBox/PowerRow/PowerTrack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.95, 0.82, 0.35, 0.95)
+
+[node name="PowerRank" type="Label" parent="ClassStats/StatsVBox/PowerRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "C-Rank"
 
 [node name="LeftButton" type="Button" parent="." unique_id=142096212]
 unique_name_in_owner = true
@@ -1001,6 +1052,7 @@ offset_top = 84.0
 offset_right = 160.0
 offset_bottom = 129.0
 grow_horizontal = 2
+mouse_filter = 0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 31
 text = "Players Lobby"
@@ -1008,6 +1060,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Label" type="Label" parent="Label" unique_id=859066297]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

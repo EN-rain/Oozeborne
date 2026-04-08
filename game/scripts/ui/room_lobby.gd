@@ -10,28 +10,28 @@ extends Control
 @onready var right_button: Button = %RightButton
 @onready var title_label: Label = %Label
 @onready var title_edit: LineEdit = %LobbyNameEdit
-@onready var subclass_hint_label: Label = $Label/Label
+@onready var subclass_hint_label: Label = %SubclassHintLabel
 @onready var players_title: Label = %PlayersTitle
 @onready var players_list: VBoxContainer = %PlayersList
 @onready var stats_content: RichTextLabel = %StatsContent
 @onready var subclass_content: RichTextLabel = %SubclassContent
-@onready var hp_value_label: Label = $ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox/Value
-@onready var atk_value_label: Label = $ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox/Value
-@onready var def_value_label: Label = $ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox/Value
-@onready var spd_value_label: Label = $ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox/Value
-@onready var crit_value_label: Label = $ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox/Value
-@onready var evade_value_label: Label = $ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox/Value
-@onready var hp_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/HPCard
-@onready var attack_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/AttackCard
-@onready var defense_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/DefenseCard
-@onready var speed_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/SpeedCard
-@onready var crit_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/CritCard
-@onready var evade_card: PanelContainer = $ClassStats/StatsVBox/StatsCards/EvadeCard
-@onready var power_fill: ColorRect = get_node_or_null("ClassStats/StatsVBox/PowerRow/PowerTrack/PowerFill") as ColorRect
-@onready var power_rank_label: Label = get_node_or_null("ClassStats/StatsVBox/PowerRow/PowerRank") as Label
+@onready var hp_value_label: Label = %HPValue
+@onready var atk_value_label: Label = %AttackValue
+@onready var def_value_label: Label = %DefenseValue
+@onready var spd_value_label: Label = %SpeedValue
+@onready var crit_value_label: Label = %CritValue
+@onready var evade_value_label: Label = %EvadeValue
+@onready var hp_card: PanelContainer = %HPCard
+@onready var attack_card: PanelContainer = %AttackCard
+@onready var defense_card: PanelContainer = %DefenseCard
+@onready var speed_card: PanelContainer = %SpeedCard
+@onready var crit_card: PanelContainer = %CritCard
+@onready var evade_card: PanelContainer = %EvadeCard
+@onready var power_fill: ColorRect = %PowerFill
+@onready var power_rank_label: Label = %PowerRank
 @onready var talent_cards: VBoxContainer = %TalentCards
-@onready var title_controller = $LobbyTitleController
-@onready var carousel_controller = $LobbyCarouselController
+@onready var title_controller = %LobbyTitleController
+@onready var carousel_controller = %LobbyCarouselController
 @onready var chat_box = %ChatBox
 
 # ── Chat nodes ──────────────────────────────────────────────────────────────
@@ -40,14 +40,25 @@ extends Control
 @onready var send_button: Button = %SendButton
 
 # ── Class slot nodes ─────────────────────────────────────────────────────────
-@onready var class_slots: Array = [
-	$Class1, $Class2, $Class3, $Class4, $Class5
+@onready var class_slots: Array[Control] = [
+	%Class1, %Class2, %Class3, %Class4, %Class5
 ]
 
 const CROWN_EMOJI = "👑 "
 
 @export_file("*.tscn") var main_game_scene_path: String
 @export_file("*.tscn") var main_menu_scene_path: String
+@export var system_sender_name: String = "System"
+@export var lobby_welcome_message: String = "Welcome to the lobby!"
+@export var lobby_welcome_color: Color = Color(0.9, 0.75, 0.3)
+@export var joined_lobby_format: String = "%s joined the lobby."
+@export var joined_lobby_color: Color = Color(0.35, 0.65, 0.45)
+@export var left_lobby_format: String = "%s left the lobby."
+@export var left_lobby_color: Color = Color(0.75, 0.35, 0.35)
+@export var selected_class_format: String = "Selected class: %s"
+@export var selected_class_color: Color = Color(0.4, 0.7, 0.9)
+@export var chat_message_default_color: Color = Color(0.7, 0.65, 0.85)
+@export var join_game_button_text: String = "Join Quest"
 
 var _player_entries: Dictionary = {}
 var _last_state_log_time: int = 0
@@ -183,7 +194,7 @@ func _ready():
 	_refresh_lobby_title()
 	chat_box.focus_input()
 
-	_add_chat_message("System", "Welcome to the lobby!", Color(0.9, 0.75, 0.3))
+	_add_chat_message(system_sender_name, lobby_welcome_message, lobby_welcome_color)
 
 	room_code_button.text = MultiplayerManager.room_code
 	
@@ -272,7 +283,7 @@ func _add_player_entry(user_id: String, ign: String, _prefix: String, is_host_fl
 	_refresh_lobby_title()
 	
 	# Chat notification
-	_add_chat_message("System", ign + " joined the lobby.", Color(0.35, 0.65, 0.45))
+	_add_chat_message(system_sender_name, joined_lobby_format % ign, joined_lobby_color)
 
 func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool):
 	print("[Lobby] Player joined signal: ", ign)
@@ -283,7 +294,7 @@ func _on_player_left_signal(user_id: String):
 	print("[Lobby] Player left signal")
 	if _player_entries.has(user_id):
 		var entry = _player_entries[user_id]
-		_add_chat_message("System", entry.ign + " left the lobby.", Color(0.75, 0.35, 0.35))
+		_add_chat_message(system_sender_name, left_lobby_format % entry.ign, left_lobby_color)
 		_player_entries.erase(user_id)
 	_refresh_start_button_state()
 	_refresh_party_cards()
@@ -307,7 +318,7 @@ func _get_chat_sender_name() -> String:
 		return "You"
 	return MultiplayerManager.player_ign
 
-func _add_chat_message(sender: String, message: String, color: Color = Color(0.7, 0.65, 0.85)):
+func _add_chat_message(sender: String, message: String, color: Color = chat_message_default_color):
 	chat_box.add_message(sender, message, color)
 
 func _on_send_chat():
@@ -332,7 +343,7 @@ func _on_select_class_pressed():
 	if _selected_class:
 		_selected_class.player_scene = MultiplayerManager.resolve_player_scene()
 		MultiplayerManager.player_class = _selected_class
-		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		_add_chat_message(system_sender_name, selected_class_format % active_class, selected_class_color)
 		print("[Lobby] Selected class: ", active_class, " with player_scene: ", _selected_class.player_scene)
 		# Broadcast class selection to other players
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
@@ -342,7 +353,7 @@ func _on_select_class_pressed():
 				"class_name": active_class
 			})
 	else:
-		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		_add_chat_message(system_sender_name, selected_class_format % active_class, selected_class_color)
 		print("[Lobby] Selected class: ", active_class)
 
 func _get_player_class_for_name(selected_name: String) -> PlayerClass:
@@ -443,7 +454,7 @@ func _on_match_state(match_state):
 			var sender = data.get("sender", "Unknown")
 			var message = data.get("message", "")
 			if not message.is_empty():
-				_add_chat_message(sender, message, Color(0.7, 0.65, 0.85))
+				_add_chat_message(sender, message, chat_message_default_color)
 		
 		"start_game":
 			pass

@@ -5,6 +5,8 @@ class_name ShopUI
 
 signal closed
 
+@export var item_card_scene: PackedScene
+
 @onready var close_button: Button = %CloseButton
 @onready var tabs: TabContainer = %TabContainer
 @onready var coins_label: Label = %CoinsLabel
@@ -13,9 +15,9 @@ signal closed
 @onready var equipment_grid: GridContainer = %EquipmentGrid
 @onready var special_grid: GridContainer = %SpecialGrid
 
+var _item_cards: Array[ShopItemCard] = []
 
 func _ready():
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	_connect_signals()
 	_refresh_shop()
 
@@ -44,89 +46,33 @@ func _populate_grid(grid: GridContainer, items: Array):
 	# Clear existing
 	for child in grid.get_children():
 		child.queue_free()
-	
+	_item_cards.clear()
+
 	for item in items:
 		var item_card = _create_item_card(item)
 		grid.add_child(item_card)
 
+func _update_buy_button_states() -> void:
+	# Update existing buttons without rebuilding the entire UI
+	var coin_manager := _coin_manager()
+	var coins: int = coin_manager.get_coins() if coin_manager != null else 0
+
+	for card in _item_cards:
+		if is_instance_valid(card):
+			card.refresh_state(coins)
+
 
 func _create_item_card(item: ShopItem) -> Control:
-	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(140, 100)
-	
-	# Pixel-art card style
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.06, 0.14, 0.95)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.35, 0.28, 0.45, 0.55)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_right = 4
-	style.corner_radius_bottom_left = 4
-	card.add_theme_stylebox_override("panel", style)
-	
-	var vbox = VBoxContainer.new()
-	card.add_child(vbox)
-	
-	# Item name
-	var name_label = Label.new()
-	name_label.text = item.display_name
-	name_label.add_theme_font_size_override("font_size", 14)
-	name_label.add_theme_color_override("font_color", Color(0.95, 0.82, 0.35))
-	vbox.add_child(name_label)
-	
-	# Effect description
-	var effect_label = Label.new()
-	effect_label.text = item.get_effect_description()
-	effect_label.add_theme_font_size_override("font_size", 11)
-	effect_label.add_theme_color_override("font_color", Color(0.6, 0.55, 0.75))
-	effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	vbox.add_child(effect_label)
-	
-	# Price
-	var price_label = Label.new()
-	price_label.text = "%d coins" % item.price
-	price_label.add_theme_font_size_override("font_size", 12)
-	price_label.add_theme_color_override("font_color", Color(0.95, 0.82, 0.35))
-	vbox.add_child(price_label)
-	
-	# Buy button
-	var buy_btn = Button.new()
-	buy_btn.text = "Buy"
-	buy_btn.custom_minimum_size = Vector2(80, 25)
-	
-	# Style button
-	var btn_normal = StyleBoxFlat.new()
-	btn_normal.bg_color = Color(0.15, 0.45, 0.28)
-	btn_normal.border_width_left = 2
-	btn_normal.border_width_top = 2
-	btn_normal.border_width_right = 2
-	btn_normal.border_width_bottom = 2
-	btn_normal.border_color = Color(0.1, 0.35, 0.2)
-	btn_normal.corner_radius_top_left = 4
-	btn_normal.corner_radius_top_right = 4
-	btn_normal.corner_radius_bottom_right = 4
-	btn_normal.corner_radius_bottom_left = 4
-	buy_btn.add_theme_stylebox_override("normal", btn_normal)
-	
-	# Disable if can't afford
+	if item_card_scene == null:
+		push_warning("[ShopUI] item_card_scene is not assigned.")
+		return Control.new()
 	var coin_manager := _coin_manager()
-	if coin_manager != null and not item.can_afford(coin_manager.get_coins()):
-		buy_btn.disabled = true
-		btn_normal.bg_color = Color(0.15, 0.12, 0.2, 0.5)
-	
-	# Disable if already owned (permanent upgrades)
-	if item.item_type == ShopItem.ItemType.PERMANENT_UPGRADE and item.owned:
-		buy_btn.text = "Owned"
-		buy_btn.disabled = true
-		btn_normal.bg_color = Color(0.1, 0.3, 0.2)
-	
-	buy_btn.pressed.connect(_on_buy_pressed.bind(item))
-	vbox.add_child(buy_btn)
-	
+	var player_coins: int = coin_manager.get_coins() if coin_manager != null else 0
+	var card := item_card_scene.instantiate() as ShopItemCard
+	card.configure(item, player_coins)
+	if not card.buy_requested.is_connected(_on_buy_pressed):
+		card.buy_requested.connect(_on_buy_pressed)
+	_item_cards.append(card)
 	return card
 
 
@@ -136,14 +82,14 @@ func _on_buy_pressed(item: ShopItem):
 		shop_manager.purchase_item(item)
 
 
-func _on_item_purchased(_item: ShopItem, success: bool):
+func _on_item_purchased(item: ShopItem, success: bool):
 	if success:
-		_refresh_shop()
+		_update_buy_button_states()
 
 
 func _on_coins_changed(_total: int):
 	_update_coins_display()
-	_refresh_shop()
+	_update_buy_button_states()  # Only update buttons, don't rebuild entire UI
 
 
 func _update_coins_display():
@@ -160,6 +106,8 @@ func _on_close_pressed():
 func open():
 	show()
 	_refresh_shop()
+	if close_button != null:
+		close_button.grab_focus.call_deferred()
 	var shop_manager := _shop_manager()
 	if shop_manager != null:
 		shop_manager.notify_shop_opened()
@@ -176,10 +124,8 @@ func close():
 
 
 func _coin_manager() -> Node:
-	var tree := get_tree()
-	return tree.root.get_node_or_null("CoinManager") if tree != null and tree.root != null else null
+	return CoinManager
 
 
 func _shop_manager() -> Node:
-	var tree := get_tree()
-	return tree.root.get_node_or_null("ShopManager") if tree != null and tree.root != null else null
+	return ShopManager

@@ -113,11 +113,15 @@ func set_level(player: Node, level: int) -> void:
 	var entity_id = player.get_instance_id()
 	if not player_data.has(entity_id):
 		return
-	
-	player_data[entity_id].level = max(1, level)
+
+	var resolved_level: int = max(1, level)
+	var previous_level: int = int(player_data[entity_id].level)
+	player_data[entity_id].level = resolved_level
 	player_data[entity_id].xp = 0
-	player_data[entity_id].xp_to_next = player_stats.get_xp_for_level(level + 1)
+	player_data[entity_id].xp_to_next = player_stats.get_xp_for_level(resolved_level + 1)
 	_apply_current_stats(entity_id)
+	if resolved_level != previous_level:
+		level_up.emit(entity_id, resolved_level, player_stats.get_stats_at_level(resolved_level))
 
 
 ## Internal: Handle level up

@@ -19,12 +19,13 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [node name="DevToolsPanel" type="PanelContainer"]
+process_mode = 2
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -280.0
-offset_top = 60.0
-offset_bottom = 420.0
+offset_top = 186.0
+offset_bottom = 546.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("panel_style")
 script = ExtResource("1_script")
@@ -43,8 +44,11 @@ theme_override_font_sizes/font_size = 18
 text = "Dev Tools"
 
 [node name="CloseButton" type="Button" parent="VBoxContainer/Header"]
+process_mode = 2
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
+custom_minimum_size = Vector2(56, 32)
 text = "X"
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
@@ -62,16 +66,30 @@ text = "Player Level"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/LevelSection"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="LevelSpinbox" type="SpinBox" parent="VBoxContainer/LevelSection/HBoxContainer"]
+[node name="LevelInput" type="LineEdit" parent="VBoxContainer/LevelSection/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-min_value = 1.0
-max_value = 100.0
-value = 1.0
+size_flags_horizontal = 3
+text = "1"
+placeholder_text = "1-100"
+max_length = 3
 
 [node name="SetLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Set Level"
+text = "Set"
+
+[node name="MaxLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Max Level"
+
+[node name="ResetLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset Lvl"
 
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
@@ -93,20 +111,24 @@ layout_mode = 2
 layout_mode = 2
 text = "Count:"
 
-[node name="SpawnCountSpinbox" type="SpinBox" parent="VBoxContainer/SpawnSection/HBoxContainer"]
+[node name="SpawnCountInput" type="LineEdit" parent="VBoxContainer/SpawnSection/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-min_value = 1.0
-max_value = 50.0
-value = 1.0
+size_flags_horizontal = 3
+text = "1"
+placeholder_text = "1-50"
+max_length = 2
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer/SpawnSection"]
 layout_mode = 2
 
 [node name="SpawnCommonButton" type="Button" parent="VBoxContainer/SpawnSection/HBoxContainer2"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Spawn Common"
 
 [node name="SpawnEliteButton" type="Button" parent="VBoxContainer/SpawnSection/HBoxContainer2"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Spawn Elite"
 
@@ -124,14 +146,20 @@ theme_override_font_sizes/font_size = 14
 text = "Change Class"
 
 [node name="ClassOption" type="OptionButton" parent="VBoxContainer/ClassSection"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="ApplyClassButton" type="Button" parent="VBoxContainer/ClassSection"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Apply Class"
 
 [connection signal="pressed" from="VBoxContainer/Header/CloseButton" to="." method="_on_close_pressed"]
+[connection signal="text_submitted" from="VBoxContainer/LevelSection/HBoxContainer/LevelInput" to="." method="_on_level_input_submitted"]
+[connection signal="text_submitted" from="VBoxContainer/SpawnSection/HBoxContainer/SpawnCountInput" to="." method="_on_spawn_count_input_submitted"]
 [connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/SetLevelButton" to="." method="_on_set_level_pressed"]
+[connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/MaxLevelButton" to="." method="_on_max_level_pressed"]
+[connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/ResetLevelButton" to="." method="_on_reset_level_pressed"]
 [connection signal="pressed" from="VBoxContainer/SpawnSection/HBoxContainer2/SpawnCommonButton" to="." method="_on_spawn_common_pressed"]
 [connection signal="pressed" from="VBoxContainer/SpawnSection/HBoxContainer2/SpawnEliteButton" to="." method="_on_spawn_elite_pressed"]
 [connection signal="pressed" from="VBoxContainer/ClassSection/ApplyClassButton" to="." method="_on_apply_class_pressed"]

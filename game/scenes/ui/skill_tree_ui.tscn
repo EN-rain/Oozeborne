@@ -1,6 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cwpucu5aaht6t"]
 
-[ext_resource type="Script" path="res://scripts/ui/skill_tree_ui.gd" id="1_skilltree"]
+[ext_resource type="Script" uid="uid://ba22h1doscahf" path="res://scripts/ui/skill_tree_ui.gd" id="1_skilltree"]
+[ext_resource type="PackedScene" path="res://scenes/ui/skill_tree_card.tscn" id="2_skilltreecard"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 20.0
@@ -36,7 +37,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="SkillTreeUI" type="Control"]
+[node name="SkillTreeUI" type="Control" unique_id=1638418858]
+process_mode = 2
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,8 +46,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_skilltree")
+skill_card_scene = ExtResource("2_skilltreecard")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=141963930]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -54,7 +57,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.01, 0.03, 0.05, 0.76)
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Panel" type="PanelContainer" parent="." unique_id=693672087]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -69,84 +72,86 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("panel_style")
 
-[node name="VBox" type="VBoxContainer" parent="Panel"]
+[node name="VBox" type="VBoxContainer" parent="Panel" unique_id=1524974669]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Header" type="HBoxContainer" parent="Panel/VBox"]
+[node name="Header" type="HBoxContainer" parent="Panel/VBox" unique_id=175892671]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="Panel/VBox/Header"]
+[node name="TitleLabel" type="Label" parent="Panel/VBox/Header" unique_id=1310694176]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 22
 text = "SKILL TREE"
 
-[node name="SpLabel" type="Label" parent="Panel/VBox/Header"]
+[node name="SpLabel" type="Label" parent="Panel/VBox/Header" unique_id=750859000]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 16
 text = "SP 0 / 0"
 
-[node name="CloseButton" type="Button" parent="Panel/VBox/Header"]
+[node name="CloseButton" type="Button" parent="Panel/VBox/Header" unique_id=637552803]
 unique_name_in_owner = true
+process_mode = 2
+custom_minimum_size = Vector2(88, 36)
 layout_mode = 2
 text = "Close"
 
-[node name="StatusLabel" type="Label" parent="Panel/VBox"]
+[node name="StatusLabel" type="Label" parent="Panel/VBox" unique_id=1478939584]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 1)
-text = ""
 
-[node name="Tabs" type="TabContainer" parent="Panel/VBox"]
+[node name="Tabs" type="TabContainer" parent="Panel/VBox" unique_id=426088190]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ActionBarCard" type="PanelContainer" parent="Panel/VBox"]
+[node name="ActionBarCard" type="PanelContainer" parent="Panel/VBox" unique_id=1562081407]
 layout_mode = 2
 theme_override_styles/panel = SubResource("tooltip_style")
 
-[node name="ActionBarVBox" type="VBoxContainer" parent="Panel/VBox/ActionBarCard"]
+[node name="ActionBarVBox" type="VBoxContainer" parent="Panel/VBox/ActionBarCard" unique_id=1357283627]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ActionBarLabel" type="Label" parent="Panel/VBox/ActionBarCard/ActionBarVBox"]
+[node name="ActionBarLabel" type="Label" parent="Panel/VBox/ActionBarCard/ActionBarVBox" unique_id=821327563]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.75, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 16
 text = "Action Bar"
 
-[node name="ActionBarSlots" type="HBoxContainer" parent="Panel/VBox/ActionBarCard/ActionBarVBox"]
+[node name="ActionBarSlots" type="HBoxContainer" parent="Panel/VBox/ActionBarCard/ActionBarVBox" unique_id=1133642466]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TooltipPanel" type="PanelContainer" parent="Panel/VBox"]
+[node name="TooltipPanel" type="PanelContainer" parent="Panel/VBox" unique_id=1966711486]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("tooltip_style")
 
-[node name="TooltipVBox" type="VBoxContainer" parent="Panel/VBox/TooltipPanel"]
+[node name="TooltipVBox" type="VBoxContainer" parent="Panel/VBox/TooltipPanel" unique_id=387411398]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="TooltipTitle" type="Label" parent="Panel/VBox/TooltipPanel/TooltipVBox"]
+[node name="TooltipTitle" type="Label" parent="Panel/VBox/TooltipPanel/TooltipVBox" unique_id=1596442307]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.95, 0.92, 0.72, 1)
+theme_override_font_sizes/font_size = 16
 text = "Skill"
 
-[node name="TooltipBody" type="Label" parent="Panel/VBox/TooltipPanel/TooltipVBox"]
+[node name="TooltipBody" type="Label" parent="Panel/VBox/TooltipPanel/TooltipVBox" unique_id=940900611]
 unique_name_in_owner = true
 layout_mode = 2
-autowrap_mode = 3
 theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
-text = ""
+autowrap_mode = 3
+
+[connection signal="pressed" from="Panel/VBox/Header/CloseButton" to="." method="_on_close_pressed"]

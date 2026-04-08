@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/shop_ui.gd" id="1_shopui"]
+[ext_resource type="PackedScene" path="res://scenes/ui/shop_item_card.tscn" id="2_shopitemcard"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 20.0
@@ -53,6 +54,7 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [node name="ShopUI" type="Control" unique_id=1473691007]
+process_mode = 2
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -61,6 +63,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_shopui")
+item_card_scene = ExtResource("2_shopitemcard")
 
 [node name="Background" type="ColorRect" parent="." unique_id=435350685]
 layout_mode = 1
@@ -109,12 +112,14 @@ theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 text = "Coins: 0"
 
 [node name="CloseButton" type="Button" parent="Panel/VBox/Header" unique_id=186572287]
+process_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(88, 36)
 theme_override_styles/normal = SubResource("btn_close_normal")
 theme_override_styles/hover = SubResource("btn_close_hover")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "✕"
+text = "Close"
 
 [node name="TabContainer" type="TabContainer" parent="Panel/VBox" unique_id=92499757]
 unique_name_in_owner = true

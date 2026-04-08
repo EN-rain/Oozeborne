@@ -129,7 +129,6 @@ func _setup_carousel() -> void:
 	var center_label_bottom: float = center_label.offset_bottom if center_label else 26.0
 
 	for slot in _carousel_nodes:
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sprite: AnimatedSprite2D = slot.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 		var name_label: Label = slot.get_node_or_null("ClassName") as Label
 		if sprite:
@@ -139,8 +138,6 @@ func _setup_carousel() -> void:
 			sprite.play("idle")
 			sprite.stop()
 			sprite.frame = 0
-		if name_label:
-			name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_carousel_slot_refs.append({
 			"node": slot,
 			"sprite": sprite,

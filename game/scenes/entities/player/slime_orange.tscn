@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bfcrotff8571w"]
 
 [ext_resource type="Script" uid="uid://c1uffs06ybyl8" path="res://scripts/entities/player/player.gd" id="13_script"]
-[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health_component.gd" id="14_health"]
+[ext_resource type="Script" uid="uid://dngqjqxft2dc" path="res://scripts/components/health_component.gd" id="14_health"]
 [ext_resource type="Script" path="res://scripts/components/player_death_sequence.gd" id="15_death_sequence"]
 [ext_resource type="Shader" uid="uid://gr33ix60db3n" path="res://assets/shaders/slime_color.gdshader" id="17_shader"]
 [ext_resource type="PackedScene" uid="uid://b6bpgalmnjwat" path="res://scenes/effects/damage_particles.tscn" id="20_dmgparticles"]

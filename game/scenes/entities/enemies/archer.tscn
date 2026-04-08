@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://cwcoajhmup11r" path="res://assets/sprites/Mobs/Archer/Soldier-Death.png" id="3_d71b8"]
 [ext_resource type="Texture2D" uid="uid://dn2ficws0agqe" path="res://assets/sprites/Mobs/Archer/Soldier-Idle.png" id="3_ejvcm"]
 [ext_resource type="Texture2D" uid="uid://b1pwi5fn7nxge" path="res://assets/sprites/Mobs/Archer/Soldier-Walk.png" id="4_c85qa"]
-[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health_component.gd" id="4_cctdm"]
+[ext_resource type="Script" uid="uid://dngqjqxft2dc" path="res://scripts/components/health_component.gd" id="4_cctdm"]
 [ext_resource type="Texture2D" uid="uid://dcm2veuov3m7x" path="res://assets/sprites/Mobs/Archer/Soldier-Hurt.png" id="5_mak8i"]
 [sub_resource type="AtlasTexture" id="AtlasTexture_b0l3x"]
 atlas = ExtResource("1_jggnj")

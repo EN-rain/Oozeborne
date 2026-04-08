@@ -1,17 +1,27 @@
 extends Control
 
-@onready var color_rect: ColorRect = $ColorRect
-@onready var death_card: PanelContainer = $DeathCard
-@onready var death_card_animation_player: AnimationPlayer = $DeathCard/AnimationPlayer
-@onready var death_title_label: Label = $DeathCard/VBoxContainer/YouDiedLabel
-@onready var death_message_label: Label = $DeathCard/VBoxContainer/KillerLabel
-@onready var death_card_content: VBoxContainer = $DeathCard/VBoxContainer
-@onready var final_score_label: Label = $DeathCard/VBoxContainer/FinalScore
-@onready var restart_button: Button = $DeathCard/VBoxContainer/Restart
-@onready var menu_button: Button = $DeathCard/VBoxContainer/MenuButton
+@onready var color_rect: ColorRect = %ColorRect
+@onready var death_card: PanelContainer = %DeathCard
+@onready var death_card_animation_player: AnimationPlayer = %AnimationPlayer
+@onready var death_title_label: Label = %YouDiedLabel
+@onready var death_message_label: Label = %KillerLabel
+@onready var death_card_content: VBoxContainer = %VBoxContainer
+@onready var final_score_label: Label = %FinalScore
+@onready var restart_button: Button = %Restart
+@onready var menu_button: Button = %MenuButton
 
 @export var main_menu_scene: PackedScene
 @export_file("*.json") var death_messages_json_path: String = "res://resources/data/death_messages.json"
+@export var death_title_text: String = "Run Over"
+@export var final_score_format: String = "Final Score: %d"
+@export var fallback_killer_name: String = "something rude"
+@export var death_message_format: String = "You were killed by %s. %s"
+@export var overlay_hidden_color: Color = Color(0, 0, 0, 0)
+@export var overlay_visible_color: Color = Color(0, 0, 0, 0.6)
+@export var card_hidden_modulate: Color = Color(1, 1, 1, 0)
+@export var card_visible_modulate: Color = Color(1, 1, 1, 1)
+@export var content_hidden_modulate: Color = Color(1, 1, 1, 0)
+@export var content_visible_modulate: Color = Color(1, 1, 1, 1)
 
 var _funny_suffixes: Array[String] = [
 	"That was not your best shift.",
@@ -29,11 +39,11 @@ func _ready() -> void:
 
 func show_death_screen(final_score: int, killer_name: String) -> void:
 	if death_title_label:
-		death_title_label.text = "Run Over"
+		death_title_label.text = death_title_text
 	if death_message_label:
 		death_message_label.text = _build_death_message(killer_name)
 	if final_score_label:
-		final_score_label.text = "Final Score: %d" % final_score
+		final_score_label.text = final_score_format % final_score
 
 	visible = true
 	_play_slide_in_animation()
@@ -42,13 +52,13 @@ func show_death_screen(final_score: int, killer_name: String) -> void:
 func _play_slide_in_animation() -> void:
 	# Reset to initial state for animation (card below screen)
 	if color_rect:
-		color_rect.color = Color(0, 0, 0, 0)
+		color_rect.color = overlay_hidden_color
 	if death_card:
-		death_card.modulate = Color(1, 1, 1, 0)
+		death_card.modulate = card_hidden_modulate
 		death_card.anchor_top = 1.2
 		death_card.anchor_bottom = 1.2
 	if death_card_content:
-		death_card_content.modulate = Color(1, 1, 1, 0)
+		death_card_content.modulate = content_hidden_modulate
 
 	# Use Tween for animation (works with pause mode)
 	var tween := create_tween()
@@ -57,24 +67,24 @@ func _play_slide_in_animation() -> void:
 	
 	# Animate ColorRect fade to black
 	if color_rect:
-		tween.tween_property(color_rect, "color", Color(0, 0, 0, 0.6), 0.3)
+		tween.tween_property(color_rect, "color", overlay_visible_color, 0.3)
 	
 	# Animate DeathCard sliding up and fading in
 	if death_card:
 		tween.parallel().tween_property(death_card, "anchor_top", 0.5, 0.5)
 		tween.parallel().tween_property(death_card, "anchor_bottom", 0.5, 0.5)
-		tween.parallel().tween_property(death_card, "modulate", Color(1, 1, 1, 1), 0.5)
+		tween.parallel().tween_property(death_card, "modulate", card_visible_modulate, 0.5)
 	
 	# Also animate content to visible
 	if death_card_content:
-		tween.parallel().tween_property(death_card_content, "modulate", Color(1, 1, 1, 1), 0.5)
+		tween.parallel().tween_property(death_card_content, "modulate", content_visible_modulate, 0.5)
 
 
 func _build_death_message(killer_name: String) -> String:
 	var resolved_killer := killer_name.strip_edges()
 	if resolved_killer.is_empty():
-		resolved_killer = "something rude"
-	return "You were killed by %s. %s" % [resolved_killer, _funny_suffixes[randi() % _funny_suffixes.size()]]
+		resolved_killer = fallback_killer_name
+	return death_message_format % [resolved_killer, _funny_suffixes[randi() % _funny_suffixes.size()]]
 
 
 func _load_death_messages() -> void:

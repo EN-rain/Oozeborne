@@ -1,21 +1,26 @@
 extends CanvasLayer
 
-@onready var health_bar: ProgressBar = $Control/PlayerStats/VBoxContainer/HealtBar
-@onready var xp_bar: ProgressBar = $Control/PlayerStats/VBoxContainer/ManaBar
-@onready var level_label: Label = $Control/PlayerStats/LevelLabel
-@onready var player_name_label: Label = $Control/PlayerStats/PlayerName
-@onready var coin_label: Label = $Control/PlayerStats/CoinDisplay/CoinLabel
-@onready var score_label: Label = $Control/Score
-@onready var mob_count_label: Label = $Control/MobCount
-@onready var round_level_label: Label = $Control/RoundLevelPopup
-@onready var minimap: Control = $Control/Map
-@onready var death_screen: Control = $Death
-@onready var store_button: Button = $Control/Store
-@onready var skill_tree_button: Button = $Control/SkillTree
-@onready var dev_tools_button: Button = $Control/DevTools
-@onready var shop_ui: ShopUI = $ShopUI
-@onready var skill_tree_ui: SkillTreeUI = $SkillTreeUI
-@onready var dev_tools_panel: PanelContainer = $DevToolsPanel
+@onready var health_bar: ProgressBar = %HealtBar
+@onready var xp_bar: ProgressBar = %ManaBar
+@onready var level_label: Label = %LevelLabel
+@onready var player_name_label: Label = %PlayerName
+@onready var coin_label: Label = %CoinLabel
+@onready var score_label: Label = %Score
+@onready var mob_count_label: Label = %MobCount
+@onready var round_level_label: Label = %RoundLevelPopup
+@onready var minimap: Control = %Map
+@onready var death_screen: Control = %Death
+@onready var store_button: Button = %Store
+@onready var skill_tree_button: Button = %SkillTree
+@onready var dev_tools_button: Button = %DevTools
+@onready var shop_ui: ShopUI = %ShopUI
+@onready var skill_tree_ui: SkillTreeUI = %SkillTreeUI
+@onready var dev_tools_panel: PanelContainer = %DevToolsPanel
+@onready var skills_root: Control = %Skills
+@onready var skill_slots_host: HBoxContainer = %SkillSlots
+@onready var active_skill_strip_host: HBoxContainer = %ActiveSkillStrip
+@onready var passive_scroll_host: ScrollContainer = %PassiveScroll
+@onready var passive_strip_host: HBoxContainer = %PassiveStrip
 
 var current_score: int = 0
 var player_ref: CharacterBody2D
@@ -25,6 +30,8 @@ var remote_players: Dictionary = {}  # user_id -> { "pos": Vector2, "ign": Strin
 var _overlay_pause_active: bool = false
 
 var world_size: Vector2 = Vector2(800, 600)
+@export var active_skill_slot_scene: PackedScene
+@export var passive_skill_icon_scene: PackedScene
 @export var player_color: Color = Color.GREEN
 @export var remote_player_color: Color = Color.GREEN  # Same as local player
 @export var slime_color: Color = Color.RED
@@ -41,6 +48,7 @@ var world_size: Vector2 = Vector2(800, 600)
 @export var minimap_world_radius: float = 950.0
 @export var map_bounds_group_name: StringName = &"map_bounds"
 @export var environment_group_name: StringName = &"environment"
+@export var block_input_when_overlay_open: bool = false
 
 const DEFAULT_MINIMAP_BACKGROUND_COLOR := Color(0.04, 0.07, 0.11, 0.88)
 const DEFAULT_MINIMAP_GRID_COLOR := Color(0.55, 0.78, 0.92, 0.14)
@@ -48,6 +56,10 @@ const DEFAULT_MINIMAP_RING_COLOR := Color(0.72, 0.9, 1.0, 0.2)
 const DEFAULT_MINIMAP_OUTLINE_COLOR := Color(0.82, 0.95, 1.0, 0.55)
 
 var _round_popup_tween: Tween
+var _hud_active_icon_nodes: Array[HudActiveSkillSlot] = []
+var _hud_passive_strip: HBoxContainer
+var _hud_passive_signature: String = ""
+var _hud_needs_refresh: bool = true
 
 
 func _queue_minimap_redraw() -> void:
@@ -74,33 +86,22 @@ func _ready():
 	# Connect to coin changes
 	CoinManager.coins_changed.connect(_on_coins_changed)
 	_on_coins_changed(CoinManager.get_coins())
-
-	# Connect store button
-	if store_button and not store_button.pressed.is_connected(_on_store_pressed):
-		store_button.pressed.connect(_on_store_pressed)
-	if skill_tree_button and not skill_tree_button.pressed.is_connected(_on_skill_tree_pressed):
-		skill_tree_button.pressed.connect(_on_skill_tree_pressed)
-	if dev_tools_button and not dev_tools_button.pressed.is_connected(_on_dev_tools_pressed):
-		dev_tools_button.pressed.connect(_on_dev_tools_pressed)
 	
 	if shop_ui:
 		shop_ui.hide()
-		if not shop_ui.closed.is_connected(_on_overlay_closed):
-			shop_ui.closed.connect(_on_overlay_closed)
 	if skill_tree_ui:
 		skill_tree_ui.hide()
-		if not skill_tree_ui.closed.is_connected(_on_overlay_closed):
-			skill_tree_ui.closed.connect(_on_overlay_closed)
 	if dev_tools_panel:
 		dev_tools_panel.hide()
-		if not dev_tools_panel.closed.is_connected(_on_overlay_closed):
-			dev_tools_panel.closed.connect(_on_overlay_closed)
 	if mob_count_label:
 		mob_count_label.text = "Mobs: 0"
 	if round_level_label:
 		round_level_label.visible = false
 		round_level_label.modulate = Color(1, 1, 1, 0)
 		round_level_label.scale = Vector2(0.92, 0.92)
+	_setup_skill_hud()
+	_connect_skill_tree_signals()
+	_refresh_skill_hud()
 
 func _find_map_bounds() -> void:
 	if not is_inside_tree():
@@ -134,6 +135,7 @@ func _process(_delta):
 		return
 	_refresh_minimap_size()
 	_queue_minimap_redraw()
+	_refresh_skill_hud_if_needed()
 
 func set_player(player):
 	if player_ref and is_instance_valid(player_ref) and player_ref.has_node("Health"):
@@ -452,22 +454,133 @@ func _on_overlay_closed() -> void:
 
 
 func _update_overlay_pause() -> void:
-	var should_pause := _should_pause_for_overlay() and _is_overlay_open()
-	if should_pause == _overlay_pause_active:
-		return
-	_overlay_pause_active = should_pause
-	get_tree().paused = _overlay_pause_active
+	_overlay_pause_active = block_input_when_overlay_open and _is_overlay_open()
+
+
+func has_blocking_overlay_open() -> bool:
+	return _overlay_pause_active
 
 
 func _is_overlay_open() -> bool:
 	return (shop_ui != null and shop_ui.visible) or (skill_tree_ui != null and skill_tree_ui.visible) or (dev_tools_panel != null and dev_tools_panel.visible)
 
 
-func _should_pause_for_overlay() -> bool:
-	return not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty()
-
-
 func _safe_color(value: Variant, fallback: Color) -> Color:
 	if value is Color:
 		return value
 	return fallback
+
+
+func _setup_skill_hud() -> void:
+	if skill_slots_host == null or active_skill_strip_host == null:
+		return
+	if active_skill_slot_scene == null:
+		push_warning("[HUD] active_skill_slot_scene is not assigned.")
+		return
+
+	for child in active_skill_strip_host.get_children():
+		child.queue_free()
+
+	_hud_active_icon_nodes.clear()
+	_hud_passive_signature = ""
+
+	for slot_index in range(4):
+		var slot: HudActiveSkillSlot = active_skill_slot_scene.instantiate() as HudActiveSkillSlot
+		slot.set_slot_index(slot_index)
+		active_skill_strip_host.add_child(slot)
+		_hud_active_icon_nodes.append(slot)
+
+	if passive_strip_host != null:
+		_hud_passive_strip = passive_strip_host
+
+func _connect_skill_tree_signals() -> void:
+	var manager: Node = SkillTreeManager
+	if manager == null:
+		return
+	if not manager.sp_changed.is_connected(_on_skill_tree_state_changed):
+		manager.sp_changed.connect(_on_skill_tree_state_changed)
+	if not manager.skill_invested.is_connected(_on_skill_tree_skill_invested):
+		manager.skill_invested.connect(_on_skill_tree_skill_invested)
+	if not manager.state_loaded.is_connected(_on_skill_tree_loaded):
+		manager.state_loaded.connect(_on_skill_tree_loaded)
+
+
+func _refresh_skill_hud() -> void:
+	_hud_needs_refresh = true
+
+func _refresh_skill_hud_if_needed() -> void:
+	var manager: Node = SkillTreeManager
+	var registry: Node = SkillRegistry
+	if manager == null or registry == null or _hud_active_icon_nodes.is_empty():
+		return
+
+	# Always update cooldowns (cheap check)
+	var cooldowns_changed := false
+	for slot_index in range(_hud_active_icon_nodes.size()):
+		var slot_ref: HudActiveSkillSlot = _hud_active_icon_nodes[slot_index]
+		var cooldown_remaining := PlayerSkillManager.get_ability_cooldown_remaining(slot_index)
+		if slot_ref.set_cooldown(cooldown_remaining):
+			cooldowns_changed = true
+
+	# Only do expensive rebuild when needed
+	if not _hud_needs_refresh and not cooldowns_changed:
+		return
+	_hud_needs_refresh = false
+
+	for slot_index in range(_hud_active_icon_nodes.size()):
+		var slot_ref: HudActiveSkillSlot = _hud_active_icon_nodes[slot_index]
+		var skill_id: String = str(manager.call("get_slotted_skill", slot_index))
+		if skill_id.is_empty():
+			slot_ref.set_empty()
+			continue
+
+		slot_ref.set_skill_icon(registry.call("get_skill_icon", skill_id) as Texture2D)
+
+	_refresh_passive_skill_icons(manager, registry)
+
+
+func _refresh_passive_skill_icons(manager, registry) -> void:
+	if _hud_passive_strip == null:
+		return
+	if passive_skill_icon_scene == null:
+		push_warning("[HUD] passive_skill_icon_scene is not assigned.")
+		return
+
+	var passive_skill_ids: Array[String] = []
+	for skill_id_variant in manager.call("get_learned_skill_ids"):
+		var skill_id := str(skill_id_variant)
+		var skill = registry.get_skill(skill_id)
+		if skill == null:
+			continue
+		if skill.skill_type == SkillDefinition.SkillType.STAT or skill.skill_type == SkillDefinition.SkillType.PASSIVE:
+			passive_skill_ids.append(skill_id)
+
+	passive_skill_ids.sort()
+	var signature := "|".join(passive_skill_ids)
+	if signature == _hud_passive_signature:
+		return
+	_hud_passive_signature = signature
+
+	for child in _hud_passive_strip.get_children():
+		child.queue_free()
+
+	for skill_id in passive_skill_ids:
+		var skill: Resource = registry.get_skill(skill_id)
+		var icon_panel: HudPassiveSkillIcon = passive_skill_icon_scene.instantiate() as HudPassiveSkillIcon
+		icon_panel.configure(skill, registry.call("get_skill_icon", skill_id) as Texture2D, skill_id)
+		_hud_passive_strip.add_child(icon_panel)
+
+
+func _on_skill_tree_state_changed(_available: int, _total: int) -> void:
+	_hud_passive_signature = ""
+	_hud_needs_refresh = true
+
+
+func _on_skill_tree_skill_invested(_skill_id: String, _new_level: int) -> void:
+	_hud_passive_signature = ""
+	_hud_needs_refresh = true
+
+
+func _on_skill_tree_loaded(_state: Dictionary) -> void:
+	_hud_passive_signature = ""
+	_hud_needs_refresh = true

@@ -394,3 +394,5 @@ func _update_class_panels(class_id: String) -> void:
 	if is_instance_valid(_talent_cards):
 		for child in _talent_cards.get_children():
 			child.queue_free()
+		_rebuild_talent_cards(panel_data.get("talents", []))
+		_talent_cards.visible = true

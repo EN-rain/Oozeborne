@@ -1,0 +1,94 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/shop_item_card.gd" id="1_shopitemcard"]
+
+[sub_resource type="StyleBoxFlat" id="1_card_panel"]
+bg_color = Color(0.08, 0.06, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.28, 0.45, 0.55)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="2_buy_normal"]
+bg_color = Color(0.15, 0.45, 0.28, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1, 0.35, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="3_buy_disabled"]
+bg_color = Color(0.15, 0.12, 0.2, 0.5)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.16, 0.3, 0.45)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="4_buy_owned"]
+bg_color = Color(0.1, 0.3, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.08, 0.22, 0.14, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="ShopItemCard" type="PanelContainer"]
+custom_minimum_size = Vector2(140, 100)
+theme_override_styles/panel = SubResource("1_card_panel")
+script = ExtResource("1_shopitemcard")
+affordable_button_style = SubResource("2_buy_normal")
+unaffordable_button_style = SubResource("3_buy_disabled")
+owned_button_style = SubResource("4_buy_owned")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+text = "Item"
+
+[node name="EffectLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.6, 0.55, 0.75, 1)
+autowrap_mode = 1
+text = "Effect"
+
+[node name="PriceLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+text = "0 coins"
+
+[node name="BuyButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 25)
+layout_mode = 2
+theme_override_styles/normal = SubResource("2_buy_normal")
+theme_override_styles/disabled = SubResource("3_buy_disabled")
+text = "Buy"
+
+[connection signal="pressed" from="VBox/BuyButton" to="." method="_on_buy_pressed"]

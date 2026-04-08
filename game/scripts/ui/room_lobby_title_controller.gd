@@ -12,7 +12,6 @@ var _host_name_provider: Callable = Callable()
 func setup(host_name_provider: Callable) -> void:
 	_host_name_provider = host_name_provider
 	if is_instance_valid(title_label):
-		title_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		if not title_label.gui_input.is_connected(_on_title_label_gui_input):
 			title_label.gui_input.connect(_on_title_label_gui_input)
 	if is_instance_valid(title_edit):

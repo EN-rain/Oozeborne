@@ -9,6 +9,9 @@ const TYPE_COLORS := {
 	SkillDefinition.SkillType.PASSIVE: Color(0.76, 0.46, 0.92, 1.0),
 	SkillDefinition.SkillType.SPECIAL: Color(0.98, 0.72, 0.28, 1.0),
 }
+const TAB_CONTENT_MIN_WIDTH := 920.0
+
+@export var skill_card_scene: PackedScene
 
 @onready var title_label: Label = %TitleLabel
 @onready var sp_label: Label = %SpLabel
@@ -24,10 +27,11 @@ var _status_timer: Timer
 var _selected_skill_id: String = ""
 var _slot_buttons: Array[Button] = []
 var _skill_card_refs: Dictionary = {}
+var _last_cooldowns: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var _action_bar_dirty: bool = true
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	_status_timer = Timer.new()
 	_status_timer.one_shot = true
 	_status_timer.wait_time = 2.0
@@ -41,12 +45,17 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if visible:
-		_refresh_action_bar()
+		_refresh_action_bar_if_needed()
 
 
 func open() -> void:
+	_action_bar_dirty = true
+	for i in range(4):
+		_last_cooldowns[i] = 0.0
 	_refresh_all()
 	show()
+	if close_button != null:
+		close_button.grab_focus.call_deferred()
 
 
 func close() -> void:
@@ -62,8 +71,6 @@ func _on_close_pressed() -> void:
 
 
 func _connect_signals() -> void:
-	if not close_button.pressed.is_connected(_on_close_pressed):
-		close_button.pressed.connect(_on_close_pressed)
 	var manager = _skill_tree_manager()
 	if manager == null:
 		return
@@ -132,27 +139,34 @@ func _refresh_tabs() -> void:
 
 func _add_tree_tab(tab_name: String, main_class_id: String, tree_key: String) -> void:
 	var root = MarginContainer.new()
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_theme_constant_override("margin_left", 8)
 	root.add_theme_constant_override("margin_top", 8)
 	root.add_theme_constant_override("margin_right", 8)
 	root.add_theme_constant_override("margin_bottom", 8)
 
 	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.custom_minimum_size = Vector2(TAB_CONTENT_MIN_WIDTH, 0.0)
 	scroll.add_child(vbox)
 
 	var tab_info = Label.new()
 	tab_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tab_info.custom_minimum_size = Vector2(TAB_CONTENT_MIN_WIDTH, 0.0)
 	tab_info.text = _build_tab_header_text(tree_key)
 	vbox.add_child(tab_info)
 
 	var grid = GridContainer.new()
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.custom_minimum_size = Vector2(TAB_CONTENT_MIN_WIDTH, 0.0)
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	vbox.add_child(grid)
@@ -178,66 +192,18 @@ func _build_tab_header_text(tree_key: String) -> String:
 
 
 func _create_skill_card(skill, tree_key: String) -> Control:
-	var card = Button.new()
-	card.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	card.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.custom_minimum_size = Vector2(0, 170)
-	card.focus_mode = Control.FOCUS_NONE
+	if skill_card_scene == null:
+		push_warning("[SkillTreeUI] skill_card_scene is not assigned.")
+		return Control.new()
+	var card := skill_card_scene.instantiate() as SkillTreeCard
+	card.configure(skill, tree_key)
 	card.mouse_entered.connect(_show_tooltip.bind(skill.skill_id))
 	card.mouse_exited.connect(_hide_tooltip)
 	card.pressed.connect(_on_skill_card_pressed.bind(skill.skill_id))
-
-	var container = VBoxContainer.new()
-	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	container.add_theme_constant_override("separation", 6)
-	card.add_child(container)
-
-	var top_row = HBoxContainer.new()
-	top_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	container.add_child(top_row)
-
-	var indicator = ColorRect.new()
-	indicator.custom_minimum_size = Vector2(12, 12)
-	indicator.color = TYPE_COLORS.get(skill.skill_type, Color.WHITE)
-	indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_row.add_child(indicator)
-
-	var title = Label.new()
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_row.add_child(title)
-
-	var level_label = Label.new()
-	level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_row.add_child(level_label)
-
-	var desc = Label.new()
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	container.add_child(desc)
-
-	var footer = HBoxContainer.new()
-	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	container.add_child(footer)
-
-	var state_label = Label.new()
-	state_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	footer.add_child(state_label)
-
-	var invest_button = Button.new()
-	invest_button.text = "Invest"
-	invest_button.pressed.connect(_on_invest_pressed.bind(skill.skill_id))
-	footer.add_child(invest_button)
+	card.invest_button.pressed.connect(_on_invest_pressed.bind(skill.skill_id))
 
 	_skill_card_refs[skill.skill_id] = {
 		"card": card,
-		"title": title,
-		"level": level_label,
-		"description": desc,
-		"state": state_label,
-		"invest": invest_button,
 		"tree_key": tree_key,
 	}
 	_refresh_skill_card(skill.skill_id)
@@ -262,25 +228,17 @@ func _refresh_skill_card(skill_id: String) -> void:
 	var unlocked = not is_subclass_tree or bool(manager.call("are_subclasses_unlocked"))
 	var slottable = bool(manager.call("is_skill_available_for_slotting", skill_id))
 
-	var title: Label = refs["title"]
-	var level_label: Label = refs["level"]
-	var desc: Label = refs["description"]
-	var state_label: Label = refs["state"]
-	var invest_button: Button = refs["invest"]
-	var card: Button = refs["card"]
-
-	title.text = skill.display_name
-	level_label.text = "%d / %d" % [level, skill.max_level]
-	desc.text = _summarize_skill(skill, level)
-	state_label.text = _build_skill_state_text(skill, level, slottable, unlocked)
-	invest_button.disabled = is_maxed or not unlocked or int(manager.call("get_sp_available")) <= 0
-	card.disabled = not unlocked
-	card.text = ""
-	var style = _build_card_style(level, unlocked, is_maxed, _selected_skill_id == skill_id)
-	card.add_theme_stylebox_override("normal", style)
-	card.add_theme_stylebox_override("hover", style)
-	card.add_theme_stylebox_override("pressed", style)
-	card.add_theme_stylebox_override("disabled", style)
+	var card: SkillTreeCard = refs["card"]
+	card.refresh_display(
+		_summarize_skill(skill, level),
+		_build_skill_state_text(skill, level, slottable, unlocked),
+		level,
+		skill.max_level,
+		unlocked,
+		is_maxed,
+		_selected_skill_id == skill_id,
+		not is_maxed and unlocked and int(manager.call("get_sp_available")) > 0
+	)
 
 
 func _build_skill_state_text(skill, level: int, slottable: bool, unlocked: bool) -> String:
@@ -293,38 +251,6 @@ func _build_skill_state_text(skill, level: int, slottable: bool, unlocked: bool)
 	if level > 0:
 		return "Learned"
 	return "Unlearned"
-
-
-func _build_card_style(level: int, unlocked: bool, is_maxed: bool, is_selected: bool) -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.content_margin_left = 12
-	style.content_margin_top = 12
-	style.content_margin_right = 12
-	style.content_margin_bottom = 12
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_right = 8
-	style.corner_radius_bottom_left = 8
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	if not unlocked:
-		style.bg_color = Color(0.12, 0.12, 0.14, 0.9)
-		style.border_color = Color(0.28, 0.28, 0.32, 0.7)
-	elif is_maxed:
-		style.bg_color = Color(0.18, 0.2, 0.14, 0.95)
-		style.border_color = Color(0.9, 0.8, 0.3, 0.95)
-	elif is_selected:
-		style.bg_color = Color(0.16, 0.24, 0.34, 0.95)
-		style.border_color = Color(0.45, 0.75, 1.0, 0.95)
-	elif level > 0:
-		style.bg_color = Color(0.12, 0.18, 0.22, 0.95)
-		style.border_color = Color(0.3, 0.55, 0.72, 0.85)
-	else:
-		style.bg_color = Color(0.08, 0.1, 0.14, 0.96)
-		style.border_color = Color(0.2, 0.3, 0.4, 0.7)
-	return style
 
 
 func _summarize_skill(skill, level: int) -> String:
@@ -354,10 +280,26 @@ func _hide_tooltip() -> void:
 
 
 func _refresh_action_bar() -> void:
+	_action_bar_dirty = true
+
+func _refresh_action_bar_if_needed() -> void:
 	var manager = _skill_tree_manager()
 	var registry = _skill_registry()
 	if manager == null:
 		return
+
+	# Check if any cooldowns changed
+	var cooldowns_changed := false
+	for slot_index in range(_slot_buttons.size()):
+		var cooldown := PlayerSkillManager.get_ability_cooldown_remaining(slot_index)
+		if cooldown != _last_cooldowns[slot_index]:
+			_last_cooldowns[slot_index] = cooldown
+			cooldowns_changed = true
+
+	if not _action_bar_dirty and not cooldowns_changed:
+		return
+	_action_bar_dirty = false
+
 	for slot_index in range(_slot_buttons.size()):
 		var button = _slot_buttons[slot_index]
 		var skill_id = str(manager.call("get_slotted_skill", slot_index))
@@ -365,7 +307,7 @@ func _refresh_action_bar() -> void:
 			button.text = "Slot %d\nEmpty" % (slot_index + 1)
 			continue
 		var skill = registry.get_skill(skill_id) if registry != null else null
-		var cooldown = PlayerSkillManager.get_ability_cooldown_remaining(slot_index)
+		var cooldown = _last_cooldowns[slot_index]
 		button.text = "Slot %d\n%s\n%s" % [
 			slot_index + 1,
 			skill.display_name if skill != null else skill_id,
@@ -412,12 +354,12 @@ func _on_action_slot_pressed(slot_index: int) -> void:
 			_selected_skill_id = ""
 			for key in _skill_card_refs.keys():
 				_refresh_skill_card(str(key))
-			_refresh_action_bar()
+			_action_bar_dirty = true
 		return
 	if not str(manager.call("get_slotted_skill", slot_index)).is_empty():
 		manager.call("clear_slot", slot_index)
 		_show_status("Cleared slot %d." % (slot_index + 1), Color(1, 0.8, 0.55, 1.0))
-	_refresh_action_bar()
+	_action_bar_dirty = true
 
 
 func _show_status(message: String, color: Color) -> void:
@@ -440,7 +382,7 @@ func _on_skill_invested(skill_id: String, _new_level: int) -> void:
 	_refresh_sp_label()
 	if _skill_card_refs.has(skill_id):
 		_refresh_skill_card(skill_id)
-	_refresh_action_bar()
+	_action_bar_dirty = true
 
 
 func _on_subclasses_unlocked(_main_class: String) -> void:
@@ -449,8 +391,8 @@ func _on_subclasses_unlocked(_main_class: String) -> void:
 
 
 func _on_subclass_locked(subclass_key: String, reason: String) -> void:
-	var name = ClassManager.class_id_to_display_name(subclass_key)
-	_show_status("%s reached its 30 SP cap." % name if reason == "subclass_cap_reached" else "%s is still locked." % name, Color(1, 0.55, 0.45, 1.0))
+	var class_display_name := ClassManager.class_id_to_display_name(subclass_key)
+	_show_status("%s reached its 30 SP cap." % class_display_name if reason == "subclass_cap_reached" else "%s is still locked." % class_display_name, Color(1, 0.55, 0.45, 1.0))
 
 
 func _on_insufficient_sp(required: int, available: int) -> void:
@@ -463,9 +405,9 @@ func _on_skill_not_learned(skill_id: String) -> void:
 	_show_status("%s is not available for slotting." % (skill.display_name if skill != null else skill_id), Color(1, 0.55, 0.45, 1.0))
 
 
-func _skill_tree_manager():
-	return get_tree().root.get_node_or_null("SkillTreeManager")
+func _skill_tree_manager() -> Node:
+	return SkillTreeManager
 
 
-func _skill_registry():
-	return get_tree().root.get_node_or_null("SkillRegistry")
+func _skill_registry() -> Node:
+	return SkillRegistry

@@ -1,6 +1,17 @@
 extends Node
 
 const SKILL_ROOT := "res://resources/skills"
+const SKILL_ICON_ROOT := "res://assets/class_icons"
+const SKILL_ICON_ALIASES := {
+	"tank_main_fortify_stat": "fortification",
+	"dps_assassin_shadow_step_ability": "shadow_teleport",
+	"dps_mage_meteor_shower_ability": "meteor_storm",
+	"controller_chronomancer_slow_field_ability": "time_fracture",
+}
+const SKILL_ICON_FALLBACKS := {
+	"dps_ranger_trap_master_ability": "ranger_icon",
+	"dps_ranger_trap_network_special": "ranger_icon",
+}
 
 var _skills_by_id: Dictionary = {}
 var _skills_by_class: Dictionary = {}
@@ -47,6 +58,41 @@ func get_skills_for_tree(main_class: String, tree_key: String) -> Array:
 
 func get_skill_path_info(skill_id: String) -> Dictionary:
 	return (_skill_path_info.get(skill_id, {}) as Dictionary).duplicate(true)
+
+
+func get_skill_icon(skill_id: String) -> Texture2D:
+	var resolved_skill_id := skill_id.strip_edges()
+	if resolved_skill_id.is_empty():
+		return null
+
+	var skill = get_skill(resolved_skill_id)
+	if skill != null and skill.icon != null:
+		return skill.icon
+
+	var info := get_skill_path_info(resolved_skill_id)
+	if info.is_empty():
+		return null
+
+	var folder_name := str(info.get("tree_key", ""))
+	if folder_name == "main":
+		folder_name = str(info.get("main_class", ""))
+	if folder_name.is_empty():
+		return null
+
+	var icon_base := _resolve_icon_base_name(resolved_skill_id)
+	var icon_path := "%s/%s/%s.png" % [SKILL_ICON_ROOT, folder_name, icon_base]
+	if not ResourceLoader.exists(icon_path):
+		var fallback_base := str(SKILL_ICON_FALLBACKS.get(resolved_skill_id, ""))
+		if fallback_base.is_empty():
+			fallback_base = "%s_icon" % folder_name
+		icon_path = "%s/%s/%s.png" % [SKILL_ICON_ROOT, folder_name, fallback_base]
+		if not ResourceLoader.exists(icon_path):
+			return null
+
+	var texture := load(icon_path) as Texture2D
+	if skill != null:
+		skill.icon = texture
+	return texture
 
 
 func all_skill_ids() -> PackedStringArray:
@@ -118,3 +164,17 @@ func _parse_skill_path(resource_path: String) -> Dictionary:
 		"tree_key": segments[1],
 		"resource_path": resource_path,
 	}
+
+
+func _resolve_icon_base_name(skill_id: String) -> String:
+	if SKILL_ICON_ALIASES.has(skill_id):
+		return str(SKILL_ICON_ALIASES[skill_id])
+
+	var segments := skill_id.split("_", false)
+	if segments.size() <= 3:
+		return skill_id
+
+	var parts: PackedStringArray = []
+	for index in range(2, segments.size() - 1):
+		parts.append(segments[index])
+	return "_".join(parts)

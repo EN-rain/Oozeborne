@@ -132,6 +132,10 @@ func _physics_process(delta):
 	if is_death_sequence_active:
 		velocity = Vector2.ZERO
 		return
+	if _is_hud_blocking_input():
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	
 	var input_dir := Vector2.ZERO
 	
@@ -180,12 +184,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if is_death_sequence_active:
 		return
+	if _is_hud_blocking_input():
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if not mouse_event.pressed:
 			return
 
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			if _is_pointer_over_ui():
+				return
 			start_basic_attack()
 			return
 
@@ -198,6 +207,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func start_basic_attack():
 	if is_death_sequence_active:
+		return
+	if _is_hud_blocking_input():
+		return
+	if get_tree() != null and get_tree().paused:
 		return
 	var skill_manager := _get_player_skill_manager()
 	if skill_manager != null:
@@ -242,9 +255,30 @@ func _apply_camera_zoom(delta_zoom: float) -> void:
 func start_dash(dir):
 	if is_death_sequence_active:
 		return
+	if _is_hud_blocking_input():
+		return
 	var skill_manager := _get_player_skill_manager()
 	if skill_manager != null:
 		skill_manager.request_dash(self, dir)
+
+
+func _get_hud() -> Node:
+	var scene_tree := get_tree()
+	if scene_tree == null:
+		return null
+	var current_scene := scene_tree.current_scene
+	if current_scene == null:
+		return null
+	return current_scene.get_node_or_null("HUD")
+
+
+func _is_hud_blocking_input() -> bool:
+	var hud := _get_hud()
+	return hud != null and hud.has_method("has_blocking_overlay_open") and bool(hud.call("has_blocking_overlay_open"))
+
+
+func _is_pointer_over_ui() -> bool:
+	return get_viewport().gui_get_hovered_control() != null
 
 
 func perform_dash(dir):
