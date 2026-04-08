@@ -26,6 +26,8 @@ MultiplayerUtils="*res://scripts/globals/multiplayer_utils.gd"
 PlayerSkillManager="*res://scripts/globals/player_skill_manager.gd"
 StatusEffectManager="*res://scripts/globals/status_effect_manager.gd"
 LevelSystem="*res://scripts/globals/level_system.gd"
+SkillRegistry="*res://scripts/globals/skill_registry.gd"
+SkillTreeManager="*res://scripts/globals/skill_tree_manager.gd"
 DamageNumbers="*res://scenes/autoload/damage_numbers.tscn"
 CoinManager="*res://scenes/autoload/coin_manager.tscn"
 ShopManager="*res://scripts/globals/shop_manager.gd"
@@ -35,9 +37,8 @@ McpInteractionServer="*res://scripts/globals/mcp_interaction_server.gd"
 
 [display]
 
-window/size/viewport_width=1600
-window/size/viewport_height=900
-window/size/borderless=true
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 
 [editor_plugins]
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_main_fortify_special"
+display_name = "Fortify"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Gain 20% damage reduction, taunt 4m. 14s CD, 3s duration\nInitial: 20% / 4m / 3s\nPer level: +5% / +1m / +0.25s\nMax: 40% / 8m / 4s"
+value_per_level = "+5% / +1m / +0.25s"

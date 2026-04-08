@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_hawk_strike_ability"
+display_name = "Hawk Strike"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Summon hawk to dive at target within 15m. Deal 60-100 damage + 0.5-1.5s stun\nInitial: 60 dmg / 0.5s\nPer level: +10 dmg / +0.25s\nMax: 100 dmg / 1.5s"
+value_per_level = "+10 dmg / +0.25s"

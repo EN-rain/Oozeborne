@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_main_resilience_stat"
+display_name = "Resilience"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase ally defense aura percentage within 8m\nInitial: +3% Defense\nPer level: +3% Defense\nMax: +15% Defense"
+value_per_level = "+3% Defense"

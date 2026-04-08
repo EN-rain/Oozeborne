@@ -8,31 +8,18 @@ signal round_changed(new_round: int, profile: Dictionary)
 signal mob_scaled(mob: Node, profile: Dictionary)
 
 @export var starting_round: int = 1
-@export var round_duration_sec: float = 45.0
-@export var health_growth_per_round: float = 0.25
-@export var damage_growth_per_round: float = 0.12
-@export var speed_growth_per_round: float = 0.04
-@export var xp_growth_per_round: float = 0.10
+@export var health_growth_per_round: float = 0.12
+@export var damage_growth_per_round: float = 0.08
+@export var speed_growth_per_round: float = 0.02
+@export var xp_growth_per_round: float = 0.08
 
 var current_round: int = 1
-var elapsed_time_sec: float = 0.0
 
 var _tracked_mobs: Array[Node] = []
 
 
 func _ready() -> void:
 	current_round = max(1, starting_round)
-	set_process(true)
-
-
-func _process(delta: float) -> void:
-	elapsed_time_sec += delta
-	if round_duration_sec <= 0.0:
-		return
-
-	var target_round := starting_round + int(floor(elapsed_time_sec / round_duration_sec))
-	if target_round != current_round:
-		set_round(target_round)
 
 
 func set_round(new_round: int) -> void:
@@ -51,6 +38,10 @@ func get_round_profile(round_number: int = current_round) -> Dictionary:
 	return {
 		"round": round_number,
 		"mob_level": round_number,
+		"health_growth_pct": int(round(health_growth_per_round * 100.0)),
+		"damage_growth_pct": int(round(damage_growth_per_round * 100.0)),
+		"speed_growth_pct": int(round(speed_growth_per_round * 100.0)),
+		"xp_growth_pct": int(round(xp_growth_per_round * 100.0)),
 		"health_multiplier": pow(1.0 + health_growth_per_round, round_offset),
 		"damage_multiplier": pow(1.0 + damage_growth_per_round, round_offset),
 		"speed_multiplier": pow(1.0 + speed_growth_per_round, round_offset),

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_spell_parry_ability"
+display_name = "Spell Parry"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Parry next attack within 2s, converting it to 20-80 magic damage burst. 10s CD\nInitial: 20 damage / 2s\nPer level: +15 damage / +0s\nMax: 80 damage / 2s"
+value_per_level = "+15 damage / +0s"

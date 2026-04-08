@@ -56,6 +56,7 @@ func _ready():
 	_apply_slime_size_tuning()
 	_configure_dash_particles()
 	_capture_original_slime_shader_colors()
+	_apply_slime_effect_colors()
 	player_sprite.animation_finished.connect(_on_animation_finished)
 	hit_stun_timer.timeout.connect(_on_hit_stun_timeout)
 	health.died.connect(_on_player_died)
@@ -213,6 +214,8 @@ func perform_basic_attack():
 	slash.global_position = global_position + dir * 12
 	slash.rotation = dir.angle()
 	slash.set_damage(attack_damage)
+	if slash.has_method("set_slash_color"):
+		slash.set_slash_color(get_slash_effect_color())
 	
 	# Sync attack to other players
 	var main = get_tree().current_scene
@@ -225,6 +228,8 @@ func emit_attack_particles_at(world_pos: Vector2, rotation_angle: float) -> void
 	get_tree().current_scene.add_child(slash)
 	slash.global_position = world_pos
 	slash.rotation = rotation_angle
+	if slash.has_method("set_slash_color"):
+		slash.set_slash_color(get_slash_effect_color())
 
 
 func _apply_camera_zoom(delta_zoom: float) -> void:
@@ -381,6 +386,7 @@ func _on_death_sequence_finished(killer_name: String) -> void:
 
 
 func _exit_tree() -> void:
+	LevelSystem.unregister_player(self)
 	if is_local_player:
 		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
@@ -418,6 +424,32 @@ func _capture_original_slime_shader_colors() -> void:
 		"eye_highlight_color"
 	]:
 		_original_slime_shader_colors[parameter_name] = shader_material.get_shader_parameter(parameter_name)
+
+
+func _apply_slime_effect_colors() -> void:
+	if damage_particles != null:
+		damage_particles.color = get_explosion_effect_color()
+
+
+func get_slime_effect_palette() -> Dictionary:
+	var fallback_primary := Color(0.95, 0.95, 1.0, 1.0)
+	var fallback_secondary := Color(0.75, 0.85, 1.0, 1.0)
+	return {
+		"primary": _original_slime_shader_colors.get("mid_color", fallback_primary),
+		"secondary": _original_slime_shader_colors.get("highlight_color", fallback_secondary),
+		"outline": _original_slime_shader_colors.get("outline_color", Color(0.1, 0.1, 0.1, 1.0))
+	}
+
+
+func get_slash_effect_color() -> Color:
+	return get_slime_effect_palette().get("secondary", Color.WHITE)
+
+
+func get_explosion_effect_color() -> Color:
+	var palette := get_slime_effect_palette()
+	var primary: Color = palette.get("primary", Color.WHITE)
+	var secondary: Color = palette.get("secondary", Color.WHITE)
+	return primary.lerp(secondary, 0.35)
 
 
 func _apply_white_hit_flash() -> void:

@@ -1,10 +1,10 @@
 extends Node2D
 
-const CLASS_MANAGER_SCRIPT := preload("res://scripts/globals/class_manager.gd")
-
 @onready var player = $Player
 @onready var ui = $HUD
 @onready var spawn_point: Marker2D = %SpawnPoint
+@onready var _subclass_overlay_layer: CanvasLayer = %SubclassOverlayLayer
+@onready var _subclass_overlay_choices: VBoxContainer = %SubclassChoicesVBox
 
 @export var player_scene: PackedScene
 
@@ -21,8 +21,7 @@ const DEBUG_STATS_LABEL_NODE_PATH := "Control/DebugStatsLabel"
 
 var _solo_class_selection_ui: ClassSelectionUI = null
 var _solo_class_locked: bool = false
-var _subclass_overlay_layer: CanvasLayer = null
-var _subclass_overlay_panel: PanelContainer = null
+var _starting_round_transition: bool = false
 
 # FPS/Ping display
 var _fps_label: Label
@@ -71,6 +70,8 @@ func _ready():
 	mob_spawner.set_round_manager(round_manager)
 	mob_spawner.mob_spawned.connect(_on_mob_spawned)
 	mob_spawner.mob_died.connect(_on_mob_died)
+	mob_spawner.active_mob_count_changed.connect(_on_active_mob_count_changed)
+	mob_spawner.round_cleared.connect(_on_round_cleared)
 	add_child(mob_spawner)
 	
 	# Create FPS/Ping display
@@ -95,7 +96,7 @@ func _ready():
 	if _should_show_solo_class_selection():
 		_show_solo_class_selection_overlay()
 	else:
-		mob_spawner.spawn_initial_mobs()
+		call_deferred("_start_round", round_manager.current_round, false)
 
 	if not LevelSystem.level_up.is_connected(_on_level_up):
 		LevelSystem.level_up.connect(_on_level_up)
@@ -109,6 +110,7 @@ func _bind_local_player(target_player: Node) -> void:
 	call_deferred("_setup_player_camera")
 	if mob_spawner != null:
 		mob_spawner.initialize(self, player)
+		ui.set_mob_spawner(mob_spawner)
 	if MultiplayerManager.socket:
 		MultiplayerUtils.set_local_player(player)
 
@@ -212,7 +214,7 @@ func _start_initial_mob_spawns() -> void:
 		return
 	_setup_player_camera()
 	mob_spawner.initialize(self, player)
-	mob_spawner.spawn_initial_mobs()
+	call_deferred("_start_round", round_manager.current_round, false)
 
 func _create_fps_display():
 	_fps_label = ui.get_node_or_null(DEBUG_STATS_LABEL_NODE_PATH) as Label
@@ -333,12 +335,20 @@ func _on_match_state(match_state):
 			# Someone requested player info, send ours
 			MultiplayerUtils.send_player_info(MultiplayerManager.player_ign, MultiplayerManager.is_host)
 
+		"skill_stat_update":
+			var stat_sender_id := str(data.get("user_id", ""))
+			if stat_sender_id.is_empty() or MultiplayerUtils.is_local_player(stat_sender_id):
+				return
+			var skill_tree_manager = get_tree().root.get_node_or_null("SkillTreeManager")
+			if skill_tree_manager != null:
+				skill_tree_manager.call("handle_remote_skill_stat_update", stat_sender_id, data.get("stats", {}))
+
 		"subclass_selected":
 			var subclass_sender_id := str(data.get("user_id", ""))
 			if subclass_sender_id.is_empty() or MultiplayerUtils.is_local_player(subclass_sender_id):
 				return
 			var subclass_id := str(data.get("subclass_id", ""))
-			var subclass_res := CLASS_MANAGER_SCRIPT.create_class_instance(subclass_id)
+			var subclass_res := ClassManager.create_class_instance(subclass_id)
 			if subclass_res != null:
 				MultiplayerManager.set_player_subclass(subclass_sender_id, subclass_res)
 				if MultiplayerUtils.has_remote_player(subclass_sender_id):
@@ -498,6 +508,50 @@ func _on_mob_died(_mob, score_value: int, xp_value: int):
 		LevelSystem.add_xp(player, xp_value)
 		print("[Main] Awarded %d XP to player" % xp_value)
 
+
+func _on_active_mob_count_changed(current_alive: int, total_in_round: int) -> void:
+	if ui != null and ui.has_method("update_mob_counter"):
+		ui.update_mob_counter(current_alive, total_in_round)
+
+
+func _on_round_cleared(round_number: int) -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+	call_deferred("_start_next_round_after_clear", round_number)
+
+
+func _start_next_round_after_clear(round_number: int) -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+	await _start_round(round_number + 1, true)
+
+
+func _start_round(round_number: int, show_popup: bool) -> void:
+	if _starting_round_transition or mob_spawner == null or not is_inside_tree() or is_queued_for_deletion():
+		return
+	_starting_round_transition = true
+
+	round_manager.set_round(round_number)
+	var profile := round_manager.get_round_profile(round_number)
+	var added_mobs := mob_spawner.get_round_added_mobs(round_number)
+	var total_mobs := mob_spawner.get_round_total_mobs(round_number)
+
+	if ui != null:
+		ui.update_mob_counter(total_mobs, total_mobs)
+		if show_popup and ui.has_method("show_round_level"):
+			ui.show_round_level(round_number, added_mobs, profile)
+			var tree := get_tree()
+			if tree == null:
+				_starting_round_transition = false
+				return
+			await tree.create_timer(1.7).timeout
+			if not is_inside_tree() or is_queued_for_deletion() or mob_spawner == null:
+				_starting_round_transition = false
+				return
+
+	mob_spawner.start_round(round_number)
+	_starting_round_transition = false
+
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
 	print("[Main] Player joined signal received for: ", username)
 	_spawn_player_for_user(user_id)
@@ -523,10 +577,10 @@ func _maybe_prompt_subclass_selection() -> void:
 		return
 	if LevelSystem.get_level(player) < 10:
 		return
-	if _subclass_overlay_layer != null and is_instance_valid(_subclass_overlay_layer):
+	if _subclass_overlay_layer.visible:
 		return
 
-	var choices := CLASS_MANAGER_SCRIPT.get_subclasses_for_main_class(MultiplayerManager.player_class)
+	var choices: Array[PlayerClass] = ClassManager.get_subclasses_for_main_class(MultiplayerManager.player_class)
 	if choices.is_empty():
 		return
 
@@ -534,48 +588,7 @@ func _maybe_prompt_subclass_selection() -> void:
 
 
 func _show_subclass_selection_overlay(choices: Array[PlayerClass]) -> void:
-	_subclass_overlay_layer = CanvasLayer.new()
-	_subclass_overlay_layer.layer = 90
-	add_child(_subclass_overlay_layer)
-
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_STOP
-	_subclass_overlay_layer.add_child(root)
-
-	var backdrop := ColorRect.new()
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0, 0, 0, 0.5)
-	root.add_child(backdrop)
-
-	_subclass_overlay_panel = PanelContainer.new()
-	_subclass_overlay_panel.custom_minimum_size = Vector2(520, 360)
-	_subclass_overlay_panel.position = Vector2(
-		(DisplayServer.window_get_size().x - _subclass_overlay_panel.custom_minimum_size.x) * 0.5,
-		(DisplayServer.window_get_size().y - _subclass_overlay_panel.custom_minimum_size.y) * 0.5
-	)
-	root.add_child(_subclass_overlay_panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 16)
-	_subclass_overlay_panel.add_child(margin)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
-	margin.add_child(vbox)
-
-	var title := Label.new()
-	title.text = "Subclass Unlocked (Level 10)"
-	title.add_theme_font_size_override("font_size", 24)
-	vbox.add_child(title)
-
-	var subtitle := Label.new()
-	subtitle.text = "Choose one subclass. This choice is permanent for this run."
-	subtitle.add_theme_font_size_override("font_size", 14)
-	vbox.add_child(subtitle)
+	_clear_subclass_choice_buttons()
 
 	for subclass in choices:
 		var button := Button.new()
@@ -583,7 +596,9 @@ func _show_subclass_selection_overlay(choices: Array[PlayerClass]) -> void:
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.custom_minimum_size = Vector2(0, 54)
 		button.pressed.connect(_on_subclass_choice_selected.bind(subclass))
-		vbox.add_child(button)
+		_subclass_overlay_choices.add_child(button)
+
+	_subclass_overlay_layer.visible = true
 
 
 func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
@@ -599,19 +614,20 @@ func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
 		MultiplayerManager.send_match_state({
 			"type": "subclass_selected",
 			"user_id": MultiplayerManager.session.user_id,
-			"subclass_id": CLASS_MANAGER_SCRIPT.get_class_id(subclass)
+			"subclass_id": ClassManager.get_class_id(subclass)
 		})
 	_clear_subclass_selection_overlay()
 	print("[Main] Subclass selected: ", subclass.display_name)
 
 
 func _clear_subclass_selection_overlay() -> void:
-	if _subclass_overlay_panel != null and is_instance_valid(_subclass_overlay_panel):
-		_subclass_overlay_panel.queue_free()
-	_subclass_overlay_panel = null
-	if _subclass_overlay_layer != null and is_instance_valid(_subclass_overlay_layer):
-		_subclass_overlay_layer.queue_free()
-	_subclass_overlay_layer = null
+	_clear_subclass_choice_buttons()
+	_subclass_overlay_layer.visible = false
+
+
+func _clear_subclass_choice_buttons() -> void:
+	for child in _subclass_overlay_choices.get_children():
+		child.queue_free()
 
 
 ## Handle server state snapshot (op code 2)

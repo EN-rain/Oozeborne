@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_control_field_special"
+display_name = "Control Field"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "6m zone: 10% slow, -5% enemy dmg, 3s. 14s CD\nInitial: 10% / -5% / 3s\nPer level: +5% / -2.5% / +0.75s\nMax: 30% / -15% / 6s"
+value_per_level = "+5% / -2.5% / +0.75s"

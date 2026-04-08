@@ -3,57 +3,40 @@ class_name ShopUI
 
 ## ShopUI - Shop panel for purchasing items
 
+signal closed
+
 @onready var close_button: Button = %CloseButton
 @onready var tabs: TabContainer = %TabContainer
 @onready var coins_label: Label = %CoinsLabel
-
-# Category grids
-var consumables_grid: GridContainer
-var upgrades_grid: GridContainer
-var equipment_grid: GridContainer
-var special_grid: GridContainer
+@onready var consumables_grid: GridContainer = %ConsumablesGrid
+@onready var upgrades_grid: GridContainer = %UpgradesGrid
+@onready var equipment_grid: GridContainer = %EquipmentGrid
+@onready var special_grid: GridContainer = %SpecialGrid
 
 
 func _ready():
-	_setup_ui()
+	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	_connect_signals()
 	_refresh_shop()
 
 
-func _setup_ui():
-	# Create tab content
-	for i in range(tabs.get_child_count()):
-		var child = tabs.get_child(i)
-		match child.name:
-			"Consumables":
-				consumables_grid = _create_item_grid(child)
-			"Upgrades":
-				upgrades_grid = _create_item_grid(child)
-			"Equipment":
-				equipment_grid = _create_item_grid(child)
-			"Special":
-				special_grid = _create_item_grid(child)
-
-
-func _create_item_grid(parent: Control) -> GridContainer:
-	var grid = GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	parent.add_child(grid)
-	return grid
-
-
 func _connect_signals():
-	CoinManager.coins_changed.connect(_on_coins_changed)
-	ShopManager.item_purchased.connect(_on_item_purchased)
+	var coin_manager := _coin_manager()
+	if coin_manager != null and not coin_manager.coins_changed.is_connected(_on_coins_changed):
+		coin_manager.coins_changed.connect(_on_coins_changed)
+	var shop_manager := _shop_manager()
+	if shop_manager != null and not shop_manager.item_purchased.is_connected(_on_item_purchased):
+		shop_manager.item_purchased.connect(_on_item_purchased)
 
 
 func _refresh_shop():
-	_populate_grid(consumables_grid, ShopManager.consumables)
-	_populate_grid(upgrades_grid, ShopManager.upgrades)
-	_populate_grid(equipment_grid, ShopManager.equipment)
-	_populate_grid(special_grid, ShopManager.special_items)
+	var shop_manager := _shop_manager()
+	if shop_manager == null:
+		return
+	_populate_grid(consumables_grid, shop_manager.consumables)
+	_populate_grid(upgrades_grid, shop_manager.upgrades)
+	_populate_grid(equipment_grid, shop_manager.equipment)
+	_populate_grid(special_grid, shop_manager.special_items)
 	_update_coins_display()
 
 
@@ -130,7 +113,8 @@ func _create_item_card(item: ShopItem) -> Control:
 	buy_btn.add_theme_stylebox_override("normal", btn_normal)
 	
 	# Disable if can't afford
-	if not item.can_afford(CoinManager.get_coins()):
+	var coin_manager := _coin_manager()
+	if coin_manager != null and not item.can_afford(coin_manager.get_coins()):
 		buy_btn.disabled = true
 		btn_normal.bg_color = Color(0.15, 0.12, 0.2, 0.5)
 	
@@ -147,7 +131,9 @@ func _create_item_card(item: ShopItem) -> Control:
 
 
 func _on_buy_pressed(item: ShopItem):
-	ShopManager.purchase_item(item)
+	var shop_manager := _shop_manager()
+	if shop_manager != null:
+		shop_manager.purchase_item(item)
 
 
 func _on_item_purchased(_item: ShopItem, success: bool):
@@ -161,16 +147,39 @@ func _on_coins_changed(_total: int):
 
 
 func _update_coins_display():
-	if coins_label:
-		coins_label.text = "Coins: %d" % CoinManager.get_coins()
+	if not is_instance_valid(coins_label):
+		return
+	var coin_manager := _coin_manager()
+	coins_label.text = "Coins: %d" % (coin_manager.get_coins() if coin_manager != null else 0)
 
 
 func _on_close_pressed():
-	hide()
-	ShopManager.notify_shop_closed()
+	close()
 
 
 func open():
 	show()
 	_refresh_shop()
-	ShopManager.notify_shop_opened()
+	var shop_manager := _shop_manager()
+	if shop_manager != null:
+		shop_manager.notify_shop_opened()
+
+
+func close():
+	if not visible:
+		return
+	hide()
+	var shop_manager := _shop_manager()
+	if shop_manager != null:
+		shop_manager.notify_shop_closed()
+	closed.emit()
+
+
+func _coin_manager() -> Node:
+	var tree := get_tree()
+	return tree.root.get_node_or_null("CoinManager") if tree != null and tree.root != null else null
+
+
+func _shop_manager() -> Node:
+	var tree := get_tree()
+	return tree.root.get_node_or_null("ShopManager") if tree != null and tree.root != null else null

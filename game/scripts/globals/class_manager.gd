@@ -74,6 +74,7 @@ const DPS_CLASS_IDS: Array[String] = ["dps", "assassin", "ranger", "mage", "samu
 const SUPPORT_CLASS_IDS: Array[String] = ["support", "cleric", "bard", "alchemist", "necromancer"]
 const HYBRID_CLASS_IDS: Array[String] = ["hybrid", "spellblade", "shadow_knight", "monk"]
 const CONTROLLER_CLASS_IDS: Array[String] = ["controller", "chronomancer", "warden", "hexbinder", "stormcaller"]
+const CLASS_ICON_ROOT := "res://assets/class_icons"
 
 const MAIN_TO_SUBCLASS_IDS := {
 	"tank": ["guardian", "berserker", "paladin"],
@@ -150,6 +151,7 @@ func _load_all_classes() -> void:
 			continue
 		var instance: PlayerClass = script.new()
 		_apply_class_identity(instance, class_id)
+		_assign_class_icon(instance, class_id)
 		_cached_all_classes.append(instance)
 		_cached_class_map[class_id] = instance
 		var script_name := str(script.get_global_name())
@@ -166,6 +168,17 @@ func _load_all_classes() -> void:
 	for class_id in SUBCLASS_IDS:
 		if _cached_class_map.has(class_id):
 			_cached_subclasses.append(_cached_class_map[class_id])
+
+
+func _assign_class_icon(instance: PlayerClass, class_id: String) -> void:
+	if instance == null or class_id.is_empty():
+		return
+
+	var icon_path := "%s/%s/icon.png" % [CLASS_ICON_ROOT, class_id]
+	if not ResourceLoader.exists(icon_path):
+		return
+
+	instance.icon = load(icon_path) as Texture2D
 
 
 static func _initialize() -> void:

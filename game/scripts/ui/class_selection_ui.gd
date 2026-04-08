@@ -4,9 +4,6 @@ class_name ClassSelectionUI
 ## Main-class-only selection screen.
 ## Subclass is chosen later in-game at level 10.
 
-const CLASS_MANAGER_SCRIPT := preload("res://scripts/globals/class_manager.gd")
-
-
 signal class_selected(p_class, sub_class)
 
 
@@ -46,7 +43,7 @@ func _ready() -> void:
 
 
 func _load_available_classes() -> void:
-	available_main_classes = CLASS_MANAGER_SCRIPT.get_main_classes()
+	available_main_classes = ClassManager.get_main_classes()
 	if available_main_classes.size() > max_main_class_options:
 		available_main_classes = available_main_classes.slice(0, max_main_class_options)
 
@@ -135,7 +132,7 @@ func _populate_subclass_preview(main_class: PlayerClass) -> void:
 	if main_class == null:
 		return
 
-	var subclasses := CLASS_MANAGER_SCRIPT.get_subclasses_for_main_class(main_class)
+	var subclasses := ClassManager.get_subclasses_for_main_class(main_class)
 	for subclass in subclasses:
 		var card := Label.new()
 		card.custom_minimum_size = Vector2(0, 42)

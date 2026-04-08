@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_burst_window_special"
+display_name = "Burst Window"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "+10% attack, +5% crit for 2s. 12s CD\nInitial: +10% / +5% / 2s\nPer level: +5% / +3.75% / +0.5s\nMax: +30% / +20% / 4s"
+value_per_level = "+5% / +3.75% / +0.5s"

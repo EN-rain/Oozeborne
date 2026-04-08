@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_rewind_ability"
+display_name = "Rewind"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Rewind position to 1-3s ago, resetting damage taken in that window. 35s CD\nInitial: 1s rewind\nPer level: +0.5s\nMax: 3s rewind"
+value_per_level = "+0.5s"

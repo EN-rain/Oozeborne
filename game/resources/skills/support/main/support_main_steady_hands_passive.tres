@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_main_steady_hands_passive"
+display_name = "Steady Hands"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Reduce all healing ability cooldowns by 3-15% and improve regen by 5-25%\nInitial: -3% CD / +5% regen\nPer level: -3% CD / +5% regen\nMax: -15% CD / +25% regen"
+value_per_level = "-3% CD / +5% regen"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_volley_ability"
+display_name = "Volley"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Fire 3-7 arrows in 60° cone, each dealing 15-25 damage. 8s cooldown\nInitial: 3 arrows / 15 dmg\nPer level: +1 arrow / +2.5 dmg\nMax: 7 arrows / 25 dmg"
+value_per_level = "+1 arrow / +2.5 dmg"

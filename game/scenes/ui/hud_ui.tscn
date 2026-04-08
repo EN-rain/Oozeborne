@@ -5,6 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://byney87c1siuq" path="res://scenes/ui/class_selection.tscn" id="3_classselect"]
 [ext_resource type="PackedScene" uid="uid://shopui001" path="res://scenes/ui/shop.tscn" id="4_shop"]
 [ext_resource type="Script" uid="uid://15tjehs4i4i6" path="res://scripts/ui/death_overlay.gd" id="5_deathoverlay"]
+[ext_resource type="PackedScene" path="res://scenes/ui/skill_tree_ui.tscn" id="6_skilltree"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dev_tools_panel.tscn" id="7_devtools"]
 
 [sub_resource type="StyleBoxFlat" id="hp_bg"]
 content_margin_left = 3.0
@@ -321,6 +323,45 @@ theme_override_font_sizes/font_size = 26
 text = "Score: 0"
 horizontal_alignment = 1
 
+[node name="MobCount" type="Label" parent="Control" unique_id=287511850]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 52.0
+offset_right = 120.0
+offset_bottom = 82.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "Mobs: 0"
+horizontal_alignment = 1
+
+[node name="RoundLevelPopup" type="Label" parent="Control" unique_id=287511851]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.04, 0.02, 0.95)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
+text = "Round 2\n+10 Mobs"
+horizontal_alignment = 1
+vertical_alignment = 1
 [node name="Map" type="Control" parent="Control" unique_id=206952806]
 custom_minimum_size = Vector2(212, 169)
 layout_mode = 1
@@ -382,6 +423,29 @@ offset_top = -35.0
 offset_right = 74.0
 offset_bottom = 35.0
 grow_vertical = 2
+text = "Shop"
+
+[node name="SkillTree" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = 45.0
+offset_right = 104.0
+offset_bottom = 115.0
+grow_vertical = 2
+text = "Skill Tree"
+
+[node name="DevTools" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = 125.0
+offset_right = 104.0
+offset_bottom = 155.0
+grow_vertical = 2
+text = "Dev Tools"
 
 [node name="DebugStatsLabel" type="Label" parent="Control" unique_id=1902204007]
 visible = false
@@ -396,6 +460,12 @@ theme_override_font_sizes/font_size = 14
 visible = false
 
 [node name="ShopUI" parent="." unique_id=411928006 instance=ExtResource("4_shop")]
+visible = false
+
+[node name="SkillTreeUI" parent="." instance=ExtResource("6_skilltree")]
+visible = false
+
+[node name="DevToolsPanel" parent="." instance=ExtResource("7_devtools")]
 visible = false
 
 [node name="Death" type="Control" parent="." unique_id=1587043198]

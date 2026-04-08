@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_main_war_cry_ability"
+display_name = "War Cry"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Roar reduces enemy defense by 10% for 2s in 8m radius. Scales to 20%/4s\nInitial: 10% / 2s\nPer level: +2.5% / +0.5s\nMax: 20% / 4s"
+value_per_level = "+2.5% / +0.5s"

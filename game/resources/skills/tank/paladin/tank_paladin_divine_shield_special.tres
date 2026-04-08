@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_paladin_divine_shield_special"
+display_name = "Divine Shield"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Invulnerable 2s, heal 10% max HP. 25s CD\nInitial: 2s / 10% heal\nPer level: +0.25s / +2.5%\nMax: 3s / 20% heal"
+value_per_level = "+0.25s / +2.5%"

@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://shopui001"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://jkdbjm8hvkn3" path="res://scripts/ui/shop_ui.gd" id="1_shopui"]
+[ext_resource type="Script" path="res://scripts/ui/shop_ui.gd" id="1_shopui"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 20.0
@@ -97,23 +97,23 @@ layout_mode = 2
 [node name="TitleLabel" type="Label" parent="Panel/VBox/Header" unique_id=1605193949]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 text = "🏪 SHOP"
 
 [node name="CoinsLabel" type="Label" parent="Panel/VBox/Header" unique_id=1592584335]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 text = "Coins: 0"
 
 [node name="CloseButton" type="Button" parent="Panel/VBox/Header" unique_id=186572287]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_styles/normal = SubResource("btn_close_normal")
 theme_override_styles/hover = SubResource("btn_close_hover")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "✕"
 
 [node name="TabContainer" type="TabContainer" parent="Panel/VBox" unique_id=92499757]
@@ -123,22 +123,51 @@ size_flags_vertical = 3
 current_tab = 0
 
 [node name="Consumables" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=410603817]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
+
+[node name="ConsumablesGrid" type="GridContainer" parent="Panel/VBox/TabContainer/Consumables" unique_id=260711856]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
 
 [node name="Upgrades" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=564899692]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
+[node name="UpgradesGrid" type="GridContainer" parent="Panel/VBox/TabContainer/Upgrades" unique_id=1264863344]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
+
 [node name="Equipment" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=1681604979]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
+[node name="EquipmentGrid" type="GridContainer" parent="Panel/VBox/TabContainer/Equipment" unique_id=376051401]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
+
 [node name="Special" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=145862779]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
+
+[node name="SpecialGrid" type="GridContainer" parent="Panel/VBox/TabContainer/Special" unique_id=736828582]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
 
 [connection signal="pressed" from="Panel/VBox/Header/CloseButton" to="." method="_on_close_pressed"]

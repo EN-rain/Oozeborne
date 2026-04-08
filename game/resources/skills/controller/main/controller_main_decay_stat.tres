@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_decay_stat"
+display_name = "Decay"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Enemies in your slow fields take 5-25 damage over time per second\nInitial: +5 DOT\nPer level: +5 DOT\nMax: +25 DOT"
+value_per_level = "+5 DOT"

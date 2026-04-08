@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_bramble_wall_ability"
+display_name = "Bramble Wall"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Erect thorn wall (6m wide, 2s duration) blocking movement, dealing 20-50 damage\nInitial: 2s / 20 damage\nPer level: +0s / +7.5 damage\nMax: 2s / 50 damage"
+value_per_level = "+0s / +7.5 damage"

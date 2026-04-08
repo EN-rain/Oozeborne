@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_guardian_stalwart_stat"
+display_name = "Stalwart"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase block chance percentage\nInitial: +2% Block\nPer level: +2% Block\nMax: +10% Block"
+value_per_level = "+2% Block"

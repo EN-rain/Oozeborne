@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_spellblade_arcane_strike_passive"
+display_name = "Arcane Strike"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Every 4th attack deals 6-30% bonus magic damage. 3% lifesteal.\nInitial: 6%\nPer level: +6%\nMax: 30%"
+value_per_level = "+6%"

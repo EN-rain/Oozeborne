@@ -5,15 +5,18 @@ class_name MobSpawner
 
 signal mob_spawned(mob: Node)
 signal mob_died(mob: Node, score_value: int, xp_value: int)
+signal active_mob_count_changed(current_alive: int, total_in_round: int)
+signal round_started(round_number: int, total_mobs: int)
+signal round_cleared(round_number: int)
 
 @export var common_mob_scene: PackedScene
 @export var elite_mob_lancer_scene: PackedScene
 @export var elite_mob_archer_scene: PackedScene
 
-@export var initial_common_mob_count: int = 5
-@export var max_total_common_mob: int = 5
-@export var initial_elite_mob_count: int = 5
-@export var max_total_elite_mob: int = 15
+@export var initial_common_mob_count: int = 7
+@export var initial_elite_mob_count: int = 3
+@export var additional_mobs_per_round: int = 10
+@export_range(0.0, 1.0, 0.01) var elite_ratio_per_round: float = 0.3
 
 @export var spawn_area_size: Vector2 = Vector2(800, 600)
 @export var min_distance_from_player: float = 150.0
@@ -21,15 +24,15 @@ signal mob_died(mob: Node, score_value: int, xp_value: int)
 @export var offscreen_spawn_band: float = 24.0
 
 var current_common_mob_count := 0
-var total_common_mob_spawned := 0
-
 var current_elite_mob_count := 0
-var total_elite_mob_spawned := 0
 
 var _parent: Node
 var _player: Node
 var _round_manager: RoundManager
-var _has_spawned_initial_mobs := false
+var _current_round: int = 1
+var _round_total_mobs: int = 0
+var _round_active_mobs: int = 0
+var _round_in_progress: bool = false
 
 
 func initialize(parent: Node, player: Node):
@@ -41,27 +44,37 @@ func set_round_manager(round_manager: RoundManager) -> void:
 	_round_manager = round_manager
 
 
-func spawn_initial_mobs():
-	if _has_spawned_initial_mobs:
-		return
-	_has_spawned_initial_mobs = true
-	spawn_initial_common_mobs()
-	spawn_initial_elite_mobs()
+func spawn_initial_mobs() -> void:
+	start_round(1)
 
 
-func spawn_initial_common_mobs():
-	for i in range(initial_common_mob_count):
+func start_round(round_number: int) -> void:
+	_current_round = max(1, round_number)
+	_round_total_mobs = get_round_total_mobs(_current_round)
+	_round_active_mobs = 0
+	current_common_mob_count = 0
+	current_elite_mob_count = 0
+	_round_in_progress = true
+
+	var elite_target: int = get_round_elite_count(_current_round)
+	var common_target: int = maxi(_round_total_mobs - elite_target, 0)
+
+	for i in range(common_target):
 		spawn_common_mob()
+	for i in range(elite_target):
+		spawn_elite_mob()
+
+	_emit_active_count()
+	round_started.emit(_current_round, _round_total_mobs)
 
 
-func spawn_common_mob():
-	if total_common_mob_spawned >= max_total_common_mob:
-		return
-	
+func spawn_common_mob() -> void:
 	if common_mob_scene == null:
 		return
 	
-	var mob = common_mob_scene.instantiate()
+	var mob: Node2D = common_mob_scene.instantiate() as Node2D
+	if mob == null:
+		return
 	mob.global_position = get_random_spawn_position()
 	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
 	
@@ -71,34 +84,28 @@ func spawn_common_mob():
 	mob_spawned.emit(mob)
 	
 	current_common_mob_count += 1
-	total_common_mob_spawned += 1
+	_round_active_mobs += 1
+	_emit_active_count()
 
 
-func _on_common_mob_died(_mob):
-	current_common_mob_count -= 1
-	var xp = _mob.xp_value if _mob.has_method("get") or "xp_value" in _mob else 10
+func _on_common_mob_died(_mob: Node) -> void:
+	current_common_mob_count = max(current_common_mob_count - 1, 0)
+	_round_active_mobs = max(_round_active_mobs - 1, 0)
+	var xp: int = _mob.xp_value if _mob.has_method("get") or "xp_value" in _mob else 10
 	mob_died.emit(_mob, 1, xp)
-	
-	if total_common_mob_spawned < max_total_common_mob:
-		await _parent.get_tree().create_timer(0.5).timeout
-		spawn_common_mob()
+	_emit_active_count()
+	_check_round_clear()
 
 
-func spawn_initial_elite_mobs():
-	for i in range(initial_elite_mob_count):
-		spawn_elite_mob()
-
-
-func spawn_elite_mob():
-	if total_elite_mob_spawned >= max_total_elite_mob:
-		return
-	
+func spawn_elite_mob() -> void:
 	if elite_mob_lancer_scene == null or elite_mob_archer_scene == null:
 		return
 	
-	var elite_scene = elite_mob_lancer_scene if randf() < 0.5 else elite_mob_archer_scene
+	var elite_scene: PackedScene = elite_mob_lancer_scene if randf() < 0.5 else elite_mob_archer_scene
 	
-	var elite = elite_scene.instantiate()
+	var elite: Node2D = elite_scene.instantiate() as Node2D
+	if elite == null:
+		return
 	elite.global_position = get_random_spawn_position()
 	elite.tree_exiting.connect(_on_elite_mob_died.bind(elite))
 	
@@ -108,17 +115,52 @@ func spawn_elite_mob():
 	mob_spawned.emit(elite)
 	
 	current_elite_mob_count += 1
-	total_elite_mob_spawned += 1
+	_round_active_mobs += 1
+	_emit_active_count()
 
 
-func _on_elite_mob_died(_elite):
-	current_elite_mob_count -= 1
-	var xp = _elite.xp_value if _elite.has_method("get") or "xp_value" in _elite else 25
+func _on_elite_mob_died(_elite: Node) -> void:
+	current_elite_mob_count = max(current_elite_mob_count - 1, 0)
+	_round_active_mobs = max(_round_active_mobs - 1, 0)
+	var xp: int = _elite.xp_value if _elite.has_method("get") or "xp_value" in _elite else 25
 	mob_died.emit(_elite, 5, xp)
-	
-	if total_elite_mob_spawned < max_total_elite_mob:
-		await _parent.get_tree().create_timer(1.0).timeout
-		spawn_elite_mob()
+	_emit_active_count()
+	_check_round_clear()
+
+
+func get_round_total_mobs(round_number: int) -> int:
+	return initial_common_mob_count + initial_elite_mob_count + max(round_number - 1, 0) * additional_mobs_per_round
+
+
+func get_round_added_mobs(round_number: int) -> int:
+	return 0 if round_number <= 1 else additional_mobs_per_round
+
+
+func get_round_elite_count(round_number: int) -> int:
+	var total: int = get_round_total_mobs(round_number)
+	var elite_count: int = int(round(float(total) * elite_ratio_per_round))
+	return clampi(elite_count, initial_elite_mob_count, max(total - 1, 0))
+
+
+func get_alive_mob_count() -> int:
+	return _round_active_mobs
+
+
+func get_total_mob_count() -> int:
+	return _round_total_mobs
+
+
+func _emit_active_count() -> void:
+	active_mob_count_changed.emit(_round_active_mobs, _round_total_mobs)
+
+
+func _check_round_clear() -> void:
+	if not _round_in_progress:
+		return
+	if _round_active_mobs > 0:
+		return
+	_round_in_progress = false
+	round_cleared.emit(_current_round)
 
 
 func get_random_spawn_position() -> Vector2:

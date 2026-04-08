@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_guardian_bulwark_cry_ability"
+display_name = "Bulwark Cry"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "War cry forces enemies in 6m to target you for 1.5-3s\nInitial: 1.5s taunt\nPer level: +0.4s\nMax: 3s taunt"
+value_per_level = "+0.4s"

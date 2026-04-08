@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_blade_burst_ability"
+display_name = "Blade Burst"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Unleash magic in weapon for 4m radius explosion. Deal 20-100 damage. 15s CD\nInitial: 20 damage\nPer level: +20 damage\nMax: 100 damage"
+value_per_level = "+20 damage"

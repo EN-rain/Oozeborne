@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_main_consecrate_ability"
+display_name = "Consecrate"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Sanctify 4m radius ground for 3-5s, dealing 20-40 holy damage/s to enemies\nInitial: 20 dmg/s / 3s\nPer level: +5 dmg/s / +0.5s\nMax: 40 dmg/s / 5s"
+value_per_level = "+5 dmg/s / +0.5s"

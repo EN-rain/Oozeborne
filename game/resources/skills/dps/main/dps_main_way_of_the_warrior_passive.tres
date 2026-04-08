@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_way_of_the_warrior_passive"
+display_name = "Way of the Warrior"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Consecutive hits on same target add +1-5% damage per hit, stacking up to +5-25%. 5% dodge.\nInitial: +1% per hit / +5% max\nPer level: +1% per hit / +5% max\nMax: +5% per hit / +25% max"
+value_per_level = "+1% per hit / +5% max"

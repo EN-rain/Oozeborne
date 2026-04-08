@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_shadow_knight_vampiric_embrace_passive"
+display_name = "Vampiric Embrace"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Lifesteal is 10-50% more effective. Healing from abilities 5-25% stronger. 15% base lifesteal.\nInitial: +10% / +5%\nPer level: +10% / +5%\nMax: +50% / +25%"
+value_per_level = "+10% / +5%"

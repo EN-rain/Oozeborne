@@ -22,6 +22,11 @@ func _ready() -> void:
 
 	_update_auth_ui()
 
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		get_tree().quit()
+		get_viewport().set_input_as_handled()
+
 func _set_status(text: String, color: Color = Color(0.6, 0.62, 0.75, 0.7)) -> void:
 	status_label.text = text
 	status_label.add_theme_color_override("font_color", color)

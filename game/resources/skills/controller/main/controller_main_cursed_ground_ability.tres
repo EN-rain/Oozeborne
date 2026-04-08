@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_cursed_ground_ability"
+display_name = "Cursed Ground"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Corrupt 5m ground for 3-5s. Enemies have -10-30% stats while standing in it\nInitial: 3s / -10%\nPer level: +0.5s / -5%\nMax: 5s / -30%"
+value_per_level = "+0.5s / -5%"

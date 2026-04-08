@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_adaptive_stance_special"
+display_name = "Adaptive Stance"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "+5% all stats for 3s. 13s CD\nInitial: +5% / 3s\nPer level: +2.5% / +0.5s\nMax: +15% / 5s"
+value_per_level = "+2.5% / +0.5s"

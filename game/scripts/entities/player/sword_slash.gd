@@ -9,6 +9,12 @@ var hit_enemies = []  # Track enemies already hit this swing
 func set_damage(damage: int) -> void:
 	weapon_damage = damage
 
+
+func set_slash_color(color: Color) -> void:
+	var slash_effect := $SlashEffect as Sprite2D
+	if slash_effect != null:
+		slash_effect.self_modulate = color
+
 func _ready() -> void:
 	print("[Slash] _ready called, global_position: ", global_position, " damage: ", weapon_damage)
 	var anim_player = $SlashEffect/SlashAnim

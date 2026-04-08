@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_wind_step_ability"
+display_name = "Wind Step"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Dash through enemy within 6m dealing 20-60 damage and reset dodge cooldown. 8s CD\nInitial: 20 damage\nPer level: +10 damage\nMax: 60 damage"
+value_per_level = "+10 damage"

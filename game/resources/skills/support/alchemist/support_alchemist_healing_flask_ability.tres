@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_alchemist_healing_flask_ability"
+display_name = "Healing Flask"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Throw flask at ally within 12m restoring 20-50 HP instantly. 12s cooldown\nInitial: 20 HP\nPer level: +7.5 HP\nMax: 50 HP"
+value_per_level = "+7.5 HP"

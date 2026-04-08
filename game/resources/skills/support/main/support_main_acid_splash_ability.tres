@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_main_acid_splash_ability"
+display_name = "Acid Splash"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Throw vial dealing 20-40 damage and reducing armor by 10-30% for 3-5s. 15s CD\nInitial: 20 dmg / -10% / 3s\nPer level: +5 dmg / -5% / +0.5s\nMax: 40 dmg / -30% / 5s"
+value_per_level = "+5 dmg / -5% / +0.5s"

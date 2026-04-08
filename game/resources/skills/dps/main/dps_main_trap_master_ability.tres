@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_trap_master_ability"
+display_name = "Trap Master"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Place 1-3 traps that deal 30-50 damage + 1-3s slow when triggered. 15s cooldown\nInitial: 1 trap / 30 dmg\nPer level: +0.5 trap / +5 dmg\nMax: 3 traps / 50 dmg"
+value_per_level = "+0.5 trap / +5 dmg"

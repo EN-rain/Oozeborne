@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_assassin_backstab_passive"
+display_name = "Backstab"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Attacks from behind deal +10-50% bonus damage and always critically strike. 10% dodge.\nInitial: +10% / always crit\nPer level: +10% damage\nMax: +50% / always crit"
+value_per_level = "+10% damage"

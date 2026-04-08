@@ -1,7 +1,5 @@
 extends Control
 
-const CLASS_MANAGER_SCRIPT := preload("res://scripts/globals/class_manager.gd")
-
 
 # ── Node References (matching new prototype layout) ──────────────────────────
 @onready var room_code_button: Button = %RoomCode
@@ -348,9 +346,9 @@ func _on_select_class_pressed():
 		print("[Lobby] Selected class: ", active_class)
 
 func _get_player_class_for_name(selected_name: String) -> PlayerClass:
-	var class_id := CLASS_MANAGER_SCRIPT.display_name_to_class_id(selected_name)
+	var class_id := ClassManager.display_name_to_class_id(selected_name)
 	if not class_id.is_empty():
-		return CLASS_MANAGER_SCRIPT.create_class_instance(class_id)
+		return ClassManager.create_class_instance(class_id)
 	return null
 
 func _get_slime_scene_path_for_class(selected_name: String) -> String:

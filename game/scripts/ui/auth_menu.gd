@@ -2,9 +2,9 @@ extends Control
 
 @onready var auth_tabs: TabContainer = %AuthTabs
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
-@onready var login_tab: Control = %AuthTabs.get_node("LoginTab")
-@onready var register_tab: Control = %AuthTabs.get_node("RegisterTab")
-@onready var auth_card: Control = $MarginContainer/Center/VBox
+@onready var login_tab: Control = %LoginTab
+@onready var register_tab: Control = %RegisterTab
+@onready var auth_card: Control = %VBox
 @onready var login_email_input: LineEdit = %LoginEmailInput
 @onready var login_password_input: LineEdit = %LoginPasswordInput
 @onready var login_button: Button = %LoginButton
@@ -60,30 +60,31 @@ func _setup_animation_player() -> void:
 		library = AnimationLibrary.new()
 		animation_player.add_animation_library(&"", library)
 
-	_add_tab_animation(library, &"tab_login", "../MarginContainer/Center/VBox/AuthTabs/LoginTab")
-	_add_tab_animation(library, &"tab_register", "../MarginContainer/Center/VBox/AuthTabs/RegisterTab")
+	_add_tab_animation(library, &"tab_login")
+	_add_tab_animation(library, &"tab_register")
 	_add_main_menu_animation(library, &"to_main_menu")
 
 
-func _add_tab_animation(library: AnimationLibrary, animation_name: StringName, target_path: String) -> void:
+func _add_tab_animation(library: AnimationLibrary, animation_name: StringName) -> void:
 	if library.has_animation(animation_name):
 		library.remove_animation(animation_name)
 
 	var animation := Animation.new()
 	animation.length = 0.22
+	var target_node: Control = login_tab if animation_name == &"tab_login" else register_tab
 
 	var modulate_track := animation.add_track(Animation.TYPE_VALUE)
-	animation.track_set_path(modulate_track, NodePath("%s:modulate" % target_path))
+	animation.track_set_path(modulate_track, _animation_property_path(target_node, "modulate"))
 	animation.track_insert_key(modulate_track, 0.0, Color(1.0, 1.0, 1.0, 0.0))
 	animation.track_insert_key(modulate_track, 0.22, Color.WHITE)
 
 	var scale_track := animation.add_track(Animation.TYPE_VALUE)
-	animation.track_set_path(scale_track, NodePath("%s:scale" % target_path))
+	animation.track_set_path(scale_track, _animation_property_path(target_node, "scale"))
 	animation.track_insert_key(scale_track, 0.0, Vector2(0.985, 0.985))
 	animation.track_insert_key(scale_track, 0.22, Vector2.ONE)
 
 	var status_track := animation.add_track(Animation.TYPE_VALUE)
-	animation.track_set_path(status_track, NodePath("../MarginContainer/Center/VBox/StatusLabel:modulate"))
+	animation.track_set_path(status_track, _animation_property_path(status_label, "modulate"))
 	animation.track_insert_key(status_track, 0.0, Color(1.0, 1.0, 1.0, 0.55))
 	animation.track_insert_key(status_track, 0.16, Color.WHITE)
 
@@ -98,16 +99,20 @@ func _add_main_menu_animation(library: AnimationLibrary, animation_name: StringN
 	animation.length = 0.3
 
 	var modulate_track := animation.add_track(Animation.TYPE_VALUE)
-	animation.track_set_path(modulate_track, NodePath("../MarginContainer/Center/VBox:modulate"))
+	animation.track_set_path(modulate_track, _animation_property_path(auth_card, "modulate"))
 	animation.track_insert_key(modulate_track, 0.0, Color.WHITE)
 	animation.track_insert_key(modulate_track, 0.3, Color(1.0, 1.0, 1.0, 0.0))
 
 	var scale_track := animation.add_track(Animation.TYPE_VALUE)
-	animation.track_set_path(scale_track, NodePath("../MarginContainer/Center/VBox:scale"))
+	animation.track_set_path(scale_track, _animation_property_path(auth_card, "scale"))
 	animation.track_insert_key(scale_track, 0.0, Vector2.ONE)
 	animation.track_insert_key(scale_track, 0.3, Vector2(0.97, 0.97))
 
 	library.add_animation(animation_name, animation)
+
+
+func _animation_property_path(target: Node, property: String) -> NodePath:
+	return NodePath("%s:%s" % [animation_player.get_path_to(target), property])
 
 
 func _set_busy(busy: bool) -> void:

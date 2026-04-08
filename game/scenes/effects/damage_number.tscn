@@ -3,20 +3,22 @@
 [ext_resource type="Script" path="res://scripts/effects/damage_number.gd" id="1_dmgnum"]
 
 [sub_resource type="LabelSettings" id="label_settings"]
-font_size = 22
+font_size = 12
 font_color = Color(1, 1, 1, 1)
-outline_size = 3
+outline_size = 1
 outline_color = Color(0, 0, 0, 1)
 
-[node name="DamageNumber" type="Node2D"]
+[node name="DamageNumber" type="Control"]
+top_level = true
+mouse_filter = 2
 script = ExtResource("1_dmgnum")
 
 [node name="Label" type="Label" parent="."]
-offset_left = -30.0
-offset_top = -20.0
-offset_right = 30.0
-offset_bottom = 10.0
-theme_override_font_sizes/font_size = 22
+offset_left = -20.0
+offset_top = -14.0
+offset_right = 20.0
+offset_bottom = 6.0
+theme_override_font_sizes/font_size = 12
 label_settings = SubResource("label_settings")
 horizontal_alignment = 1
 vertical_alignment = 1

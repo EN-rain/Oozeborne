@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_main_grace_stat"
+display_name = "Grace"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase healing received percentage\nInitial: +4% Healing\nPer level: +4% Healing\nMax: +20% Healing"
+value_per_level = "+4% Healing"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_blade_storm_ability"
+display_name = "Blade Storm"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Spin rapidly for 2s, striking all enemies within 4m for 40-120 damage total\nInitial: 40 damage\nPer level: +20 damage\nMax: 120 damage"
+value_per_level = "+20 damage"

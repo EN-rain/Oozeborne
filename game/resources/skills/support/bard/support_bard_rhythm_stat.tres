@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_bard_rhythm_stat"
+display_name = "Rhythm"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase movement speed percentage for you and nearby allies\nInitial: +4% Speed\nPer level: +4% Speed\nMax: +20% Speed"
+value_per_level = "+4% Speed"

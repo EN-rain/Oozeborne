@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_spellblade_elemental_infusion_special"
+display_name = "Elemental Infusion"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "+10% elemental dmg, effect 5s. 12s CD\nInitial: +10% / 5s\nPer level: +5% / +1.25s\nMax: +30% / 10s"
+value_per_level = "+5% / +1.25s"

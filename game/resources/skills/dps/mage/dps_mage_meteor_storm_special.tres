@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_mage_meteor_storm_special"
+display_name = "Meteor Storm"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "100 dmg over 2s in large area. 20s CD\nInitial: 100 dmg / 2s\nPer level: +25 dmg / +0.25s\nMax: 200 dmg / 3s"
+value_per_level = "+25 dmg / +0.25s"

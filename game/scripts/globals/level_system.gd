@@ -41,6 +41,14 @@ func unregister_player(player: Node) -> void:
 		print("[LevelSystem] Unregistered player %d" % entity_id)
 
 
+func reset_run_state() -> void:
+	player_data.clear()
+	if get_tree() != null and get_tree().root != null and get_tree().root.has_node("SkillTreeManager"):
+		var skill_tree_manager = get_tree().root.get_node("SkillTreeManager")
+		if skill_tree_manager != null:
+			skill_tree_manager.call("reset_run_state")
+
+
 ## Add XP to a player
 func add_xp(player: Node, amount: int) -> void:
 	if amount <= 0:

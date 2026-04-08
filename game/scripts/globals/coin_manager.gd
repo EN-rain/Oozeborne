@@ -41,6 +41,7 @@ func get_coins() -> int:
 
 func reset_coins() -> void:
 	total_coins = 0
+	coins_changed.emit(total_coins)
 
 
 ## Spawn coin drops at position with 50% chance

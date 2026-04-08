@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_mana_blade_stat"
+display_name = "Mana Blade"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase magic damage on melee attacks by percentage\nInitial: +5% Magic\nPer level: +5% Magic\nMax: +25% Magic"
+value_per_level = "+5% Magic"

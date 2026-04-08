@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_assassin_shadow_step_ability"
+display_name = "Shadow Step"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Teleport behind nearest enemy within 10m. Next attack has 60-100% crit chance\nInitial: 60% crit\nPer level: +10% crit\nMax: 100% crit"
+value_per_level = "+10% crit"

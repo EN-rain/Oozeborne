@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_shadow_knight_dark_pact_special"
+display_name = "Dark Pact"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Sacrifice 10% HP, deal 75 dmg, heal 25%. 10s CD\nInitial: 10% / 75 dmg / 25%\nPer level: +2.5% / +18.75 dmg / +6.25%\nMax: 20% / 150 dmg / 50%"
+value_per_level = "+2.5% / +18.75 dmg / +6.25%"

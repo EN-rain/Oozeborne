@@ -113,6 +113,16 @@ func send_pong(target_user_id: String, timestamp: float) -> void:
 	})
 
 
+func send_skill_stat_update(stats: Dictionary) -> void:
+	if MultiplayerManager.session == null:
+		return
+	MultiplayerManager.send_match_state({
+		"type": "skill_stat_update",
+		"user_id": MultiplayerManager.session.user_id,
+		"stats": stats,
+	})
+
+
 ## Calculate ping from pong response
 func calculate_ping(sent_timestamp: float) -> float:
 	return now_sec() - sent_timestamp

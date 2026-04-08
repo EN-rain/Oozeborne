@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "tank_berserker_adrenaline_passive"
+display_name = "Adrenaline"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Deal +10-50% more damage based on missing HP (max bonus at <20% HP). 5% lifesteal.\nInitial: +10% at 100% HP\nPer level: +10% per 20% missing\nMax: +50% at <20% HP"
+value_per_level = "+10% per 20% missing"

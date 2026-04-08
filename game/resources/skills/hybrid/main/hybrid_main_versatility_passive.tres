@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_versatility_passive"
+display_name = "Versatility"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Spells cost 4-20% less mana, melee attacks restore 2-10 mana on hit\nInitial: -4% cost / +2 mana\nPer level: -4% cost / +2 mana\nMax: -20% cost / +10 mana"
+value_per_level = "-4% cost / +2 mana"

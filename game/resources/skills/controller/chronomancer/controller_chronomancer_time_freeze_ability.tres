@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_chronomancer_time_freeze_ability"
+display_name = "Time Freeze"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Freeze single target completely for 0.5-2s. 25s cooldown\nInitial: 0.5s freeze\nPer level: +0.375s\nMax: 2s freeze"
+value_per_level = "+0.375s"

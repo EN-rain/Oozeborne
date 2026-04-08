@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_main_resurrection_pulse_ability"
+display_name = "Resurrection Pulse"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Send wave restoring 10-30 HP instantly to all allies within 10m. 30s cooldown\nInitial: 10 HP\nPer level: +5 HP\nMax: 30 HP"
+value_per_level = "+5 HP"

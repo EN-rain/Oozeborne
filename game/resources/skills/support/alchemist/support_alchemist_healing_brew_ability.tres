@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_alchemist_healing_brew_ability"
+display_name = "Healing Brew"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Toss potion restoring 15-40 HP to ally within 10m. 10s cooldown\nInitial: 15 HP\nPer level: +6.25 HP\nMax: 40 HP"
+value_per_level = "+6.25 HP"

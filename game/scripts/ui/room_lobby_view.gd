@@ -1,8 +1,6 @@
 extends RefCounted
 class_name RoomLobbyView
 
-const CLASS_MANAGER_SCRIPT := preload("res://scripts/globals/class_manager.gd")
-
 const MAX_PARTY_SIZE := 4
 
 const PLAYER_ACCENT_COLORS: Array = [
@@ -117,7 +115,7 @@ func _init(refs: Dictionary) -> void:
 	_stat_cards = refs["stat_cards"]
 
 func get_class_order() -> Array:
-	return CLASS_MANAGER_SCRIPT.get_main_class_display_order()
+	return ClassManager.get_main_class_display_order()
 
 func get_class_name_color(class_id: String) -> Color:
 	return CLASS_NAME_COLORS.get(class_id, PARTY_TEXT_PRIMARY)
@@ -187,13 +185,13 @@ func update_active_class_panels(active_class: String) -> void:
 	_update_class_panels(active_class)
 
 func _build_subclass_info_text(active_class: String) -> String:
-	var main_class_id := CLASS_MANAGER_SCRIPT.display_name_to_class_id(active_class)
+	var main_class_id := ClassManager.display_name_to_class_id(active_class)
 	if main_class_id.is_empty():
 		return "No subclasses available."
 
 	var visible_subclasses = []
-	for subclass_id in CLASS_MANAGER_SCRIPT.get_subclass_ids_for_main_id(main_class_id):
-		var subclass_instance := CLASS_MANAGER_SCRIPT.get_class_by_id(subclass_id)
+	for subclass_id in ClassManager.get_subclass_ids_for_main_id(main_class_id):
+		var subclass_instance := ClassManager.get_class_by_id(subclass_id)
 		if subclass_instance == null:
 			continue
 		var subclass_display_name := subclass_instance.display_name

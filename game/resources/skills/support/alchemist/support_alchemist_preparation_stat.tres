@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_alchemist_preparation_stat"
+display_name = "Preparation"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase potion/ability item slots (rounds down until max)\nInitial: +0.2 Slots\nPer level: +0.2 Slots\nMax: +1 Slot"
+value_per_level = "+0.2 Slots"

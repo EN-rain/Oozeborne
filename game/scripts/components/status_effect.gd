@@ -9,6 +9,9 @@ signal effect_expired(effect_name: String)
 @export var effect_name: String = "unknown"
 @export var duration: float = 5.0
 @export var is_debuff: bool = true
+@export var popup_text: String = ""
+@export var popup_color: Color = Color(1.0, 0.45, 0.3, 1.0)
+@export var show_apply_popup: bool = true
 
 var target: Node = null
 var time_remaining: float = 0.0

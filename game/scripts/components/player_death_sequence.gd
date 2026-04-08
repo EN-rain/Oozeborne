@@ -109,7 +109,10 @@ func _play_death_explosion(player: CharacterBody2D) -> void:
 	explosion.initial_velocity_max = 260.0
 	explosion.scale_amount_min = 1.4
 	explosion.scale_amount_max = 2.8
-	explosion.color = Color(0.98, 0.98, 0.98, 1.0)
+	if player.has_method("get_explosion_effect_color"):
+		explosion.color = player.get_explosion_effect_color()
+	else:
+		explosion.color = Color(0.98, 0.98, 0.98, 1.0)
 	explosion.z_index = 6
 	explosion.emitting = false
 	explosion.restart()

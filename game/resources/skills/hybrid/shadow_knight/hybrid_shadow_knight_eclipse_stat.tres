@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_shadow_knight_eclipse_stat"
+display_name = "Eclipse"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase damage by percentage when health is below 50%\nInitial: +4% Low HP\nPer level: +4% Low HP\nMax: +20% Low HP"
+value_per_level = "+4% Low HP"

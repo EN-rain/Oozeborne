@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_void_strike_ability"
+display_name = "Void Strike"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Teleport to enemy within 8m, dealing 20-80 dark damage + heal 25% of damage. 12s CD\nInitial: 20 damage / 25% heal\nPer level: +15 damage / +0%\nMax: 80 damage / 50% heal"
+value_per_level = "+15 damage / +0%"

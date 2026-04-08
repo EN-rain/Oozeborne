@@ -18,7 +18,7 @@
 [ext_resource type="Texture2D" uid="uid://ceirglcindktx" path="res://assets/sprites/Mobs/Plagued Lancer/hit01.png" id="20_yoavi"]
 [ext_resource type="Texture2D" uid="uid://ciyc7oafk7v11" path="res://assets/sprites/Mobs/Plagued Lancer/hit02.png" id="21_tqndv"]
 [ext_resource type="Texture2D" uid="uid://mpeyiedg7ua6" path="res://assets/sprites/Mobs/Plagued Lancer/hit03.png" id="22_gl1ha"]
-[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health.gd" id="24_ae6dh"]
+[ext_resource type="Script" uid="uid://btu0n3yg6spmu" path="res://scripts/components/health_component.gd" id="24_ae6dh"]
 [ext_resource type="Texture2D" uid="uid://ba22w27o75evi" path="res://assets/sprites/Mobs/Plagued Lancer/walk01.png" id="24_t7fbb"]
 [ext_resource type="Texture2D" uid="uid://c1y0shksf6y7d" path="res://assets/sprites/Mobs/Plagued Lancer/walk02.png" id="25_8ryja"]
 [ext_resource type="Texture2D" uid="uid://dmfhlt7ss3err" path="res://assets/sprites/Mobs/Plagued Lancer/walk03.png" id="26_igk01"]

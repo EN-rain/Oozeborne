@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_stormcaller_thunder_clap_ability"
+display_name = "Thunder Clap"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Slam ground sending shockwave in 6m radius, stunning for 0.3-1.5s. 18s cooldown\nInitial: 0.3s stun\nPer level: +0.3s\nMax: 1.5s stun"
+value_per_level = "+0.3s"

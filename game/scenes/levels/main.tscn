@@ -1,31 +1,28 @@
-[gd_scene load_steps=9 format=3 uid="uid://dlwfu5d1pq3y7"]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/systems/game/main.gd" id="1_main"]
-[ext_resource type="PackedScene" uid="uid://212bgn1oxjjc" path="res://scenes/levels/environment.tscn" id="2_env"]
-[ext_resource type="PackedScene" uid="uid://xhxwepnhhfr8" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
-[ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
-[ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
-[ext_resource type="PackedScene" path="res://scenes/entities/enemies/blue_slime.tscn" id="6_commonmob"]
-[ext_resource type="PackedScene" path="res://scenes/entities/enemies/plagued_lancer.tscn" id="7_lancer"]
-[ext_resource type="PackedScene" path="res://scenes/entities/enemies/archer.tscn" id="8_archer"]
+[ext_resource type="PackedScene" path="res://scenes/levels/environment.tscn" id="2_env"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
 
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true
-script = ExtResource("1_main")
-player_scene = ExtResource("4_player")
-common_mob_scene = ExtResource("6_commonmob")
-elite_lancer_scene = ExtResource("7_lancer")
-elite_archer_scene = ExtResource("8_archer")
 
-[node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
+[node name="Environment" type="Node2D" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
+y_sort_enabled = true
 
-[node name="HUD" parent="." unique_id=1617366584 instance=ExtResource("3_hud")]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1617366584 instance=ExtResource("3_hud")]
 
-[node name="PauseMenu" parent="." unique_id=1429287246 instance=ExtResource("5_pause")]
+[node name="PauseMenu" type="CanvasLayer" parent="." unique_id=1429287246 instance=ExtResource("5_pause")]
+process_mode = 3
+layer = 100
 visible = false
+metadata/_edit_use_anchors_ = true
 
-[node name="Player" parent="." unique_id=734413701 instance=ExtResource("4_player")]
+[node name="Player" type="CharacterBody2D" parent="." unique_id=734413701 groups=["player"] instance=ExtResource("4_player")]
+y_sort_enabled = true
 position = Vector2(61.782185, 3.4233246)
+scale = Vector2(0.4, 0.4)
 
 [node name="PingTimer" type="Timer" parent="." unique_id=1766112053]
 unique_name_in_owner = true
@@ -33,3 +30,68 @@ unique_name_in_owner = true
 [node name="SpawnPoint" type="Marker2D" parent="." unique_id=1157932121]
 unique_name_in_owner = true
 position = Vector2(67.346375, -39.783676)
+
+[node name="SubclassOverlayLayer" type="CanvasLayer" parent="." unique_id=1512673001]
+visible = false
+layer = 90
+unique_name_in_owner = true
+
+[node name="SubclassOverlayRoot" type="Control" parent="SubclassOverlayLayer" unique_id=331412890]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Backdrop" type="ColorRect" parent="SubclassOverlayLayer/SubclassOverlayRoot" unique_id=167430820]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="SubclassOverlayPanel" type="PanelContainer" parent="SubclassOverlayLayer/SubclassOverlayRoot" unique_id=1784452912]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(520, 360)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -180.0
+offset_right = 260.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="SubclassOverlayLayer/SubclassOverlayRoot/SubclassOverlayPanel" unique_id=1243415004]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="SubclassOverlayLayer/SubclassOverlayRoot/SubclassOverlayPanel/Margin" unique_id=1590550011]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="SubclassOverlayLayer/SubclassOverlayRoot/SubclassOverlayPanel/Margin/Content" unique_id=1175163002]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Subclass Unlocked (Level 10)"
+
+[node name="Subtitle" type="Label" parent="SubclassOverlayLayer/SubclassOverlayRoot/SubclassOverlayPanel/Margin/Content" unique_id=1583463207]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Choose one subclass. This choice is permanent for this run."
+
+[node name="SubclassChoicesVBox" type="VBoxContainer" parent="SubclassOverlayLayer/SubclassOverlayRoot/SubclassOverlayPanel/Margin/Content" unique_id=1799958088]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10

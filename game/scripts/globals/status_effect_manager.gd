@@ -44,6 +44,7 @@ func apply_effect(target: Node, effect: StatusEffect) -> void:
 	# Apply the effect
 	effect.apply(target)
 	active_effects[entity_id][effect_key] = effect
+	_show_effect_popup(target, effect)
 	
 	effect_added.emit(entity_id, effect_key, effect.is_debuff)
 	print("[StatusEffectManager] Applied %s to entity %d" % [effect_key, entity_id])
@@ -108,3 +109,59 @@ func _remove_effect(entity_id: int, effect_name: String) -> void:
 	
 	active_effects[entity_id].erase(effect_name)
 	effect_removed.emit(entity_id, effect_name, true)
+
+
+func _show_effect_popup(target: Node, effect: StatusEffect) -> void:
+	if effect == null or not effect.show_apply_popup:
+		return
+	if not is_instance_valid(target):
+		return
+	if not (target is Node2D):
+		return
+
+	var world_target := target as Node2D
+	var popup_text := effect.popup_text.strip_edges()
+	if popup_text.is_empty():
+		popup_text = _derive_popup_text(effect.effect_name, effect.is_debuff)
+
+	if popup_text.is_empty():
+		return
+
+	var popup_position := world_target.global_position + Vector2(0, -38)
+	DamageNumbers.spawn_custom(popup_position, popup_text, effect.popup_color, 14)
+
+
+func _derive_popup_text(effect_name: String, is_debuff: bool) -> String:
+	var normalized := effect_name.strip_edges().to_lower()
+	match normalized:
+		"slow":
+			return "Slowed"
+		"poison":
+			return "Poisoned"
+		"bleed":
+			return "Bleeding"
+		"stun":
+			return "Stunned"
+		"weakness":
+			return "Weakened"
+		"vulnerability":
+			return "Vulnerable"
+		"curse":
+			return "Cursed"
+		"blind":
+			return "Blinded"
+
+	if normalized.is_empty():
+		return ""
+
+	var words: PackedStringArray = normalized.replace("_", " ").split(" ", false)
+	var titled_words: Array[String] = []
+	for word in words:
+		if word.is_empty():
+			continue
+		titled_words.append(word.substr(0, 1).to_upper() + word.substr(1))
+
+	var base_text := " ".join(titled_words)
+	if is_debuff:
+		return base_text
+	return "+" + base_text

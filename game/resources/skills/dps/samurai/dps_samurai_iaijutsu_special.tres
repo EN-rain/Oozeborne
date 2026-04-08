@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_samurai_iaijutsu_special"
+display_name = "Iaijutsu"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Sheathe 1s, 1.5x dmg. 10s CD, 0.5s charge\nInitial: 1.5x / 0.5s\nPer level: +0.375x / +0.375s\nMax: 3x / 2s"
+value_per_level = "+0.375x / +0.375s"

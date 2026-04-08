@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_mage_frost_nova_ability"
+display_name = "Frost Nova"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Explode freezing all enemies within 5m for 1-2s. Deal 40-80 ice damage\nInitial: 40 dmg / 1s\nPer level: +10 dmg / +0.25s\nMax: 80 dmg / 2s"
+value_per_level = "+10 dmg / +0.25s"

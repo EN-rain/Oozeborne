@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_static_field_ability"
+display_name = "Static Field"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Charge self for 4-8s. Enemies within 4m take 5-20 damage when they hit you\nInitial: 4s / 5 dmg return\nPer level: +1s / +3.75 dmg\nMax: 8s / 20 dmg return"
+value_per_level = "+1s / +3.75 dmg"

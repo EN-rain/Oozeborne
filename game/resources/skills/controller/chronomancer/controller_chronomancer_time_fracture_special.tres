@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_chronomancer_time_fracture_special"
+display_name = "Time Fracture"
+skill_type = 3
+max_level = 5
+sp_cost_per_level = 1
+description_template = "20% slow enemies, +10% haste exit, 2.5s. 16s CD\nInitial: 20% / +10% / 2.5s\nPer level: +5% / +5% / +0.5s\nMax: 40% / +30% / 4.5s"
+value_per_level = "+5% / +5% / +0.5s"

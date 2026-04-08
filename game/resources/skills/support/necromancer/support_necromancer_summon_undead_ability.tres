@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_necromancer_summon_undead_ability"
+display_name = "Summon Undead"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Summon 1 skeleton warrior (20 HP, 6 damage/attack). Scales to 2 skeletons (40 HP, 10 dmg)\nInitial: 1 skel / 20 HP / 6 dmg\nPer level: +0.2 skel / +5 HP / +1 dmg\nMax: 2 skel / 40 HP / 10 dmg"
+value_per_level = "+0.2 skel / +5 HP / +1 dmg"

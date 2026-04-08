@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_slow_field_ability"
+display_name = "Slow Field"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Create 6m zone slowing enemies by 20-40% for 3-5s. 20s cooldown\nInitial: 20% / 3s\nPer level: +5% / +0.5s\nMax: 40% / 5s"
+value_per_level = "+5% / +0.5s"

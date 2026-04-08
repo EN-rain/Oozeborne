@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_elemental_strike_ability"
+display_name = "Elemental Strike"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Melee attack adds 10-50 elemental damage based on weapon type. 12s cooldown\nInitial: +10 elemental\nPer level: +10 elemental\nMax: +50 elemental"
+value_per_level = "+10 elemental"

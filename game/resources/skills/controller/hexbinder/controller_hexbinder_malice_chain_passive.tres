@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_hexbinder_malice_chain_passive"
+display_name = "Malice Chain"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Defeated cursed enemies spread weaker curse within 4m (10-50% chance)\nInitial: 10% spread\nPer level: +10% spread\nMax: 50% spread"
+value_per_level = "+10% spread"

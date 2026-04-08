@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_shockwave_ability"
+display_name = "Shockwave"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Chain of 2 shockwaves (8m range) dealing 20-60 damage + 10-30% slow for 1s. 16s CD\nInitial: 20 dmg / 10%\nPer level: +10 dmg / +5%\nMax: 60 dmg / 30%"
+value_per_level = "+10 dmg / +5%"

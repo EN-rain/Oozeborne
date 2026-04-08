@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_main_borrowed_seconds_passive"
+display_name = "Borrowed Seconds"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Control effects apply cooldown reduction burst 6-30%.\nInitial: +6% CDR\nPer level: +6% CDR\nMax: +30% CDR"
+value_per_level = "+6% CDR"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_pressure_point_ability"
+display_name = "Pressure Point"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Strike vital spot stunning target for 0.5-1.5s and dealing 30-70 damage. 12s CD\nInitial: 0.5s stun / 30 dmg\nPer level: +0.25s / +10 dmg\nMax: 1.5s stun / 70 dmg"
+value_per_level = "+0.25s / +10 dmg"

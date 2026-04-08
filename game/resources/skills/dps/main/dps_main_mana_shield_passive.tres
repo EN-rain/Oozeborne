@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_main_mana_shield_passive"
+display_name = "Mana Shield"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Convert 2-10% of damage taken into mana shield that absorbs damage. 10 magic thorns.\nInitial: 2% conversion\nPer level: +2% conversion\nMax: 10% conversion"
+value_per_level = "+2% conversion"

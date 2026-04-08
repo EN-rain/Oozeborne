@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_hexbinder_hex_bolt_ability"
+display_name = "Hex Bolt"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Fire projectile marking single target instantly. Mark lasts 2-6s. 12s CD\nInitial: 2s mark\nPer level: +1s\nMax: 6s mark"
+value_per_level = "+1s"

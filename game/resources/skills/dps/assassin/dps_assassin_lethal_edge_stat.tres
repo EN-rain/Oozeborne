@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "dps_assassin_lethal_edge_stat"
+display_name = "Lethal Edge"
+skill_type = 0
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Increase critical damage multiplier percentage\nInitial: +10% Crit DMG\nPer level: +10% Crit DMG\nMax: +50% Crit DMG"
+value_per_level = "+10% Crit DMG"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "controller_warden_ring_of_thorns_ability"
+display_name = "Ring of Thorns"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Summon ring (5m radius) lasting 3-5s. Roots crossing enemies, deals 15-40 dmg/s\nInitial: 3s / 15 dmg/s\nPer level: +0.5s / +6.25 dmg/s\nMax: 5s / 40 dmg/s"
+value_per_level = "+0.5s / +6.25 dmg/s"

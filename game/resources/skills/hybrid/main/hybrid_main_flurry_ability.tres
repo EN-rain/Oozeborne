@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "hybrid_main_flurry_ability"
+display_name = "Flurry"
+skill_type = 1
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Rapid 3-5 hit combo over 1.5s, final hit stuns for 0.5-1s. 10s cooldown\nInitial: 3 hits / 0.5s stun\nPer level: +0.5 hit / +0.125s\nMax: 5 hits / 1s stun"
+value_per_level = "+0.5 hit / +0.125s"

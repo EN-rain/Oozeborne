@@ -6,16 +6,23 @@ extends CanvasLayer
 @onready var player_name_label: Label = $Control/PlayerStats/PlayerName
 @onready var coin_label: Label = $Control/PlayerStats/CoinDisplay/CoinLabel
 @onready var score_label: Label = $Control/Score
+@onready var mob_count_label: Label = $Control/MobCount
+@onready var round_level_label: Label = $Control/RoundLevelPopup
 @onready var minimap: Control = $Control/Map
 @onready var death_screen: Control = $Death
 @onready var store_button: Button = $Control/Store
+@onready var skill_tree_button: Button = $Control/SkillTree
+@onready var dev_tools_button: Button = $Control/DevTools
 @onready var shop_ui: ShopUI = $ShopUI
+@onready var skill_tree_ui: SkillTreeUI = $SkillTreeUI
+@onready var dev_tools_panel: PanelContainer = $DevToolsPanel
 
 var current_score: int = 0
 var player_ref: CharacterBody2D
 var slimes: Array = []
 var minimap_size: Vector2 = Vector2(212, 169)
 var remote_players: Dictionary = {}  # user_id -> { "pos": Vector2, "ign": String }
+var _overlay_pause_active: bool = false
 
 var world_size: Vector2 = Vector2(800, 600)
 @export var player_color: Color = Color.GREEN
@@ -39,6 +46,8 @@ const DEFAULT_MINIMAP_BACKGROUND_COLOR := Color(0.04, 0.07, 0.11, 0.88)
 const DEFAULT_MINIMAP_GRID_COLOR := Color(0.55, 0.78, 0.92, 0.14)
 const DEFAULT_MINIMAP_RING_COLOR := Color(0.72, 0.9, 1.0, 0.2)
 const DEFAULT_MINIMAP_OUTLINE_COLOR := Color(0.82, 0.95, 1.0, 0.55)
+
+var _round_popup_tween: Tween
 
 
 func _queue_minimap_redraw() -> void:
@@ -69,9 +78,29 @@ func _ready():
 	# Connect store button
 	if store_button and not store_button.pressed.is_connected(_on_store_pressed):
 		store_button.pressed.connect(_on_store_pressed)
+	if skill_tree_button and not skill_tree_button.pressed.is_connected(_on_skill_tree_pressed):
+		skill_tree_button.pressed.connect(_on_skill_tree_pressed)
+	if dev_tools_button and not dev_tools_button.pressed.is_connected(_on_dev_tools_pressed):
+		dev_tools_button.pressed.connect(_on_dev_tools_pressed)
 	
 	if shop_ui:
 		shop_ui.hide()
+		if not shop_ui.closed.is_connected(_on_overlay_closed):
+			shop_ui.closed.connect(_on_overlay_closed)
+	if skill_tree_ui:
+		skill_tree_ui.hide()
+		if not skill_tree_ui.closed.is_connected(_on_overlay_closed):
+			skill_tree_ui.closed.connect(_on_overlay_closed)
+	if dev_tools_panel:
+		dev_tools_panel.hide()
+		if not dev_tools_panel.closed.is_connected(_on_overlay_closed):
+			dev_tools_panel.closed.connect(_on_overlay_closed)
+	if mob_count_label:
+		mob_count_label.text = "Mobs: 0"
+	if round_level_label:
+		round_level_label.visible = false
+		round_level_label.modulate = Color(1, 1, 1, 0)
+		round_level_label.scale = Vector2(0.92, 0.92)
 
 func _find_map_bounds() -> void:
 	if not is_inside_tree():
@@ -114,14 +143,14 @@ func set_player(player):
 	if player_ref and is_instance_valid(player_ref) and player_ref.has_signal("death_sequence_finished"):
 		if player_ref.death_sequence_finished.is_connected(_on_player_died):
 			player_ref.death_sequence_finished.disconnect(_on_player_died)
-	
+
 	if LevelSystem.xp_gained.is_connected(_on_xp_gained):
 		LevelSystem.xp_gained.disconnect(_on_xp_gained)
 	if LevelSystem.level_up.is_connected(_on_level_up):
 		LevelSystem.level_up.disconnect(_on_level_up)
 	if LevelSystem.stats_updated.is_connected(_on_stats_updated):
 		LevelSystem.stats_updated.disconnect(_on_stats_updated)
-	
+
 	player_ref = player
 	var health = player.health
 	if not health.health_changed.is_connected(_on_health_changed):
@@ -129,11 +158,11 @@ func set_player(player):
 	if player_ref.has_signal("death_sequence_finished") and not player_ref.death_sequence_finished.is_connected(_on_player_died):
 		player_ref.death_sequence_finished.connect(_on_player_died)
 	_on_health_changed(health.current_health, health.max_health)
-	
+
 	# Set player name in UI
 	if player_name_label:
 		player_name_label.text = MultiplayerManager.player_ign
-	
+
 	# Connect to LevelSystem singleton for XP/level updates
 	if not LevelSystem.xp_gained.is_connected(_on_xp_gained):
 		LevelSystem.xp_gained.connect(_on_xp_gained)
@@ -146,6 +175,15 @@ func set_player(player):
 	if minimap != null:
 		minimap.visible = true
 	_queue_minimap_redraw()
+
+	# Pass player reference to dev tools panel
+	if dev_tools_panel and dev_tools_panel.has_method("set_player"):
+		dev_tools_panel.set_player(player)
+
+
+func set_mob_spawner(spawner: MobSpawner) -> void:
+	if dev_tools_panel and dev_tools_panel.has_method("set_mob_spawner"):
+		dev_tools_panel.set_mob_spawner(spawner)
 
 func _on_health_changed(current_health, max_health):
 	health_bar.max_value = max_health
@@ -181,6 +219,48 @@ func add_score(amount: int):
 
 func update_score_display():
 	score_label.text = "Score: " + str(current_score)
+
+
+func update_mob_counter(current_alive: int, total_in_round: int) -> void:
+	if mob_count_label == null:
+		return
+	mob_count_label.text = "Mobs: %d/%d" % [current_alive, total_in_round]
+
+
+func show_round_level(round_number: int, added_mobs: int, profile: Dictionary) -> void:
+	if round_level_label == null:
+		return
+	if _round_popup_tween != null and _round_popup_tween.is_valid():
+		_round_popup_tween.kill()
+
+	var growth_line := "+%d Mobs  HP +%d%%  DMG +%d%%  SPD +%d%%" % [
+		added_mobs,
+		int(profile.get("health_growth_pct", 0)),
+		int(profile.get("damage_growth_pct", 0)),
+		int(profile.get("speed_growth_pct", 0))
+	]
+	round_level_label.text = "Round %d\n%s" % [round_number, growth_line]
+	round_level_label.visible = true
+	round_level_label.modulate = Color(1, 1, 1, 0)
+	round_level_label.scale = Vector2(0.92, 0.92)
+
+	_round_popup_tween = create_tween()
+	_round_popup_tween.set_trans(Tween.TRANS_CUBIC)
+	_round_popup_tween.set_ease(Tween.EASE_OUT)
+	_round_popup_tween.set_parallel(true)
+	_round_popup_tween.tween_property(round_level_label, "modulate", Color.WHITE, 0.25)
+	_round_popup_tween.tween_property(round_level_label, "scale", Vector2.ONE, 0.25)
+	_round_popup_tween.chain().tween_interval(1.1)
+	_round_popup_tween.chain().set_parallel(true)
+	_round_popup_tween.tween_property(round_level_label, "modulate", Color(1, 1, 1, 0), 0.35)
+	_round_popup_tween.tween_property(round_level_label, "scale", Vector2(1.04, 1.04), 0.35)
+	_round_popup_tween.finished.connect(_on_round_popup_finished)
+
+
+func _on_round_popup_finished() -> void:
+	if round_level_label != null:
+		round_level_label.visible = false
+	_round_popup_tween = null
 
 func register_slime(slime):
 	if slime not in slimes:
@@ -320,15 +400,71 @@ func _on_coins_changed(total: int) -> void:
 		coin_label.text = str(total)
 
 func _on_store_pressed():
-	if shop_ui:
-		shop_ui.open()
+	toggle_shop()
 
 func toggle_shop():
 	if shop_ui:
 		if shop_ui.visible:
-			shop_ui.hide()
+			shop_ui.close()
 		else:
+			if skill_tree_ui and skill_tree_ui.visible:
+				skill_tree_ui.close()
 			shop_ui.open()
+		_update_overlay_pause()
+
+
+func _on_skill_tree_pressed() -> void:
+	toggle_skill_tree()
+
+
+func toggle_skill_tree() -> void:
+	if skill_tree_ui:
+		if skill_tree_ui.visible:
+			skill_tree_ui.close()
+		else:
+			if shop_ui and shop_ui.visible:
+				shop_ui.close()
+				if dev_tools_panel and dev_tools_panel.visible:
+					dev_tools_panel.hide()
+			skill_tree_ui.open()
+		_update_overlay_pause()
+
+
+func _on_dev_tools_pressed() -> void:
+	toggle_dev_tools()
+
+
+func toggle_dev_tools() -> void:
+	if dev_tools_panel:
+		if dev_tools_panel.visible:
+			dev_tools_panel.hide()
+		else:
+			if shop_ui and shop_ui.visible:
+				shop_ui.close()
+			if skill_tree_ui and skill_tree_ui.visible:
+				skill_tree_ui.close()
+			dev_tools_panel.show()
+		_update_overlay_pause()
+
+
+func _on_overlay_closed() -> void:
+	_update_overlay_pause()
+
+
+func _update_overlay_pause() -> void:
+	var should_pause := _should_pause_for_overlay() and _is_overlay_open()
+	if should_pause == _overlay_pause_active:
+		return
+	_overlay_pause_active = should_pause
+	get_tree().paused = _overlay_pause_active
+
+
+func _is_overlay_open() -> bool:
+	return (shop_ui != null and shop_ui.visible) or (skill_tree_ui != null and skill_tree_ui.visible) or (dev_tools_panel != null and dev_tools_panel.visible)
+
+
+func _should_pause_for_overlay() -> bool:
+	return not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty()
 
 
 func _safe_color(value: Variant, fallback: Color) -> Color:

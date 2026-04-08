@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_definition.gd" id="1_skilldef"]
+
+[resource]
+script = ExtResource("1_skilldef")
+skill_id = "support_necromancer_soul_harvest_passive"
+display_name = "Soul Harvest"
+skill_type = 2
+max_level = 5
+sp_cost_per_level = 1
+description_template = "Defeated enemies restore 2-10 HP and briefly amplify spell damage. 14% lifesteal.\nInitial: +2 HP / amp\nPer level: +2 HP / amp\nMax: +10 HP / amp"
+value_per_level = "+2 HP / amp"
