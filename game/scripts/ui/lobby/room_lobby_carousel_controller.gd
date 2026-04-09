@@ -22,6 +22,7 @@ var _carousel_layouts: Array = []
 var _carousel_slot_refs: Array = []
 var _carousel_progress: float = 0.0
 var _is_dragging_carousel: bool = false
+var _interaction_enabled: bool = true
 var _drag_start_pos := Vector2.ZERO
 var _drag_delta_x: float = 0.0
 var _carousel_tween: Tween = null
@@ -56,11 +57,27 @@ func render_carousel(progress: float = 0.0) -> void:
 
 
 func move_left() -> void:
+	if not _interaction_enabled:
+		return
 	_on_left_pressed()
 
 
 func move_right() -> void:
+	if not _interaction_enabled:
+		return
 	_on_right_pressed()
+
+
+func set_interaction_enabled(enabled: bool) -> void:
+	_interaction_enabled = enabled
+	_is_dragging_carousel = false
+	_drag_delta_x = 0.0
+	if is_instance_valid(_left_button):
+		_left_button.disabled = not enabled
+	if is_instance_valid(_right_button):
+		_right_button.disabled = not enabled
+	if not enabled:
+		_animate_carousel_back_to_center(0.1)
 
 
 func _process(delta: float) -> void:
@@ -73,7 +90,7 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if _carousel_nodes.is_empty():
+	if _carousel_nodes.is_empty() or not _interaction_enabled:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -299,10 +316,14 @@ func _get_clicked_carousel_slot_index(point: Vector2) -> int:
 
 
 func _on_left_pressed() -> void:
+	if not _interaction_enabled:
+		return
 	_animate_carousel_shift(-1)
 
 
 func _on_right_pressed() -> void:
+	if not _interaction_enabled:
+		return
 	_animate_carousel_shift(1)
 
 

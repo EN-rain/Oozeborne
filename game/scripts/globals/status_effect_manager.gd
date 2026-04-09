@@ -8,18 +8,20 @@ signal effect_removed(entity_id: int, effect_name: String, is_debuff: bool)
 
 # Dictionary: entity_id -> { effect_name -> StatusEffect }
 var active_effects: Dictionary = {}
+var _active_entries: Array[Dictionary] = []
+const DEBUG_STATUS_EFFECTS := false
 
 
 func _process(delta: float) -> void:
-	# Tick all active effects
-	for entity_id in active_effects.keys():
-		var entity_effects = active_effects[entity_id]
-		for effect_name in entity_effects.keys():
-			var effect = entity_effects[effect_name]
-			if effect and is_instance_valid(effect):
-				effect.tick(delta)
-				if not effect.is_active:
-					_remove_effect(entity_id, effect_name)
+	for index in range(_active_entries.size() - 1, -1, -1):
+		var entry: Dictionary = _active_entries[index]
+		var effect = entry.get("effect")
+		if effect == null or not is_instance_valid(effect):
+			_active_entries.remove_at(index)
+			continue
+		effect.tick(delta)
+		if not effect.is_active:
+			_remove_effect(int(entry.get("entity_id", 0)), str(entry.get("effect_name", "")))
 
 
 ## Apply a new status effect to an entity
@@ -44,10 +46,16 @@ func apply_effect(target: Node, effect: StatusEffect) -> void:
 	# Apply the effect
 	effect.apply(target)
 	active_effects[entity_id][effect_key] = effect
+	_active_entries.append({
+		"entity_id": entity_id,
+		"effect_name": effect_key,
+		"effect": effect,
+	})
 	_show_effect_popup(target, effect)
 	
 	effect_added.emit(entity_id, effect_key, effect.is_debuff)
-	print("[StatusEffectManager] Applied %s to entity %d" % [effect_key, entity_id])
+	if DEBUG_STATUS_EFFECTS:
+		print("[StatusEffectManager] Applied %s to entity %d" % [effect_key, entity_id])
 
 
 ## Check if an entity has a specific effect
@@ -94,6 +102,9 @@ func on_entity_freed(entity_id: int) -> void:
 			if is_instance_valid(effect):
 				effect.queue_free()
 		active_effects.erase(entity_id)
+		_active_entries = _active_entries.filter(func(entry: Dictionary) -> bool:
+			return int(entry.get("entity_id", 0)) != entity_id
+		)
 
 
 func _remove_effect(entity_id: int, effect_name: String) -> void:
@@ -108,6 +119,9 @@ func _remove_effect(entity_id: int, effect_name: String) -> void:
 		effect.queue_free()
 	
 	active_effects[entity_id].erase(effect_name)
+	_active_entries = _active_entries.filter(func(entry: Dictionary) -> bool:
+		return int(entry.get("entity_id", 0)) != entity_id or str(entry.get("effect_name", "")) != effect_name
+	)
 	effect_removed.emit(entity_id, effect_name, true)
 
 

@@ -10,6 +10,8 @@ class_name PlayerStats
 @export var base_dash_speed: float = 400.0
 @export var base_dash_cooldown: float = 3.0
 @export var base_attack_damage: int = 25
+@export var base_crit_chance: float = 0.05
+@export var base_crit_damage: float = 1.10
 
 # --- Per-Level Scaling ---
 @export var health_per_level: int = 10
@@ -17,11 +19,15 @@ class_name PlayerStats
 @export var dash_speed_per_level: float = 5.0
 @export var dash_cooldown_reduction: float = 0.02  # Reduces cooldown per level
 @export var damage_per_level: int = 3
+@export var crit_chance_per_level: float = 0.0005
+@export var crit_damage_per_level: float = 0.001
 
 # --- Min/Max Caps ---
 @export var min_dash_cooldown: float = 1.0
 @export var max_speed: float = 200.0
 @export var max_dash_speed: float = 600.0
+@export var max_crit_chance: float = 0.10
+@export var max_crit_damage: float = 1.20
 
 # --- XP Curve ---
 @export var base_xp_requirement: int = 100
@@ -70,6 +76,16 @@ func get_attack_damage(level: int) -> int:
 	return base_attack_damage + (damage_per_level * (level - 1))
 
 
+## Get critical hit chance at a specific level
+func get_crit_chance(level: int) -> float:
+	return minf(base_crit_chance + (crit_chance_per_level * (level - 1)), max_crit_chance)
+
+
+## Get critical hit damage multiplier at a specific level
+func get_crit_damage(level: int) -> float:
+	return minf(base_crit_damage + (crit_damage_per_level * (level - 1)), max_crit_damage)
+
+
 ## Get all stats for a level as a dictionary
 func get_stats_at_level(level: int) -> Dictionary:
 	return {
@@ -78,5 +94,7 @@ func get_stats_at_level(level: int) -> Dictionary:
 		"dash_speed": get_dash_speed(level),
 		"dash_cooldown": get_dash_cooldown(level),
 		"attack_damage": get_attack_damage(level),
+		"crit_chance": get_crit_chance(level),
+		"crit_damage": get_crit_damage(level),
 		"xp_to_next": get_xp_for_level(level + 1)
 	}

@@ -128,8 +128,6 @@ func _on_restart_pressed() -> void:
 
 
 func _on_menu_pressed() -> void:
-	if get_tree() != null and get_tree().root != null and get_tree().root.has_node("SkillTreeManager"):
-		get_tree().root.get_node("SkillTreeManager").call("persist_to_disk")
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
 	if main_menu_scene != null:
@@ -154,8 +152,6 @@ func _restart_current_run() -> void:
 		return
 
 	var preserved_class: PlayerClass = MultiplayerManager.player_class
-	if tree.root != null and tree.root.has_node("SkillTreeManager"):
-		tree.root.get_node("SkillTreeManager").call("persist_to_disk")
 	await MultiplayerManager.disconnect_server()
 	MultiplayerManager.player_class = preserved_class
 	MultiplayerManager.player_subclass = null

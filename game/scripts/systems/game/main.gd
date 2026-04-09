@@ -1,5 +1,7 @@
 extends Node2D
 
+const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
+
 @onready var player = $Player
 @onready var ui = $HUD
 @onready var spawn_point: Marker2D = %SpawnPoint
@@ -18,10 +20,13 @@ var round_manager: RoundManager
 const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
 const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
 const DEBUG_STATS_LABEL_NODE_PATH := "Control/DebugStatsLabel"
+const SOLO_RUN_SAVE_MANAGER_NODE_PATH := "/root/SoloRunSaveManager"
+const DEBUG_MAIN_LOGS := false
 
 var _solo_class_selection_ui: ClassSelectionUI = null
 var _solo_class_locked: bool = false
 var _starting_round_transition: bool = false
+var _dev_tools_panel: Node = null
 
 # FPS/Ping display
 var _fps_label: Label
@@ -63,6 +68,7 @@ func _ready():
 	
 	# Initialize mob spawner
 	mob_spawner = MobSpawner.new()
+	mob_spawner.name = "MobSpawner"
 	mob_spawner.common_mob_scene = common_mob_scene
 	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
 	mob_spawner.elite_mob_archer_scene = elite_archer_scene
@@ -73,6 +79,8 @@ func _ready():
 	mob_spawner.active_mob_count_changed.connect(_on_active_mob_count_changed)
 	mob_spawner.round_cleared.connect(_on_round_cleared)
 	add_child(mob_spawner)
+	_sync_hud_bindings()
+	_restore_saved_solo_run_if_needed()
 	
 	# Create FPS/Ping display
 	_create_fps_display()
@@ -97,6 +105,7 @@ func _ready():
 		_show_solo_class_selection_overlay()
 	else:
 		call_deferred("_start_round", round_manager.current_round, false)
+	call_deferred("_ensure_solo_class_selection_visible")
 
 	if not LevelSystem.level_up.is_connected(_on_level_up):
 		LevelSystem.level_up.connect(_on_level_up)
@@ -104,15 +113,131 @@ func _ready():
 	_maybe_prompt_subclass_selection()
 
 
+func build_solo_run_snapshot() -> Dictionary:
+	if not is_instance_valid(player) or ui == null or round_manager == null:
+		return {}
+	var class_id := ClassManagerScript.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
+	if class_id.is_empty():
+		return {}
+	var subclass_id := ClassManagerScript.get_class_id(MultiplayerManager.player_subclass) if MultiplayerManager.player_subclass != null else ""
+	return {
+		"scene_path": scene_file_path,
+		"player_class_id": class_id,
+		"player_class_name": MultiplayerManager.player_class.display_name if MultiplayerManager.player_class != null else "",
+		"player_subclass_id": subclass_id,
+		"subclass_choice_made": MultiplayerManager.subclass_choice_made,
+		"player_level": LevelSystem.get_level(player),
+		"player_xp": LevelSystem.get_xp(player),
+		"skill_tree_state": SkillTreeManager.save_state(),
+		"coins": CoinManager.get_coins(),
+		"score": ui.get_current_score() if ui.has_method("get_current_score") else 0,
+		"round": round_manager.current_round,
+	}
+
+
+func _restore_saved_solo_run_if_needed() -> void:
+	var save_manager := _get_solo_run_save_manager()
+	if save_manager == null:
+		return
+	var snapshot: Dictionary = save_manager.call("consume_pending_continue_snapshot")
+	if snapshot.is_empty():
+		return
+	var class_id := str(snapshot.get("player_class_id", ""))
+	if not class_id.is_empty():
+		MultiplayerManager.player_class = ClassManagerScript.create_class_instance(class_id)
+	var subclass_id := str(snapshot.get("player_subclass_id", ""))
+	MultiplayerManager.player_subclass = ClassManagerScript.create_class_instance(subclass_id) if not subclass_id.is_empty() else null
+	MultiplayerManager.subclass_choice_made = bool(snapshot.get("subclass_choice_made", false))
+	MultiplayerManager.player_level = int(snapshot.get("player_level", 1))
+	if is_instance_valid(player):
+		LevelSystem.load_player_state(player, {
+			"level": int(snapshot.get("player_level", 1)),
+			"xp": int(snapshot.get("player_xp", 0)),
+		})
+	if snapshot.has("skill_tree_state"):
+		SkillTreeManager.load_state(snapshot.get("skill_tree_state", {}))
+	if CoinManager != null and CoinManager.has_method("set_coins"):
+		CoinManager.set_coins(int(snapshot.get("coins", 0)))
+	if ui != null and ui.has_method("set_current_score"):
+		ui.set_current_score(int(snapshot.get("score", 0)))
+	if round_manager != null:
+		round_manager.current_round = max(1, int(snapshot.get("round", 1)))
+	_refresh_local_player_runtime_state(player)
+
+
+func _get_solo_run_save_manager() -> Node:
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		return null
+	return tree.root.get_node_or_null(SOLO_RUN_SAVE_MANAGER_NODE_PATH)
+
+
 func _bind_local_player(target_player: Node) -> void:
 	player = target_player
-	ui.set_player(player)
-	call_deferred("_setup_player_camera")
+	if player == null:
+		return
+	if MultiplayerManager.session != null:
+		player.set_meta("network_user_id", str(MultiplayerManager.session.user_id))
+	else:
+		player.set_meta("network_user_id", "solo")
+	call_deferred("_finalize_local_player_binding", player)
+
+
+func _finalize_local_player_binding(target_player: Node) -> void:
+	if target_player == null or not is_instance_valid(target_player):
+		return
+	if not LevelSystem.has_player(target_player):
+		LevelSystem.register_player(target_player, max(1, MultiplayerManager.player_level))
+	if target_player.has_method("_apply_class_modifiers"):
+		target_player.call("_apply_class_modifiers")
 	if mob_spawner != null:
-		mob_spawner.initialize(self, player)
-		ui.set_mob_spawner(mob_spawner)
+		mob_spawner.initialize(self, target_player)
 	if MultiplayerManager.socket:
-		MultiplayerUtils.set_local_player(player)
+		MultiplayerUtils.set_local_player(target_player)
+	_sync_hud_bindings()
+	_setup_player_camera()
+	call_deferred("_refresh_local_player_runtime_state_after_frame", target_player)
+	if ui != null:
+		if ui.has_method("refresh_player_level_display"):
+			ui.call("refresh_player_level_display")
+		if ui.has_method("refresh_player_stat_cards"):
+			ui.call("refresh_player_stat_cards")
+
+
+func _refresh_local_player_runtime_state(target_player: Node) -> void:
+	_finalize_local_player_binding(target_player)
+
+
+func _refresh_local_player_runtime_state_after_frame(target_player: Node) -> void:
+	await get_tree().process_frame
+	if target_player == null or not is_instance_valid(target_player):
+		return
+	if not LevelSystem.has_player(target_player):
+		LevelSystem.register_player(target_player, max(1, MultiplayerManager.player_level))
+	LevelSystem.set_level(target_player, LevelSystem.get_level(target_player))
+	if target_player.has_method("_apply_class_modifiers"):
+		target_player.call("_apply_class_modifiers")
+	if ui != null:
+		if ui.has_method("set_player"):
+			ui.call("set_player", target_player)
+		if ui.has_method("refresh_player_level_display"):
+			ui.call("refresh_player_level_display")
+		if ui.has_method("refresh_player_stat_cards"):
+			ui.call("refresh_player_stat_cards")
+
+
+func _sync_hud_bindings() -> void:
+	if ui == null or player == null:
+		return
+	ui.set_player(player)
+	if _dev_tools_panel == null or not is_instance_valid(_dev_tools_panel):
+		_dev_tools_panel = ui.get_node_or_null("DevToolsPanel")
+	if _dev_tools_panel != null and _dev_tools_panel.has_method("set_player"):
+		_dev_tools_panel.call("set_player", player)
+	if mob_spawner != null:
+		ui.set_mob_spawner(mob_spawner)
+		if _dev_tools_panel != null and _dev_tools_panel.has_method("set_mob_spawner"):
+			_dev_tools_panel.call("set_mob_spawner", mob_spawner)
 
 
 func _setup_player_camera() -> void:
@@ -126,7 +251,7 @@ func _setup_player_camera() -> void:
 		return
 
 	existing_camera.make_current()
-	print("[Main] Using scene Camera2D on player")
+	_debug_log("Using scene Camera2D on player")
 
 
 func _play_local_spawn_intro() -> void:
@@ -154,6 +279,7 @@ func _apply_local_player_class(player_class: PlayerClass) -> void:
 	if player_class == null or player_class.player_scene == null or not is_instance_valid(player):
 		return
 	if player.scene_file_path == player_class.player_scene.resource_path:
+		_refresh_local_player_runtime_state(player)
 		return
 	
 	var old_player = player
@@ -167,11 +293,22 @@ func _apply_local_player_class(player_class: PlayerClass) -> void:
 	add_child(new_player)
 	old_player.queue_free()
 	_bind_local_player(new_player)
-	print("[Main] Replaced player with class scene: ", player_class.display_name)
+	_debug_log("Replaced player with class scene: %s" % player_class.display_name)
 
 
 func _should_show_solo_class_selection() -> bool:
-	return MultiplayerManager.socket == null and MultiplayerManager.player_class == null
+	return MultiplayerManager.player_class == null and not MultiplayerManager.is_socket_open() and MultiplayerManager.match_id.is_empty()
+
+
+func _ensure_solo_class_selection_visible() -> void:
+	if not _should_show_solo_class_selection():
+		return
+	var solo_ui := ui.get_node_or_null(SOLO_CLASS_SELECTION_NODE_PATH)
+	if solo_ui == null:
+		return
+	if solo_ui.visible:
+		return
+	_show_solo_class_selection_overlay()
 
 
 func _show_solo_class_selection_overlay() -> void:
@@ -191,11 +328,13 @@ func _show_solo_class_selection_overlay() -> void:
 
 
 func _on_solo_class_selected(selected_class: PlayerClass, _selected_subclass: PlayerClass) -> void:
-	selected_class.player_scene = MultiplayerManager.resolve_player_scene()
-	MultiplayerManager.player_class = selected_class
+	var class_id := ClassManagerScript.get_class_id(selected_class)
+	var resolved_class := ClassManagerScript.create_class_instance(class_id) if not class_id.is_empty() else selected_class
+	resolved_class.player_scene = MultiplayerManager.resolve_player_scene()
+	MultiplayerManager.player_class = resolved_class
 	MultiplayerManager.player_subclass = null
 	MultiplayerManager.subclass_choice_made = false
-	_apply_local_player_class(selected_class)
+	_apply_local_player_class(resolved_class)
 	_finish_solo_class_selection()
 
 
@@ -257,12 +396,12 @@ func _on_match_state(match_state):
 	
 	# Op code 5 = Start game
 	if op_code == MultiplayerUtils.OP_START_GAME:
-		print("[Main] Received start_game signal while already in game")
+		_debug_log("Received start_game signal while already in game")
 		return
 	
 	# Legacy JSON-based messages (for compatibility)
 	if data == null:
-		print("[Main] Failed to parse match state data")
+		_debug_log("Failed to parse match state data")
 		return
 	
 	var sender_id = ""
@@ -315,7 +454,7 @@ func _on_match_state(match_state):
 			
 			var attack_pos = data.get("pos", {})
 			var attack_rot = data.get("rot", 0.0)
-			print("[Main] Received attack data: ", data, " rot: ", attack_rot)
+			_debug_log("Received attack data rot=%s" % attack_rot)
 			_spawn_remote_attack(sender_id, Vector2(attack_pos.get("x", 0), attack_pos.get("y", 0)), attack_rot)
 		
 		
@@ -348,7 +487,7 @@ func _on_match_state(match_state):
 			if subclass_sender_id.is_empty() or MultiplayerUtils.is_local_player(subclass_sender_id):
 				return
 			var subclass_id := str(data.get("subclass_id", ""))
-			var subclass_res := ClassManager.create_class_instance(subclass_id)
+			var subclass_res := ClassManagerScript.create_class_instance(subclass_id)
 			if subclass_res != null:
 				MultiplayerManager.set_player_subclass(subclass_sender_id, subclass_res)
 				if MultiplayerUtils.has_remote_player(subclass_sender_id):
@@ -395,6 +534,7 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		remote_player.global_position = spawn_pos
 		remote_player.visible = has_initial_pos
 		remote_player.is_local_player = false  # Mark as remote player - this disables physics
+		remote_player.set_meta("network_user_id", user_id)
 		remote_player.velocity = Vector2.ZERO  # Reset velocity
 		var remote_collision = remote_player.get_node_or_null("CollisionShape2D")
 		if remote_collision:
@@ -456,13 +596,13 @@ func send_attack(pos: Vector2, rotation_angle: float):
 func _on_match_presence(presence_event):
 	# Handle players joining during game
 	for join in presence_event.joins:
-		print("[Main] Player joined match: user_id=", join.user_id.substr(0,8))
+		_debug_log("Player joined match: user_id=%s" % join.user_id.substr(0, 8))
 		# Skip if this is ourselves
 		if join.user_id == MultiplayerManager.session.user_id:
 			continue
 		if not MultiplayerManager.players.has(join.user_id):
 			MultiplayerManager.players[join.user_id] = {"ign": "", "is_host": false, "presence": join}
-			print("[Main] Added to players dict. Total players: ", MultiplayerManager.players.size())
+			_debug_log("Added to players dict. Total players: %d" % MultiplayerManager.players.size())
 			MultiplayerManager.player_joined.emit(join.user_id, "Player", false)
 		else:
 			MultiplayerManager.players[join.user_id]["presence"] = join
@@ -473,7 +613,7 @@ func _on_match_presence(presence_event):
 		# Skip if this is ourselves (Nakama sometimes sends our own leave event)
 		if user_id == MultiplayerManager.session.user_id:
 			continue
-		print("[Main] Player left match: ", leave.username)
+		_debug_log("Player left match: %s" % leave.username)
 		if MultiplayerManager.players.has(user_id):
 			MultiplayerManager.players.erase(user_id)
 			MultiplayerManager.player_left.emit(user_id)
@@ -506,7 +646,7 @@ func _on_mob_died(_mob, score_value: int, xp_value: int):
 	# Award XP to local player via singleton
 	if player:
 		LevelSystem.add_xp(player, xp_value)
-		print("[Main] Awarded %d XP to player" % xp_value)
+		_debug_log("Awarded %d XP to player" % xp_value)
 
 
 func _on_active_mob_count_changed(current_alive: int, total_in_round: int) -> void:
@@ -553,7 +693,7 @@ func _start_round(round_number: int, show_popup: bool) -> void:
 	_starting_round_transition = false
 
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
-	print("[Main] Player joined signal received for: ", username)
+	_debug_log("Player joined signal received for: %s" % username)
 	_spawn_player_for_user(user_id)
 
 
@@ -577,11 +717,13 @@ func _maybe_prompt_subclass_selection() -> void:
 		return
 	if LevelSystem.get_level(player) < 10:
 		return
-	if _subclass_overlay_layer.visible:
+	var overlay_has_choices := _subclass_overlay_choices != null and _subclass_overlay_choices.get_child_count() > 0
+	if _subclass_overlay_layer.visible and overlay_has_choices:
 		return
 
-	var choices: Array[PlayerClass] = ClassManager.get_subclasses_for_main_class(MultiplayerManager.player_class)
+	var choices: Array[PlayerClass] = ClassManagerScript.get_subclasses_for_main_class(MultiplayerManager.player_class)
 	if choices.is_empty():
+		_clear_subclass_selection_overlay()
 		return
 
 	_show_subclass_selection_overlay(choices)
@@ -614,10 +756,10 @@ func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
 		MultiplayerManager.send_match_state({
 			"type": "subclass_selected",
 			"user_id": MultiplayerManager.session.user_id,
-			"subclass_id": ClassManager.get_class_id(subclass)
+			"subclass_id": ClassManagerScript.get_class_id(subclass)
 		})
 	_clear_subclass_selection_overlay()
-	print("[Main] Subclass selected: ", subclass.display_name)
+	_debug_log("Subclass selected: %s" % subclass.display_name)
 
 
 func _clear_subclass_selection_overlay() -> void:
@@ -687,7 +829,7 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 			# Check for pending attack (slash effect)
 			var pending_attack = MultiplayerUtils.get_pending_attack(user_id)
 			if not pending_attack.is_empty():
-				print("[Main] Spawning remote slash at ", pending_attack.pos, " rotation ", pending_attack.rotation)
+				_debug_log("Spawning remote slash rotation %s" % pending_attack.rotation)
 				_spawn_remote_slash(pending_attack.pos, pending_attack.rotation)
 			
 			# Show player if not visible
@@ -769,3 +911,8 @@ func _handle_player_leave(data: Dictionary) -> void:
 			node.queue_free()
 		MultiplayerUtils.unregister_remote_player(user_id)
 		_remove_player_minimap_indicator(user_id)
+
+
+func _debug_log(message: String) -> void:
+	if DEBUG_MAIN_LOGS:
+		print("[Main] %s" % message)

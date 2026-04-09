@@ -16,6 +16,8 @@ func _init():
 	modifiers_damage = 1.35   # +35% Damage
 	modifiers_defense = 0.82  # -18% Defense
 	modifiers_attack_speed = 0.95   # -5% Attack Speed
+	modifiers_crit_chance = 1.06    # +6% Crit Chance
+	modifiers_crit_damage = 1.20    # +20% Crit Damage
 	
 	# Special ability
 	ability_name = "Meteor Storm"

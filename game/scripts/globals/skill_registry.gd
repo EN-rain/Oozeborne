@@ -16,6 +16,7 @@ const SKILL_ICON_FALLBACKS := {
 var _skills_by_id: Dictionary = {}
 var _skills_by_class: Dictionary = {}
 var _skill_path_info: Dictionary = {}
+var _icon_cache: Dictionary = {}
 
 
 func _ready() -> void:
@@ -65,8 +66,12 @@ func get_skill_icon(skill_id: String) -> Texture2D:
 	if resolved_skill_id.is_empty():
 		return null
 
+	if _icon_cache.has(resolved_skill_id):
+		return _icon_cache[resolved_skill_id] as Texture2D
+
 	var skill = get_skill(resolved_skill_id)
 	if skill != null and skill.icon != null:
+		_icon_cache[resolved_skill_id] = skill.icon
 		return skill.icon
 
 	var info := get_skill_path_info(resolved_skill_id)
@@ -92,6 +97,8 @@ func get_skill_icon(skill_id: String) -> Texture2D:
 	var texture := load(icon_path) as Texture2D
 	if skill != null:
 		skill.icon = texture
+	if texture != null:
+		_icon_cache[resolved_skill_id] = texture
 	return texture
 
 
@@ -105,6 +112,7 @@ func _reload_registry() -> void:
 	_skills_by_id.clear()
 	_skills_by_class.clear()
 	_skill_path_info.clear()
+	_icon_cache.clear()
 	_walk_skill_directory(SKILL_ROOT)
 
 

@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/skill_tree_ui.gd" id="1_skilltree"]
+[ext_resource type="Script" path="res://scripts/ui/gameplay/skill_tree_ui.gd" id="1_skilltree"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 20.0

@@ -16,8 +16,8 @@ func _init():
 	modifiers_damage = 1.28   # +28% Damage
 	modifiers_defense = 0.8   # -20% Defense
 	modifiers_attack_speed = 1.18   # +18% Attack Speed
-	modifiers_crit_chance = 1.35    # +35% Crit Chance
-	modifiers_crit_damage = 1.7     # +70% Crit Damage
+	modifiers_crit_chance = 1.28    # +28% Crit Chance
+	modifiers_crit_damage = 1.55    # +55% Crit Damage
 	
 	# Special ability
 	ability_name = "Shadow Step"

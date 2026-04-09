@@ -24,6 +24,28 @@
 
 Players earn Skill Points (SP) through leveling. SP is the primary resource for upgrading all skills across main class and subclass trees.
 
+### Critical Strike Scaling
+
+Critical stats use a shared baseline plus class bonuses so every build has some crit value without flattening role identity.
+
+- **Level baseline crit rate:** 5% at Lv 1, +0.05% per level, 10% by Lv 100
+- **Level baseline crit damage:** 110% at Lv 1, +0.1% per level, 120% by Lv 100
+- **Main class crit modifiers:** apply their full bonus
+- **Active subclass crit modifiers:** apply at 50% value
+
+### Crit Formula
+
+- **Final Crit Rate** = level baseline crit rate + main class crit rate bonus + 50% of active subclass crit rate bonus
+- **Final Crit Damage** = level baseline crit damage + main class crit damage bonus + 50% of active subclass crit damage bonus
+
+Balance target:
+
+- Tank: low crit
+- Support: light crit
+- Hybrid / Controller: moderate crit
+- DPS: strong crit
+- Assassin / Samurai: highest burst crit payoff
+
 ### Progression Flow
 
 1. **Pick a main class** (Tank, DPS, Support, Hybrid, or Controller)
@@ -82,7 +104,7 @@ Players earn Skill Points (SP) through leveling. SP is the primary resource for 
 
 The Tank is one of five main classes. Players begin by investing Skill Points (SP) into the main class tree. All 20 SP must be spent before subclass trees unlock.
 
-**Base Stats:** HP +25%, Speed -5%, Damage -5%, Defense +25%, Attack Speed -5%
+**Base Stats:** HP +25%, Speed -5%, Damage -5%, Defense +25%, Attack Speed -5%, Crit Chance +2%, Crit Damage +5%
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -92,6 +114,8 @@ The Tank is one of five main classes. Players begin by investing Skill Points (S
 | Damage | -5% |
 | Defense | +25% |
 | Attack Speed | -5% |
+| Crit Chance | +2% |
+| Crit Damage | +5% |
 
 **Special Ability — Fortify (14s CD):** Gain damage reduction and taunt nearby enemies briefly.
 
@@ -185,7 +209,7 @@ The Tank is one of five main classes. Players begin by investing Skill Points (S
 
 The DPS is one of five main classes. Players begin by investing Skill Points (SP) into the main class tree. All 20 SP must be spent before subclass trees unlock.
 
-**Base Stats:** HP -5%, Speed +8%, Damage +20%, Defense -10%, Attack Speed +10%
+**Base Stats:** HP -5%, Speed +8%, Damage +20%, Defense -10%, Attack Speed +10%, Crit Chance +8%, Crit Damage +10%
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -195,6 +219,8 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Damage | +20% |
 | Defense | -10% |
 | Attack Speed | +10% |
+| Crit Chance | +8% |
+| Crit Damage | +10% |
 
 **Special Ability — Burst Window (12s CD):** Temporarily increase attack and crit output.
 
@@ -210,7 +236,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 
 ### Subclass: Assassin (30 SP Cap)
 
-**Subclass Stats:** HP -18%, Speed +22%, Damage +28%, Defense -20%, Attack Speed +18%, Crit Chance +35%, Crit Damage +70%, 10% Dodge
+**Subclass Stats:** HP -18%, Speed +22%, Damage +28%, Defense -20%, Attack Speed +18%, Crit Chance +28%, Crit Damage +55%, 10% Dodge
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -220,8 +246,8 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Damage | +28% |
 | Defense | -20% |
 | Attack Speed | +18% |
-| Crit Chance | +35% |
-| Crit Damage | +70% |
+| Crit Chance | +28% |
+| Crit Damage | +55% |
 | Dodge | 10% |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
@@ -236,7 +262,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 
 ### Subclass: Ranger (30 SP Cap)
 
-**Subclass Stats:** HP -10%, Speed +20%, Damage +20%, Defense -10%, Attack Speed +15%
+**Subclass Stats:** HP -10%, Speed +20%, Damage +20%, Defense -10%, Attack Speed +15%, Crit Chance +10%, Crit Damage +15%
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -246,6 +272,8 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Damage | +20% |
 | Defense | -10% |
 | Attack Speed | +15% |
+| Crit Chance | +10% |
+| Crit Damage | +15% |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
@@ -259,7 +287,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 
 ### Subclass: Mage (30 SP Cap)
 
-**Subclass Stats:** HP -22%, Speed +10%, Damage +35%, Defense -18%, Attack Speed -5%
+**Subclass Stats:** HP -22%, Speed +10%, Damage +35%, Defense -18%, Attack Speed -5%, Crit Chance +6%, Crit Damage +20%
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -269,6 +297,8 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Damage | +35% |
 | Defense | -18% |
 | Attack Speed | -5% |
+| Crit Chance | +6% |
+| Crit Damage | +20% |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
@@ -282,7 +312,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 
 ### Subclass: Samurai (30 SP Cap)
 
-**Subclass Stats:** HP -15%, Speed +15%, Damage +24%, Defense -15%, Attack Speed +20%, Crit Damage +40%
+**Subclass Stats:** HP -15%, Speed +15%, Damage +24%, Defense -15%, Attack Speed +20%, Crit Chance +8%, Crit Damage +40%
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -292,6 +322,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Damage | +24% |
 | Defense | -15% |
 | Attack Speed | +20% |
+| Crit Chance | +8% |
 | Crit Damage | +40% |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
@@ -659,6 +690,42 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 ---
 
 # Quick Reference
+
+## Balanced Crit Reference
+
+### Level-Based Crit Baseline
+
+| Level Range | Crit Rate | Crit Damage |
+|-------------|-----------|-------------|
+| Lv 1 | 5.0% | 110% |
+| Lv 25 | 6.2% | 112.4% |
+| Lv 50 | 7.5% | 114.9% |
+| Lv 75 | 8.7% | 117.4% |
+| Lv 100 | 10.0% | 120% |
+
+### Main Class Crit Modifiers
+
+| Main Class | Crit Rate Bonus | Crit Damage Bonus | Role Target |
+|------------|------------------|-------------------|-------------|
+| Tank | +2% | +5% | Lowest crit, highest stability |
+| Support | +3% | +5% | Light crit, utility-first |
+| Hybrid | +6% | +8% | Flexible mid-crit scaling |
+| Controller | +6% | +10% | Moderate crit with ability payoff |
+| DPS | +8% | +10% | Strong general crit baseline |
+
+### Notable Subclass Crit Modifiers
+
+Active subclass bonuses apply at 50% value.
+
+| Subclass | Crit Rate Bonus | Crit Damage Bonus | Intent |
+|----------|------------------|-------------------|--------|
+| Assassin | +28% | +55% | Highest burst and crit payoff |
+| Samurai | +8% | +40% | Reliable crit damage spike |
+| Ranger | +10% | +15% | Precision ranged crit build |
+| Mage | +6% | +20% | Spell burst without assassin volatility |
+| Necromancer | +8% | +15% | Sustained spell crit pressure |
+| Spellblade | +8% | +15% | Mixed melee-magic crit hybrid |
+| Monk | +12% | +20% | Fast combo crit scaling |
 
 ## Class Summary
 

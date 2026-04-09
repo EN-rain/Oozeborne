@@ -20,7 +20,8 @@ func _init():
 	modifiers_damage = 1.14   # +14% Damage
 	modifiers_defense = 1.0   # Neutral Defense
 	modifiers_attack_speed = 1.2     # +20% Attack Speed
-	modifiers_crit_chance = 1.15     # +15% Crit Chance
+	modifiers_crit_chance = 1.12     # +12% Crit Chance
+	modifiers_crit_damage = 1.20     # +20% Crit Damage
 	
 	# Special ability
 	ability_name = "Seven-Point Strike"

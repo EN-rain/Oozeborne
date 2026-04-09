@@ -1,186 +1,186 @@
 extends Node
 
-## LevelSystem - Singleton that manages player XP, level ups, and stat application
-## Add to AutoLoad as "LevelSystem"
-
 signal xp_gained(entity_id: int, amount: int, total: int)
 signal level_up(entity_id: int, new_level: int, stats: Dictionary)
 signal stats_updated(entity_id: int, stats: Dictionary)
 
-@export var player_stats: PlayerStats  # Resource defining stat scaling
+@export var player_stats: PlayerStats
 
-# Dictionary: entity_id -> { level, xp, xp_to_next, player_ref }
 var player_data: Dictionary = {}
 
 
-func _ready():
+func _ready() -> void:
 	if player_stats == null:
-		player_stats = PlayerStats.new()  # Use defaults
+		player_stats = PlayerStats.new()
 
 
-## Register a player with the level system
 func register_player(player: Node, starting_level: int = 1) -> void:
-	var entity_id = player.get_instance_id()
-	
+	if player == null or not is_instance_valid(player):
+		return
+	var entity_id := player.get_instance_id()
 	player_data[entity_id] = {
-		"level": starting_level,
+		"level": max(1, starting_level),
 		"xp": 0,
-		"xp_to_next": player_stats.get_xp_for_level(starting_level + 1),
-		"player_ref": player
+		"xp_to_next": player_stats.get_xp_for_level(max(1, starting_level) + 1),
+		"player_ref": player,
 	}
-	
 	_apply_current_stats(entity_id)
-	print("[LevelSystem] Registered player %d at level %d" % [entity_id, starting_level])
 
 
-## Unregister a player (call when player is freed)
 func unregister_player(player: Node) -> void:
-	var entity_id = player.get_instance_id()
+	if player == null:
+		return
+	var entity_id := player.get_instance_id()
 	if player_data.has(entity_id):
 		player_data.erase(entity_id)
-		print("[LevelSystem] Unregistered player %d" % entity_id)
+
+
+func has_player(player: Node) -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	return player_data.has(player.get_instance_id())
 
 
 func reset_run_state() -> void:
 	player_data.clear()
 	if get_tree() != null and get_tree().root != null and get_tree().root.has_node("SkillTreeManager"):
-		var skill_tree_manager = get_tree().root.get_node("SkillTreeManager")
+		var skill_tree_manager := get_tree().root.get_node("SkillTreeManager")
 		if skill_tree_manager != null:
 			skill_tree_manager.call("reset_run_state")
 
 
-## Add XP to a player
 func add_xp(player: Node, amount: int) -> void:
-	if amount <= 0:
+	if amount <= 0 or player == null or not is_instance_valid(player):
 		return
-	
-	var entity_id = player.get_instance_id()
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return
-	
-	var data = player_data[entity_id]
+	var data: Dictionary = player_data[entity_id]
 	data.xp += amount
 	xp_gained.emit(entity_id, amount, data.xp)
-	
-	# Check for multiple level ups
 	while data.xp >= data.xp_to_next:
 		_level_up(entity_id)
 
 
-## Add XP from killing a mob
 func add_xp_from_kill(player: Node, mob_xp_value: int) -> void:
 	add_xp(player, mob_xp_value)
 
 
-## Get player's current level
 func get_level(player: Node) -> int:
-	var entity_id = player.get_instance_id()
+	if player == null or not is_instance_valid(player):
+		return 1
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return 1
-	return player_data[entity_id].level
+	return int(player_data[entity_id].level)
 
 
-## Get player's current XP
 func get_xp(player: Node) -> int:
-	var entity_id = player.get_instance_id()
+	if player == null or not is_instance_valid(player):
+		return 0
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return 0
-	return player_data[entity_id].xp
+	return int(player_data[entity_id].xp)
 
 
-## Get XP progress (0.0 to 1.0)
 func get_xp_progress(player: Node) -> float:
-	var entity_id = player.get_instance_id()
+	if player == null or not is_instance_valid(player):
+		return 0.0
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return 0.0
-	
-	var data = player_data[entity_id]
-	if data.xp_to_next <= 0:
+	var data: Dictionary = player_data[entity_id]
+	if int(data.xp_to_next) <= 0:
 		return 1.0
 	return float(data.xp) / float(data.xp_to_next)
 
 
-## Get current stats for a player
 func get_current_stats(player: Node) -> Dictionary:
-	var entity_id = player.get_instance_id()
+	if player == null or not is_instance_valid(player):
+		return {}
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return {}
-	return player_stats.get_stats_at_level(player_data[entity_id].level)
+	return player_stats.get_stats_at_level(int(player_data[entity_id].level))
 
 
-## Force set level (for testing or saves)
-func set_level(player: Node, level: int) -> void:
-	var entity_id = player.get_instance_id()
+func get_player_state(player: Node) -> Dictionary:
+	if player == null or not is_instance_valid(player):
+		return {}
+	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
-		return
+		return {}
+	return {
+		"level": int(player_data[entity_id].level),
+		"xp": int(player_data[entity_id].xp),
+	}
 
-	var resolved_level: int = max(1, level)
-	var previous_level: int = int(player_data[entity_id].level)
+
+func load_player_state(player: Node, state: Dictionary) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	if not has_player(player):
+		register_player(player, int(state.get("level", 1)))
+	var entity_id := player.get_instance_id()
+	player_data[entity_id].level = maxi(1, int(state.get("level", 1)))
+	player_data[entity_id].xp = max(0, int(state.get("xp", 0)))
+	player_data[entity_id].xp_to_next = player_stats.get_xp_for_level(int(player_data[entity_id].level) + 1)
+	_apply_current_stats(entity_id)
+	level_up.emit(entity_id, int(player_data[entity_id].level), player_stats.get_stats_at_level(int(player_data[entity_id].level)))
+
+
+func set_level(player: Node, level: int) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	if not has_player(player):
+		register_player(player, maxi(1, level))
+	var entity_id := player.get_instance_id()
+	var resolved_level: int = maxi(1, level)
 	player_data[entity_id].level = resolved_level
 	player_data[entity_id].xp = 0
 	player_data[entity_id].xp_to_next = player_stats.get_xp_for_level(resolved_level + 1)
 	_apply_current_stats(entity_id)
-	if resolved_level != previous_level:
-		level_up.emit(entity_id, resolved_level, player_stats.get_stats_at_level(resolved_level))
+	level_up.emit(entity_id, resolved_level, player_stats.get_stats_at_level(resolved_level))
 
 
-## Internal: Handle level up
 func _level_up(entity_id: int) -> void:
 	if not player_data.has(entity_id):
 		return
-	
-	var data = player_data[entity_id]
+	var data: Dictionary = player_data[entity_id]
 	data.xp -= data.xp_to_next
 	data.level += 1
-	data.xp_to_next = player_stats.get_xp_for_level(data.level + 1)
-	
-	var new_stats = player_stats.get_stats_at_level(data.level)
-	level_up.emit(entity_id, data.level, new_stats)
+	data.xp_to_next = player_stats.get_xp_for_level(int(data.level) + 1)
+	var new_stats: Dictionary = player_stats.get_stats_at_level(int(data.level))
+	level_up.emit(entity_id, int(data.level), new_stats)
 	_apply_current_stats(entity_id)
-	
-	print("[LevelSystem] Player %d leveled up to %d!" % [entity_id, data.level])
 
 
-## Internal: Apply current level stats to player
 func _apply_current_stats(entity_id: int) -> void:
 	if not player_data.has(entity_id):
 		return
-	
-	var data = player_data[entity_id]
-	var player = data.player_ref
-	
+	var data: Dictionary = player_data[entity_id]
+	var player: Node = data.player_ref
 	if not is_instance_valid(player) or player_stats == null:
 		return
-	
-	var stats = player_stats.get_stats_at_level(data.level)
-	
-	# Apply speed
+	var stats: Dictionary = player_stats.get_stats_at_level(int(data.level))
 	if "speed" in player:
 		player.speed = stats.speed
-	
-	# Apply dash stats
 	if "dash_speed" in player:
 		player.dash_speed = stats.dash_speed
 	if "dash_cooldown" in player:
 		player.dash_cooldown = stats.dash_cooldown
-	
-	# Apply health (update max health in health component)
 	if player.has_node("Health"):
 		var health_comp = player.get_node("Health")
-		var previous_max_health: int = max(health_comp.max_health, 1)
-		var previous_health_ratio: float = health_comp.current_health / float(previous_max_health)
+		var previous_max_health: int = max(int(health_comp.max_health), 1)
+		var previous_health_ratio: float = float(health_comp.current_health) / float(previous_max_health)
 		health_comp.max_health = stats.max_health
-		health_comp.current_health = int(stats.max_health * clamp(previous_health_ratio, 0.0, 1.0))
+		health_comp.current_health = int(stats.max_health * clampf(previous_health_ratio, 0.0, 1.0))
 		health_comp.health_changed.emit(health_comp.current_health, health_comp.max_health)
-	
-	# Store attack damage for use by attack system
 	if "attack_damage" not in player:
 		player.set_meta("attack_damage", stats.attack_damage)
 	else:
 		player.attack_damage = stats.attack_damage
-
-	# Reapply class/subclass multipliers after raw level stats are written.
 	if player.has_method("reapply_class_modifiers_after_level_sync"):
 		player.reapply_class_modifiers_after_level_sync(stats)
-	
 	stats_updated.emit(entity_id, stats)

@@ -16,7 +16,8 @@ func _init():
 	modifiers_damage = 1.22   # +22% Damage
 	modifiers_defense = 0.8   # -20% Defense
 	modifiers_attack_speed = 1.0
-	modifiers_crit_chance = 1.1  # +10% Crit Chance
+	modifiers_crit_chance = 1.08  # +8% Crit Chance
+	modifiers_crit_damage = 1.15  # +15% Crit Damage
 
 	# Special ability
 	ability_name = "Grave Swarm"

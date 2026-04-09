@@ -20,6 +20,8 @@ func _init():
 	modifiers_damage = 1.18   # +18% Damage
 	modifiers_defense = 0.94  # -6% Defense
 	modifiers_attack_speed = 1.08    # +8% Attack Speed
+	modifiers_crit_chance = 1.08     # +8% Crit Chance
+	modifiers_crit_damage = 1.15     # +15% Crit Damage
 	
 	# Special ability
 	ability_name = "Elemental Infusion"

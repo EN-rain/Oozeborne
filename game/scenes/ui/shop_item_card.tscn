@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/shop_item_card.gd" id="1_shopitemcard"]
+[ext_resource type="Script" path="res://scripts/ui/gameplay/shop_item_card.gd" id="1_shopitemcard"]
 
 [sub_resource type="StyleBoxFlat" id="1_card_panel"]
 bg_color = Color(0.08, 0.06, 0.14, 0.95)

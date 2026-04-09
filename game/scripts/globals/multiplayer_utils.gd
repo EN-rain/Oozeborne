@@ -21,6 +21,7 @@ var _input_sequence: int = 0
 ## Stores inputs that haven't been confirmed by server yet
 var _pending_inputs: Array = []  # [{seq, move_x, move_y, timestamp}]
 const MAX_PENDING_INPUTS: int = 60  # Keep last 60 inputs (3 seconds at 20Hz)
+const DEBUG_MULTIPLAYER_UTILS_LOGS := false
 
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
@@ -74,7 +75,7 @@ func unregister_remote_player(user_id: String) -> void:
 ## Update target position for a remote player with velocity
 func update_remote_player_target(user_id: String, target_pos: Vector2, velocity: Vector2, facing: int, is_attacking: bool = false, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
 	if not _remote_players.has(user_id):
-		print("[MultiplayerUtils] WARNING: No remote player found for user_id: ", user_id)
+		_debug_log("WARNING: No remote player found for user_id: %s" % user_id)
 		return
 	
 	var player_data = _remote_players[user_id]
@@ -86,7 +87,7 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	
 	# Debug: Log position updates rarely (every 50th)
 	if player_data.positions.size() % 50 == 0:
-		print("[MultiplayerUtils] Pos update for ", user_id.substr(0,8), ": ", target_pos, " vel: ", velocity, " facing: ", facing, " interval: ", snapped(time_since_last, 0.001))
+		_debug_log("Pos update for %s: %s vel: %s facing: %s interval: %s" % [user_id.substr(0, 8), target_pos, velocity, facing, snapped(time_since_last, 0.001)])
 	
 	# Add to position buffer with receive timestamp
 	player_data.positions.append({
@@ -115,7 +116,7 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	
 	# Only trigger attack animation on rising edge (was false, now true)
 	if is_attacking and not was_attacking:
-		print("[MultiplayerUtils] Attack detected for remote player at ", player_data.node.global_position)
+		_debug_log("Attack detected for remote player at %s" % str(player_data.node.global_position))
 		# Store attack info using player's VISUAL position and attack rotation
 		player_data.pending_attack = {"pos": player_data.node.global_position, "rotation": attack_rotation}
 	
@@ -281,16 +282,16 @@ func start_input_update_loop(player_node: Node) -> void:
 
 
 func _send_input_updates(player_node: Node) -> void:
-	print("[MultiplayerUtils] Starting input updates at 20Hz (authoritative)")
+	_debug_log("Starting input updates at 20Hz (authoritative)")
 	const INPUT_RATE: float = 0.05  # 20Hz to match server tickrate
 	
 	while true:
 		# Check connection state first
 		if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
-			print("[MultiplayerUtils] Stopping input updates - disconnected")
+			_debug_log("Stopping input updates - disconnected")
 			break
 		if not is_instance_valid(player_node):
-			print("[MultiplayerUtils] Stopping input updates - player node invalid")
+			_debug_log("Stopping input updates - player node invalid")
 			break
 		
 		# Read input from the player
@@ -310,7 +311,7 @@ func _send_input_updates(player_node: Node) -> void:
 		
 		# Send input to server with facing and dash state.
 		if not MultiplayerManager.is_socket_open():
-			print("[MultiplayerUtils] Stopping input updates - socket closed before send")
+			_debug_log("Stopping input updates - socket closed before send")
 			break
 		send_input(move_x, move_y, is_attacking, facing, is_dashing)
 		
@@ -511,7 +512,7 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	
 	# Debug log occasionally
 	if _input_sequence % 100 == 0:
-		print("[Prediction] Error: ", snapped(error_dist, 0.1), " px | Pending: ", _pending_inputs.size())
+		_debug_log("Prediction error: %s px | Pending: %s" % [snapped(error_dist, 0.1), _pending_inputs.size()])
 	
 	# Only reconcile if error exceeds threshold
 	if error_dist > _reconciliation_threshold:
@@ -570,3 +571,8 @@ func _move_remote_node_with_collisions(node: Node, target_pos: Vector2) -> void:
 		return
 
 	node.global_position = target_pos
+
+
+func _debug_log(message: String) -> void:
+	if DEBUG_MULTIPLAYER_UTILS_LOGS:
+		print("[MultiplayerUtils] %s" % message)

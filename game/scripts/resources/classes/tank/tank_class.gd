@@ -20,6 +20,8 @@ func _init():
 	modifiers_damage = 0.95   # -5% Damage
 	modifiers_defense = 1.25  # +25% Defense
 	modifiers_attack_speed = 0.95   # -5% Attack Speed
+	modifiers_crit_chance = 1.02    # +2% Crit Chance
+	modifiers_crit_damage = 1.05    # +5% Crit Damage
 	
 	# Special ability
 	ability_name = "Fortify"

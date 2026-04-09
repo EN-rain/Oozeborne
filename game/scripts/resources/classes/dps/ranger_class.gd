@@ -16,6 +16,8 @@ func _init():
 	modifiers_damage = 1.2    # +20% Damage
 	modifiers_defense = 0.9   # -10% Defense
 	modifiers_attack_speed = 1.15   # +15% Attack Speed
+	modifiers_crit_chance = 1.10    # +10% Crit Chance
+	modifiers_crit_damage = 1.15    # +15% Crit Damage
 	
 	# Special ability
 	ability_name = "Trap Network"

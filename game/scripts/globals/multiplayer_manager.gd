@@ -18,6 +18,7 @@ var subclass_choice_made: bool = false  # Subclass can only be selected once
 var player_level: int = 1  # Player level for subclass unlock
 var player_classes: Dictionary = {}  # user_id -> PlayerClass (for remote players)
 var player_subclasses: Dictionary = {}  # user_id -> PlayerClass (for remote players)
+const DEBUG_MULTIPLAYER_MANAGER_LOGS := false
 
 const SERVER_CONFIG_FILE = "server_config.cfg"
 const SERVER_CONFIG_SECTION = "server"
@@ -45,7 +46,7 @@ signal auth_state_changed(is_authenticated: bool, username: String, email: Strin
 
 func _ready():
 	_server_config = _resolve_server_config()
-	print("MultiplayerManager ready")
+	_debug_log("MultiplayerManager ready")
 
 func _reset_match_state() -> void:
 	match_id = ""
@@ -63,7 +64,9 @@ func _reset_match_state() -> void:
 
 
 func resolve_player_scene() -> PackedScene:
-	return load(SlimePaletteRegistry.get_scene_path(player_slime_variant)) as PackedScene
+	if not _cached_player_scenes.has(player_slime_variant):
+		_cached_player_scenes[player_slime_variant] = load(SlimePaletteRegistry.get_scene_path(player_slime_variant)) as PackedScene
+	return _cached_player_scenes[player_slime_variant] as PackedScene
 
 func _cleanup_socket_connection() -> void:
 	if socket != null:
@@ -108,7 +111,7 @@ func _ensure_client() -> void:
 	if client != null:
 		return
 
-	print("[Manager] Resolved server config from ", _server_config["source"], ": ", get_server_endpoint_summary())
+	_debug_log("Resolved server config from %s: %s" % [_server_config["source"], get_server_endpoint_summary()])
 	var http_adapter = get_node_or_null("NakamaHTTPAdapter")
 	if http_adapter == null:
 		http_adapter = NakamaHTTPAdapter.new()
@@ -328,7 +331,7 @@ func connect_to_server(device_id: String = "") -> bool:
 		var result = await client.authenticate_device_async(fallback_device_id, null, true, null)
 		var auth_error = get_last_auth_error(result)
 		if not auth_error.is_empty():
-			print("Failed to authenticate: " + auth_error)
+			_debug_log("Failed to authenticate: " + auth_error)
 			return false
 		_set_authenticated_session(result)
 
@@ -345,15 +348,15 @@ func connect_to_server(device_id: String = "") -> bool:
 	await socket.connect_async(session)
 	
 	if not socket.is_connected_to_host():
-		print("Failed to connect socket")
+		_debug_log("Failed to connect socket")
 		return false
 	
-	print("Socket connected!")
+	_debug_log("Socket connected!")
 
 	# Connect match signals here so we never miss events between scene transitions
 	socket.received_match_presence.connect(_on_match_presence)
 	socket.received_match_state.connect(_on_match_state)
-	print("[Manager] Socket signals connected, waiting for match state...")
+	_debug_log("Socket signals connected, waiting for match state...")
 
 	return true
 
@@ -381,20 +384,20 @@ func create_room() -> String:
 	
 	var result_data = JSON.parse_string(rpc_result.payload)
 	if result_data == null or not result_data.get("success", false):
-		print("RPC returned failure")
+		_debug_log("RPC returned failure")
 		return ""
 	
 	match_id = result_data.get("match_id", "")
 	if match_id.is_empty():
-		print("No match_id in RPC response")
+		_debug_log("No match_id in RPC response")
 		return ""
 	
-	print("Created room: " + room_code + " | Match: " + match_id)
+	_debug_log("Created room: %s | Match: %s" % [room_code, match_id])
 	
 	# Join the match we just created
 	var join_result = await socket.join_match_async(match_id, {"ign": player_ign})
 	if join_result.is_exception():
-		print("Failed to join created match: " + join_result.get_exception().message)
+		_debug_log("Failed to join created match: " + join_result.get_exception().message)
 		return ""
 	
 	# Store our own presence
@@ -413,40 +416,40 @@ func join_room(join_code: String) -> bool:
 
 	# Normalize the join code
 	join_code = join_code.strip_edges().to_upper()
-	print("Attempting to join room: '" + join_code + "'")
+	_debug_log("Attempting to join room: '%s'" % join_code)
 
 	# Call RPC to look up room code and get match_id
 	var payload = JSON.stringify({"room_code": join_code})
 	var rpc_result = await client.rpc_async(session, "join_room", payload)
 	
 	if rpc_result.is_exception():
-		print("RPC join_room failed: " + rpc_result.get_exception().message)
+		_debug_log("RPC join_room failed: " + rpc_result.get_exception().message)
 		return false
 	
 	var result_data = JSON.parse_string(rpc_result.payload)
 	if result_data == null:
-		print("Invalid RPC response")
+		_debug_log("Invalid RPC response")
 		return false
 	
 	var target_match_id = result_data.get("match_id", "")
 	if target_match_id.is_empty():
-		print("No match_id in RPC response")
+		_debug_log("No match_id in RPC response")
 		return false
 	
 	var host_ign = result_data.get("host_ign", "Unknown")
 	lobby_name = result_data.get("lobby_name", "%s's Lobby" % host_ign)
-	print("Found room, host: " + host_ign + ", joining match: " + target_match_id)
+	_debug_log("Found room, host: %s, joining match: %s" % [host_ign, target_match_id])
 
 	var join_result = await socket.join_match_async(target_match_id, {"ign": player_ign})
 	if join_result.is_exception():
-		print("Failed to join match: " + join_result.get_exception().message)
+		_debug_log("Failed to join match: " + join_result.get_exception().message)
 		return false
 
 	match_id = target_match_id
 	room_code = join_code
 	is_host = false
 	
-	print("Joined room: " + room_code + " | Match: " + match_id)
+	_debug_log("Joined room: %s | Match: %s" % [room_code, match_id])
 	
 	# Add ourselves to players list
 	players[session.user_id] = {"ign": player_ign, "is_host": false}
@@ -459,7 +462,7 @@ func join_room(join_code: String) -> bool:
 	if join_result.presences != null:
 		for presence in join_result.presences:
 			if presence.user_id != session.user_id:
-				print("Found existing player presence: " + presence.user_id.substr(0, 8))
+				_debug_log("Found existing player presence: %s" % presence.user_id.substr(0, 8))
 				players[presence.user_id] = {"ign": "", "is_host": false, "presence": presence}
 	
 	# Send player info to others
@@ -476,7 +479,7 @@ func _on_match_presence(p_presence):
 		# Skip if this is ourselves
 		if join.user_id == session.user_id:
 			continue
-		print("[Manager] Player joined match: ", join.user_id.substr(0, 8))
+		_debug_log("Player joined match: %s" % join.user_id.substr(0, 8))
 		if not players.has(join.user_id):
 			players[join.user_id] = {"ign": "", "is_host": false, "presence": join}
 			var display_name = join.username if not join.username.is_empty() else "Player"
@@ -490,9 +493,13 @@ func _on_match_presence(p_presence):
 		# Skip if this is ourselves (Nakama sometimes sends our own leave event)
 		if leave.user_id == session.user_id:
 			continue
-		print("[Manager] Player left match: ", leave.username)
+		_debug_log("Player left match: %s" % leave.username)
 		if players.has(leave.user_id):
 			players.erase(leave.user_id)
+		if player_classes.has(leave.user_id):
+			player_classes.erase(leave.user_id)
+		if player_subclasses.has(leave.user_id):
+			player_subclasses.erase(leave.user_id)
 			player_left.emit(leave.user_id)
 
 func disconnect_server():
@@ -502,7 +509,7 @@ func disconnect_server():
 		await client.rpc_async(session, "delete_room", payload)
 	_cleanup_socket_connection()
 	_reset_match_state()
-	print("Disconnected from server")
+	_debug_log("Disconnected from server")
 
 func send_match_state(data: Dictionary):
 	if not is_socket_open() or match_id.is_empty():
@@ -514,7 +521,7 @@ func send_match_state(data: Dictionary):
 	var current_time = Time.get_ticks_msec()
 	if current_time - _last_debug_print_time > 2000:
 		_last_debug_print_time = current_time
-		print("[Manager] Sending match state: ", json)
+		_debug_log("Sending match state: %s" % json)
 	
 	# Always broadcast to entire match (null = all players)
 	# This is more reliable than targeting specific presences
@@ -533,13 +540,19 @@ func set_player_subclass(user_id: String, assigned_subclass: PlayerClass) -> voi
 	player_subclasses[user_id] = assigned_subclass
 
 var _last_debug_print_time: int = 0  # Rate limit debug prints
+var _cached_player_scenes: Dictionary = {}
 
 func _set_match_phase(new_phase: String) -> void:
 	if new_phase.is_empty() or match_phase == new_phase:
 		return
 	match_phase = new_phase
-	print("[Manager] Match phase -> ", new_phase)
+	_debug_log("Match phase -> %s" % new_phase)
 	match_phase_changed.emit(new_phase)
+
+
+func _debug_log(message: String) -> void:
+	if DEBUG_MULTIPLAYER_MANAGER_LOGS:
+		print("[Manager] %s" % message)
 
 func _on_match_state(match_state) -> void:
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:

@@ -1,190 +1,241 @@
 [gd_scene format=3 uid="uid://ndd30h5ijflg"]
 
-[ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://scripts/ui/pause_menu.gd" id="1_pausemenu"]
+[ext_resource type="Script" uid="uid://df7kj132xa4uw" path="res://scripts/ui/gameplay/pause_menu.gd" id="1_pausemenu"]
 
-; ── Pause panel (dungeon stone dialog box) ────────────────────────────────────
 [sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 44.0
-content_margin_top = 36.0
-content_margin_right = 44.0
-content_margin_bottom = 36.0
-bg_color = Color(0.08, 0.06, 0.14, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.55, 0.45, 0.2, 0.85)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+content_margin_left = 28.0
+content_margin_top = 26.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.0431373, 0.0627451, 0.0941176, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.368627, 0.615686, 0.760784, 0.65)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="badge_style"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.101961, 0.180392, 0.270588, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.517647, 0.792157, 0.898039, 0.35)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="divider_style"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.458824, 0.705882, 0.839216, 0.16)
+
+[sub_resource type="StyleBoxFlat" id="btn_primary_normal"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.101961, 0.537255, 0.352941, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.184314, 0.701961, 0.486275, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.0509804, 0.254902, 0.168627, 0.35)
 shadow_size = 8
 
-; ── Separator (golden pixel line) ─────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="sep_style"]
-content_margin_top = 2.0
-content_margin_bottom = 2.0
-bg_color = Color(0.55, 0.45, 0.2, 0.45)
-
-; ── Resume button (emerald) ───────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="btn_resume_normal"]
-content_margin_left = 20.0
+[sub_resource type="StyleBoxFlat" id="btn_primary_hover"]
+content_margin_left = 18.0
 content_margin_top = 14.0
-content_margin_right = 20.0
+content_margin_right = 18.0
 content_margin_bottom = 14.0
-bg_color = Color(0.15, 0.55, 0.3, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.1, 0.4, 0.2, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.0, 0.0, 0.0, 0.4)
-shadow_size = 3
-
-[sub_resource type="StyleBoxFlat" id="btn_resume_pressed"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.1, 0.42, 0.22, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.08, 0.32, 0.15, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_resume_hover"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.2, 0.65, 0.38, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.15, 0.5, 0.28, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.15, 0.55, 0.3, 0.3)
-shadow_size = 5
-
-; ── Restart button (amethyst) ─────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="btn_restart_normal"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.45, 0.22, 0.65, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.35, 0.15, 0.5, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.0, 0.0, 0.0, 0.4)
-shadow_size = 3
-
-[sub_resource type="StyleBoxFlat" id="btn_restart_pressed"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.35, 0.15, 0.5, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.28, 0.1, 0.4, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_restart_hover"]
-content_margin_left = 20.0
-content_margin_top = 14.0
-content_margin_right = 20.0
-content_margin_bottom = 14.0
-bg_color = Color(0.55, 0.3, 0.78, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.42, 0.2, 0.62, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.45, 0.22, 0.65, 0.3)
-shadow_size = 5
-
-; ── Menu button (blood red) ───────────────────────────────────────────────────
-[sub_resource type="StyleBoxFlat" id="btn_menu_normal"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.35, 0.1, 0.1, 0.7)
+bg_color = Color(0.129412, 0.627451, 0.415686, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.55, 0.18, 0.18, 0.6)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.309804, 0.788235, 0.580392, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.101961, 0.537255, 0.352941, 0.3)
+shadow_size = 10
 
-[sub_resource type="StyleBoxFlat" id="btn_menu_pressed"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.45, 0.1, 0.1, 0.9)
+[sub_resource type="StyleBoxFlat" id="btn_primary_pressed"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.0823529, 0.419608, 0.27451, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.6, 0.15, 0.15, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.172549, 0.619608, 0.423529, 0.92)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="btn_menu_hover"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.55, 0.15, 0.15, 0.85)
+[sub_resource type="StyleBoxFlat" id="btn_secondary_normal"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.160784, 0.211765, 0.313726, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.7, 0.22, 0.22, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.458824, 0.705882, 0.839216, 0.36)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-; =============================================================================
-; Scene tree
-; =============================================================================
+[sub_resource type="StyleBoxFlat" id="btn_secondary_hover"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.196078, 0.266667, 0.388235, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.533333, 0.796078, 0.921569, 0.55)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_secondary_pressed"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.133333, 0.180392, 0.27451, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.411765, 0.662745, 0.8, 0.45)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_warning_normal"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.45098, 0.278431, 0.0823529, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.858824, 0.560784, 0.235294, 0.78)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_warning_hover"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.537255, 0.333333, 0.101961, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.929412, 0.65098, 0.313726, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_warning_pressed"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.34902, 0.219608, 0.0705882, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.760784, 0.486275, 0.219608, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_danger_normal"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.352941, 0.109804, 0.141176, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.74902, 0.258824, 0.305882, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_danger_hover"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.443137, 0.133333, 0.172549, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85098, 0.329412, 0.384314, 0.88)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="btn_danger_pressed"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.278431, 0.0901961, 0.117647, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.654902, 0.239216, 0.278431, 0.82)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1689519402]
 process_mode = 3
@@ -193,7 +244,6 @@ script = ExtResource("1_pausemenu")
 main_menu_scene_path = "res://scenes/ui/main_menu.tscn"
 metadata/_edit_use_anchors_ = true
 
-; Dark veil overlay
 [node name="Overlay" type="ColorRect" parent="." unique_id=1164352067]
 unique_name_in_owner = true
 anchors_preset = 15
@@ -201,10 +251,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.03, 0.0, 0.08, 0.75)
+color = Color(0.0117647, 0.0196078, 0.0352941, 0.76)
 metadata/_edit_use_anchors_ = true
 
-; Pause panel (pixel RPG dialog box)
 [node name="PausePanel" type="Panel" parent="." unique_id=1222374089]
 unique_name_in_owner = true
 anchors_preset = 8
@@ -212,10 +261,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -210.0
-offset_right = 200.0
-offset_bottom = 210.0
+offset_left = -240.0
+offset_top = -214.0
+offset_right = 240.0
+offset_bottom = 214.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("panel_style")
@@ -228,68 +277,111 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 14
-alignment = 1
+theme_override_constants/separation = 18
 
-; Pause icon
-[node name="PauseIcon" type="Label" parent="PausePanel/VBoxContainer"]
+[node name="TopRow" type="HBoxContainer" parent="PausePanel/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 0.8)
-theme_override_font_sizes/font_size = 32
-text = "⏸"
-horizontal_alignment = 1
+theme_override_constants/separation = 10
 
-; Title
-[node name="TitleLabel" type="Label" parent="PausePanel/VBoxContainer" unique_id=910023408]
+[node name="ModeBadge" type="PanelContainer" parent="PausePanel/VBoxContainer/TopRow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
-theme_override_font_sizes/font_size = 32
-text = "PAUSED"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("badge_style")
 
-; Separator
+[node name="ModeLabel" type="Label" parent="PausePanel/VBoxContainer/TopRow/ModeBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.686275, 0.866667, 0.960784, 1)
+theme_override_font_sizes/font_size = 13
+text = "RUN PAUSED"
+
+[node name="TopSpacer" type="Control" parent="PausePanel/VBoxContainer/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PauseIcon" type="Label" parent="PausePanel/VBoxContainer/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.988235, 0.85098, 0.482353, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "II"
+horizontal_alignment = 2
+
+[node name="TitleBlock" type="VBoxContainer" parent="PausePanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="PausePanel/VBoxContainer/TitleBlock" unique_id=910023408]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.956863, 0.980392, 1, 1)
+theme_override_font_sizes/font_size = 34
+text = "Pause Menu"
+
+[node name="SubtitleLabel" type="Label" parent="PausePanel/VBoxContainer/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.733333, 0.8, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Resume the run, save this round, or reset your current attempt."
+autowrap_mode = 3
+
 [node name="Separator" type="HSeparator" parent="PausePanel/VBoxContainer" unique_id=1032622985]
 layout_mode = 2
-theme_override_styles/separator = SubResource("sep_style")
+theme_override_styles/separator = SubResource("divider_style")
 
-; Spacer
-[node name="Spacer" type="Control" parent="PausePanel/VBoxContainer" unique_id=119275498]
-custom_minimum_size = Vector2(0, 4)
+[node name="ButtonsVBox" type="VBoxContainer" parent="PausePanel/VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-; Resume
-[node name="ResumeButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=613919248]
+[node name="ResumeButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox" unique_id=613919248]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("btn_resume_normal")
-theme_override_styles/pressed = SubResource("btn_resume_pressed")
-theme_override_styles/hover = SubResource("btn_resume_hover")
-text = "▶ Resume"
+theme_override_styles/normal = SubResource("btn_primary_normal")
+theme_override_styles/pressed = SubResource("btn_primary_pressed")
+theme_override_styles/hover = SubResource("btn_primary_hover")
+text = "Resume Run"
 
-; Restart
-[node name="RestartButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=983637769]
+[node name="SaveRoundButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
+theme_override_colors/font_color = Color(0.968627, 0.980392, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_secondary_normal")
+theme_override_styles/pressed = SubResource("btn_secondary_pressed")
+theme_override_styles/hover = SubResource("btn_secondary_hover")
+text = "Save Round"
+
+[node name="RestartButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox" unique_id=983637769]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("btn_restart_normal")
-theme_override_styles/pressed = SubResource("btn_restart_pressed")
-theme_override_styles/hover = SubResource("btn_restart_hover")
-text = "⚔ Restart"
+theme_override_styles/normal = SubResource("btn_warning_normal")
+theme_override_styles/pressed = SubResource("btn_warning_pressed")
+theme_override_styles/hover = SubResource("btn_warning_hover")
+text = "Restart Run"
 
-; Back to Menu
-[node name="MenuButton" type="Button" parent="PausePanel/VBoxContainer" unique_id=1276246409]
+[node name="MenuButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox" unique_id=1276246409]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.45, 0.45, 0.9)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("btn_menu_normal")
-theme_override_styles/pressed = SubResource("btn_menu_pressed")
-theme_override_styles/hover = SubResource("btn_menu_hover")
-text = "← Retreat to Menu"
+custom_minimum_size = Vector2(0, 50)
+theme_override_colors/font_color = Color(1, 0.917647, 0.92549, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("btn_danger_normal")
+theme_override_styles/pressed = SubResource("btn_danger_pressed")
+theme_override_styles/hover = SubResource("btn_danger_hover")
+text = "Back To Menu"
 
-[connection signal="pressed" from="PausePanel/VBoxContainer/ResumeButton" to="." method="_on_resume_pressed"]
-[connection signal="pressed" from="PausePanel/VBoxContainer/RestartButton" to="." method="_on_restart_pressed"]
-[connection signal="pressed" from="PausePanel/VBoxContainer/MenuButton" to="." method="_on_menu_pressed"]
+[node name="FooterLabel" type="Label" parent="PausePanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533333, 0.611765, 0.686275, 0.86)
+theme_override_font_sizes/font_size = 13
+text = "Press Esc to resume instantly."
+horizontal_alignment = 1
+
+[connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/SaveRoundButton" to="." method="_on_save_round_pressed"]
+[connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/MenuButton" to="." method="_on_menu_pressed"]

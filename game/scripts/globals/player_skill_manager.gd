@@ -8,6 +8,8 @@ var _basic_attack_ready_at_sec: float = 0.0
 var _dash_ready_at_sec: float = 0.0
 var _ability_slots: Dictionary = {}
 var _ability_ready_at_sec: Dictionary = {}
+var _last_pointer_over_ui: bool = false
+const DEBUG_PLAYER_INPUT_LOGS := false
 
 
 func bind_player(player: Node) -> void:
@@ -40,12 +42,24 @@ func process_local_input(player: Node, input_dir: Vector2) -> void:
 		bind_player(player)
 	if not ("is_local_player" in player and player.is_local_player):
 		return
+
+	var pointer_over_ui := false
+	if player.has_method("_is_pointer_over_ui"):
+		pointer_over_ui = bool(player.call("_is_pointer_over_ui"))
+	if pointer_over_ui != _last_pointer_over_ui:
+		_debug_log("pointer_over_ui=%s" % pointer_over_ui)
+		_last_pointer_over_ui = pointer_over_ui
 	
 	if Input.is_action_just_pressed("dash"):
+		_debug_log("dash pressed pointer_over_ui=%s" % pointer_over_ui)
 		request_dash(player, input_dir)
 	
 	if Input.is_action_just_pressed("basic_attack"):
-		request_basic_attack(player)
+		_debug_log("basic_attack pressed pointer_over_ui=%s" % pointer_over_ui)
+		if not pointer_over_ui:
+			request_basic_attack(player)
+		else:
+			_debug_log("basic_attack blocked by ui hover")
 
 
 func request_basic_attack(player: Node) -> bool:
@@ -169,3 +183,8 @@ func _refresh_ready_flags(player: Node) -> void:
 		player.can_basic_attack = true
 	if "can_dash" in player and now_sec >= _dash_ready_at_sec:
 		player.can_dash = true
+
+
+func _debug_log(message: String) -> void:
+	if DEBUG_PLAYER_INPUT_LOGS:
+		print("[PlayerSkillManager] %s" % message)

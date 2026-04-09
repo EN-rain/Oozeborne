@@ -3,13 +3,13 @@ class_name SkillTreeManagerService
 
 const SkillTreePassiveEffectScript := preload("res://scripts/effects/buffs/skill_tree_passive_effect.gd")
 const SkillTreeData := preload("res://scripts/globals/skill_tree_runtime_data.gd")
+const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 const MAX_SP := 250
 const SUBCLASS_UNLOCK_SP := 20
 const SUBCLASS_SP_CAP := 30
 const ACTION_BAR_SIZE := 4
 const STATE_VERSION := 1
-const SAVE_PATH := "user://skill_tree_state.json"
 const PROPERTY_TARGETS := {
 	"max_health": true,
 	"speed": true,
@@ -45,7 +45,6 @@ func _ready() -> void:
 	if not LevelSystem.stats_updated.is_connected(_on_stats_updated):
 		LevelSystem.stats_updated.connect(_on_stats_updated)
 
-	_load_from_disk()
 	call_deferred("_sync_local_player_ref")
 
 
@@ -56,12 +55,6 @@ func _exit_tree() -> void:
 		LevelSystem.stats_updated.disconnect(_on_stats_updated)
 	if _local_player != null and is_instance_valid(_local_player):
 		_remove_all_passives(_local_player)
-	persist_to_disk()
-
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
-		persist_to_disk()
 
 
 func get_skill_level(skill_id: String) -> int:
@@ -138,7 +131,6 @@ func invest_sp(skill_id: String) -> bool:
 	_refresh_action_bar_registrations()
 	sp_changed.emit(_state.sp_available, _state.total_sp_earned)
 	skill_invested.emit(skill_id, current_level + 1)
-	persist_to_disk()
 	return true
 
 
@@ -163,7 +155,6 @@ func slot_ability(slot_index: int, skill_id: String) -> bool:
 
 	_state.action_bar[slot_index] = skill_id
 	_refresh_action_bar_registrations()
-	persist_to_disk()
 	return true
 
 
@@ -187,7 +178,6 @@ func clear_slot(slot_index: int) -> void:
 		return
 	_state.action_bar[slot_index] = ""
 	PlayerSkillManager.clear_ability_slot(slot_index)
-	persist_to_disk()
 
 
 func save_state() -> Dictionary:
@@ -219,22 +209,13 @@ func load_state(data: Dictionary) -> void:
 	state_loaded.emit(save_state())
 	sp_changed.emit(_state.sp_available, _state.total_sp_earned)
 
-
-func persist_to_disk() -> void:
-	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_warning("SkillTreeManager could not open %s for writing." % SAVE_PATH)
-		return
-	file.store_string(JSON.stringify(save_state()))
-
-
 func reset_run_state() -> void:
 	if _local_player != null and is_instance_valid(_local_player):
 		_remove_all_passives(_local_player)
 	_local_player = null
 	_local_player_entity_id = 0
 	_passive_effects.clear()
-	load_state(_read_save_file())
+	load_state(_default_state())
 
 
 func handle_remote_skill_stat_update(user_id: String, stats: Dictionary) -> void:
@@ -273,21 +254,17 @@ func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
 	_sync_local_player_ref()
 	if entity_id != _local_player_entity_id:
 		return
-	if _sync_sp_from_level(new_level):
-		persist_to_disk()
+	_sync_sp_from_level(new_level)
 
 
 func _on_stats_updated(entity_id: int, _stats: Dictionary) -> void:
 	_sync_local_player_ref()
 	if entity_id != _local_player_entity_id:
 		return
-	var level_changed: bool = false
 	if _local_player != null and is_instance_valid(_local_player):
-		level_changed = _sync_sp_from_level(LevelSystem.get_level(_local_player))
+		_sync_sp_from_level(LevelSystem.get_level(_local_player))
 	if _local_player != null and is_instance_valid(_local_player):
 		_apply_stat_skills(_local_player)
-	if level_changed:
-		persist_to_disk()
 
 
 func _apply_stat_skills(player: Node) -> void:
@@ -440,7 +417,7 @@ func _resolve_local_player() -> Node:
 
 
 func _get_current_main_class_key() -> String:
-	return ClassManager.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
+	return ClassManagerScript.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
 
 
 func _calculate_total_sp_for_level(level: int) -> int:
@@ -597,20 +574,6 @@ func _default_state() -> Dictionary:
 		"total_sp_earned": 0,
 		"subclasses_unlock_emitted": false,
 	}
-
-
-func _load_from_disk() -> void:
-	load_state(_read_save_file())
-
-
-func _read_save_file() -> Dictionary:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return {}
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		return {}
-	var parsed = JSON.parse_string(file.get_as_text())
-	return parsed if parsed is Dictionary else {}
 
 
 func _is_valid_save_data(data: Dictionary) -> bool:

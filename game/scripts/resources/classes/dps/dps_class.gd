@@ -18,6 +18,8 @@ func _init():
 	modifiers_damage = 1.2    # +20% Damage
 	modifiers_defense = 0.9   # -10% Defense
 	modifiers_attack_speed = 1.1    # +10% Attack Speed
+	modifiers_crit_chance = 1.08    # +8% Crit Chance
+	modifiers_crit_damage = 1.10    # +10% Crit Damage
 	
 	# Special ability
 	ability_name = "Burst Window"

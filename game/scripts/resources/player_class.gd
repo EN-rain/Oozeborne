@@ -77,5 +77,7 @@ func get_stats_summary() -> String:
 		summary += "  Attack Speed: %+.0f%s\n" % [(modifiers_attack_speed - 1.0) * 100, "%"]
 	if modifiers_crit_chance != 1.0:
 		summary += "  Crit Chance: %+.0f%s\n" % [(modifiers_crit_chance - 1.0) * 100, "%"]
+	if modifiers_crit_damage != 1.0:
+		summary += "  Crit Damage: %+.0f%s\n" % [(modifiers_crit_damage - 1.0) * 100, "%"]
 	
 	return summary

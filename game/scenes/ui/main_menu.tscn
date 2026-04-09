@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_mainmenu"]
+[ext_resource type="Script" path="res://scripts/ui/auth/main_menu.gd" id="1_mainmenu"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -70,6 +70,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Play Solo"
 
+[node name="ContinueButton" type="Button" parent="MarginContainer/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Continue"
+
 [node name="HostButton" type="Button" parent="MarginContainer/Center/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -106,6 +111,7 @@ text = "Quit"
 
 [connection signal="pressed" from="MarginContainer/Center/VBox/AccountRow/LogoutButton" to="." method="_on_logout_pressed"]
 [connection signal="pressed" from="MarginContainer/Center/VBox/StartButton" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="MarginContainer/Center/VBox/ContinueButton" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="MarginContainer/Center/VBox/HostButton" to="." method="_on_host_pressed"]
 [connection signal="pressed" from="MarginContainer/Center/VBox/JoinHBox/ConnectButton" to="." method="_on_connect_pressed"]
 [connection signal="pressed" from="MarginContainer/Center/VBox/QuitButton" to="." method="_on_quit_pressed"]

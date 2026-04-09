@@ -6,6 +6,7 @@ extends Node
 signal coins_changed(total: int)
 
 var total_coins: int = 0
+var _coin_totals_by_user: Dictionary = {}
 
 @export var coin_scene: PackedScene
 
@@ -21,27 +22,48 @@ func _ready():
 	_load_coins()
 
 
-func add_coins(amount: int) -> void:
-	total_coins += amount
-	coins_changed.emit(total_coins)
-	print("[CoinManager] Collected %d coins. Total: %d" % [amount, total_coins])
+func add_coins(amount: int, user_id: String = "") -> void:
+	var target_user_id := _resolve_coin_user_id(user_id)
+	var previous_local_total := get_coins()
+	_coin_totals_by_user[target_user_id] = get_coins(target_user_id) + amount
+	_sync_legacy_total()
+	if get_coins() != previous_local_total:
+		coins_changed.emit(get_coins())
 
 
-func spend_coins(amount: int) -> bool:
-	if total_coins >= amount:
-		total_coins -= amount
-		coins_changed.emit(total_coins)
+func spend_coins(amount: int, user_id: String = "") -> bool:
+	var target_user_id := _resolve_coin_user_id(user_id)
+	if get_coins(target_user_id) >= amount:
+		var previous_local_total := get_coins()
+		_coin_totals_by_user[target_user_id] = get_coins(target_user_id) - amount
+		_sync_legacy_total()
+		if get_coins() != previous_local_total:
+			coins_changed.emit(get_coins())
 		return true
 	return false
 
 
-func get_coins() -> int:
-	return total_coins
+func get_coins(user_id: String = "") -> int:
+	var target_user_id := _resolve_coin_user_id(user_id)
+	return int(_coin_totals_by_user.get(target_user_id, 0))
 
 
-func reset_coins() -> void:
-	total_coins = 0
-	coins_changed.emit(total_coins)
+func set_coins(amount: int, user_id: String = "") -> void:
+	var target_user_id := _resolve_coin_user_id(user_id)
+	var previous_local_total := get_coins()
+	_coin_totals_by_user[target_user_id] = maxi(0, amount)
+	_sync_legacy_total()
+	if get_coins() != previous_local_total:
+		coins_changed.emit(get_coins())
+
+
+func reset_coins(user_id: String = "") -> void:
+	var target_user_id := _resolve_coin_user_id(user_id)
+	var previous_local_total := get_coins()
+	_coin_totals_by_user[target_user_id] = 0
+	_sync_legacy_total()
+	if get_coins() != previous_local_total:
+		coins_changed.emit(get_coins())
 
 
 ## Spawn coin drops at position with 50% chance
@@ -90,7 +112,9 @@ func spawn_coin_burst(at_position: Vector2, count: int = 3, value_per_coin: int 
 func _load_coins():
 	# TODO: Implement save/load with file
 	# For now, start at 0
-	total_coins = 0
+	_coin_totals_by_user.clear()
+	_coin_totals_by_user[_resolve_coin_user_id()] = 0
+	_sync_legacy_total()
 
 
 func save_coins():
@@ -104,3 +128,26 @@ func _ensure_coin_scene_loaded() -> bool:
 
 	push_error("[CoinManager] coin_scene is not assigned.")
 	return false
+
+
+func get_player_coin_user_id(body: Node = null) -> String:
+	if body != null and body.has_meta("network_user_id"):
+		return str(body.get_meta("network_user_id"))
+	if body != null and "is_local_player" in body and body.is_local_player:
+		return _resolve_coin_user_id()
+	return _resolve_coin_user_id()
+
+
+func _resolve_coin_user_id(user_id: String = "") -> String:
+	var trimmed_user_id := user_id.strip_edges()
+	if not trimmed_user_id.is_empty():
+		return trimmed_user_id
+	if MultiplayerManager != null and MultiplayerManager.session != null:
+		var session_user_id := str(MultiplayerManager.session.user_id)
+		if not session_user_id.is_empty():
+			return session_user_id
+	return "solo"
+
+
+func _sync_legacy_total() -> void:
+	total_coins = get_coins()

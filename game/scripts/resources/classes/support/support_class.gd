@@ -20,6 +20,8 @@ func _init():
 	modifiers_damage = 0.9    # -10% Damage
 	modifiers_defense = 1.05  # +5% Defense
 	modifiers_attack_speed = 1.0     # Base Attack Speed
+	modifiers_crit_chance = 1.03     # +3% Crit Chance
+	modifiers_crit_damage = 1.05     # +5% Crit Damage
 	
 	# Special ability
 	ability_name = "Field Aid"

@@ -1,6 +1,8 @@
 extends RefCounted
 class_name RoomLobbyView
 
+const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
+
 const MAX_PARTY_SIZE := 4
 
 const PLAYER_ACCENT_COLORS: Array = [
@@ -47,35 +49,35 @@ const SUBCLASS_DESCRIPTIONS := {
 }
 const CLASS_PANEL_DATA := {
 	"DPS": {
-		"stats": {"hp": "1,080", "atk": "268", "def": "104", "spd": "128", "crit": "19%", "evade": "12%", "power": 0.74, "rank": "A-Rank"},
+		"stats": {"hp": "1,080", "atk": "268", "def": "104", "spd": "128", "crit": "19%", "crit_damage": "170%", "power": 0.74, "rank": "A-Rank"},
 		"talents": [
 			{"name": "Falcon Mark", "desc": "Critical hits mark enemies to take bonus team damage.", "accent": Color(0.38, 0.78, 0.58)},
 			{"name": "Volley Step", "desc": "Attacking after a dodge fires an extra piercing arrow.", "accent": Color(0.33, 0.67, 0.95)},
 		],
 	},
 	"Support": {
-		"stats": {"hp": "1,220", "atk": "175", "def": "126", "spd": "101", "crit": "9%", "evade": "8%", "power": 0.68, "rank": "B-Rank"},
+		"stats": {"hp": "1,220", "atk": "175", "def": "126", "spd": "101", "crit": "9%", "crit_damage": "130%", "power": 0.68, "rank": "B-Rank"},
 		"talents": [
 			{"name": "Mercy Bloom", "desc": "Healing pulses grant allies a brief regeneration buff.", "accent": Color(0.44, 0.86, 0.55)},
 			{"name": "Sanctuary Veil", "desc": "Low-health allies gain a small protective barrier.", "accent": Color(0.56, 0.78, 0.95)},
 		],
 	},
 	"Hybrid": {
-		"stats": {"hp": "1,150", "atk": "235", "def": "118", "spd": "112", "crit": "14%", "evade": "9%", "power": 0.77, "rank": "A-Rank"},
+		"stats": {"hp": "1,150", "atk": "235", "def": "118", "spd": "112", "crit": "14%", "crit_damage": "150%", "power": 0.77, "rank": "A-Rank"},
 		"talents": [
 			{"name": "Adaptive Combo", "desc": "Alternating mobility and offense grants stacking bonus output.", "accent": Color(0.62, 0.42, 0.85)},
 			{"name": "Stance Echo", "desc": "Skill use alternates defensive and offensive aftereffects.", "accent": Color(0.38, 0.78, 0.62)},
 		],
 	},
 	"Tank": {
-		"stats": {"hp": "1,680", "atk": "190", "def": "225", "spd": "82", "crit": "8%", "evade": "3%", "power": 0.81, "rank": "A-Rank"},
+		"stats": {"hp": "1,680", "atk": "190", "def": "225", "spd": "82", "crit": "8%", "crit_damage": "120%", "power": 0.81, "rank": "A-Rank"},
 		"talents": [
 			{"name": "Iron Bastion", "desc": "Standing still builds armor and reflects minor damage.", "accent": Color(0.95, 0.74, 0.32)},
 			{"name": "Groundbreaker", "desc": "Heavy strikes create shockwaves that slow enemies.", "accent": Color(0.75, 0.62, 0.42)},
 		],
 	},
 	"Controller": {
-		"stats": {"hp": "1,040", "atk": "248", "def": "102", "spd": "114", "crit": "13%", "evade": "10%", "power": 0.79, "rank": "A-Rank"},
+		"stats": {"hp": "1,040", "atk": "248", "def": "102", "spd": "114", "crit": "13%", "crit_damage": "145%", "power": 0.79, "rank": "A-Rank"},
 		"talents": [
 			{"name": "Control Field", "desc": "Control zones apply slow and damage suppression.", "accent": Color(0.28, 0.78, 0.83)},
 			{"name": "Tempo Lock", "desc": "Controlled targets take increased ability damage.", "accent": Color(0.56, 0.75, 0.94)},
@@ -115,7 +117,7 @@ func _init(refs: Dictionary) -> void:
 	_stat_cards = refs["stat_cards"]
 
 func get_class_order() -> Array:
-	return ClassManager.get_main_class_display_order()
+	return ClassManagerScript.get_main_class_display_order()
 
 func get_class_name_color(class_id: String) -> Color:
 	return CLASS_NAME_COLORS.get(class_id, PARTY_TEXT_PRIMARY)
@@ -185,13 +187,13 @@ func update_active_class_panels(active_class: String) -> void:
 	_update_class_panels(active_class)
 
 func _build_subclass_info_text(active_class: String) -> String:
-	var main_class_id := ClassManager.display_name_to_class_id(active_class)
+	var main_class_id := ClassManagerScript.display_name_to_class_id(active_class)
 	if main_class_id.is_empty():
 		return "No subclasses available."
 
 	var visible_subclasses = []
-	for subclass_id in ClassManager.get_subclass_ids_for_main_id(main_class_id):
-		var subclass_instance := ClassManager.get_class_by_id(subclass_id)
+	for subclass_id in ClassManagerScript.get_subclass_ids_for_main_id(main_class_id):
+		var subclass_instance := ClassManagerScript.get_class_by_id(subclass_id)
 		if subclass_instance == null:
 			continue
 		var subclass_display_name := subclass_instance.display_name
@@ -321,7 +323,7 @@ func _build_waiting_card(slot_number: int) -> Control:
 
 func _get_class_panel_data(class_id: String) -> Dictionary:
 	var fallback: Dictionary = {
-		"stats": {"hp": "--", "atk": "--", "def": "--", "spd": "--", "crit": "--", "evade": "--", "power": 0.45, "rank": "C-Rank"},
+		"stats": {"hp": "--", "atk": "--", "def": "--", "spd": "--", "crit": "--", "crit_damage": "--", "power": 0.45, "rank": "C-Rank"},
 		"talents": [{"name": "Talent Locked", "desc": "Select a class to preview its combat talents.", "accent": Color(0.76, 0.66, 0.28)}]
 	}
 	return CLASS_PANEL_DATA.get(class_id, fallback)
@@ -385,7 +387,7 @@ func _update_class_panels(class_id: String) -> void:
 	_set_stat_card_value(_def_value_label, str(stats.get("def", "--")))
 	_set_stat_card_value(_spd_value_label, str(stats.get("spd", "--")))
 	_set_stat_card_value(_crit_value_label, str(stats.get("crit", "--")))
-	_set_stat_card_value(_evade_value_label, str(stats.get("evade", "--")))
+	_set_stat_card_value(_evade_value_label, str(stats.get("crit_damage", "--")))
 
 	if is_instance_valid(_power_fill):
 		_power_fill.size_flags_stretch_ratio = float(stats.get("power", 0.45))

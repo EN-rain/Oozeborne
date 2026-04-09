@@ -11,10 +11,14 @@ var _busy: bool = false
 var _busy_since: float = 0.0
 const PORT: int = 9090
 const BUSY_TIMEOUT: float = 30.0
+const ALLOW_IN_NON_DEBUG := false
 var _key_map: Dictionary
 var _held_keys: Dictionary = {}
 
 func _ready() -> void:
+	if not OS.has_feature("debug") and not ALLOW_IN_NON_DEBUG:
+		set_process(false)
+		return
 	# Ensure MCP server keeps processing even when game is paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_init_key_map()

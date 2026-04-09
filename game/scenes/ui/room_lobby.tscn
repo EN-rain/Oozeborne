@@ -1,11 +1,13 @@
-[gd_scene load_steps=22 format=3 uid="uid://bu8cpoti5dsrs"]
+[gd_scene load_steps=24 format=3 uid="uid://bu8cpoti5dsrs"]
 
-[ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://scripts/ui/room_lobby.gd" id="1_roomlobby"]
+[ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://scripts/ui/lobby/room_lobby.gd" id="1_roomlobby"]
 [ext_resource type="Texture2D" uid="uid://cmxlei5j5rtla" path="res://assets/bg/bg.png" id="2_2lpa5"]
-[ext_resource type="Script" uid="uid://bq3ksto6mdk5n" path="res://scripts/ui/room_lobby_title_controller.gd" id="2_titlecontroller"]
-[ext_resource type="Script" uid="uid://b3ngnxhbybi0o" path="res://scripts/ui/room_lobby_carousel_controller.gd" id="3_carouselcontroller"]
-[ext_resource type="Script" uid="uid://c50h1doi8ya5x" path="res://scripts/ui/room_lobby_chat_box.gd" id="4_chatbox"]
+[ext_resource type="Script" uid="uid://bq3ksto6mdk5n" path="res://scripts/ui/lobby/room_lobby_title_controller.gd" id="2_titlecontroller"]
+[ext_resource type="Script" uid="uid://b3ngnxhbybi0o" path="res://scripts/ui/lobby/room_lobby_carousel_controller.gd" id="3_carouselcontroller"]
+[ext_resource type="Script" uid="uid://c50h1doi8ya5x" path="res://scripts/ui/lobby/room_lobby_chat_box.gd" id="4_chatbox"]
+[ext_resource type="Script" path="res://scripts/ui/lobby/room_lobby_party_controller.gd" id="5_partycontroller"]
 [ext_resource type="Shader" path="res://assets/shaders/slime_color.gdshader" id="5_slime_shader"]
+[ext_resource type="Script" path="res://scripts/ui/lobby/room_lobby_match_flow.gd" id="6_matchflow"]
 [ext_resource type="Texture2D" uid="uid://bdkimgwowyxxh" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
 [ext_resource type="Texture2D" uid="uid://jenrhvjxo3sw" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
 [ext_resource type="Texture2D" uid="uid://trh7butoi32x" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
@@ -412,6 +414,14 @@ unique_name_in_owner = true
 script = ExtResource("3_carouselcontroller")
 slime_preview_shader = ExtResource("5_slime_shader")
 
+[node name="LobbyPartyController" type="Node" parent="." unique_id=192331245]
+unique_name_in_owner = true
+script = ExtResource("5_partycontroller")
+
+[node name="LobbyMatchFlow" type="Node" parent="." unique_id=748835912]
+unique_name_in_owner = true
+script = ExtResource("6_matchflow")
+
 [node name="Background" type="TextureRect" parent="." unique_id=1291819552]
 texture_filter = 1
 layout_mode = 1
@@ -816,7 +826,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
 text = "HP"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1853932290]
+[node name="HPValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=1853932290]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -845,7 +855,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
 text = "ATTACK"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1790935392]
+[node name="AttackValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1790935392]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -874,7 +884,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
 text = "DEFENSE"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=338114341]
+[node name="DefenseValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=338114341]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -903,7 +913,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
 text = "SPEED"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1146953593]
+[node name="SpeedValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1146953593]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -932,7 +942,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
 text = "CRIT RATE"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=1412280641]
+[node name="CritValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=1412280641]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -959,9 +969,9 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_font_sizes/font_size = 13
-text = "EVADE"
+text = "CRIT DAMAGE"
 
-[node name="Value" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1932028259]
+[node name="EvadeValue" type="Label" parent="ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1932028259]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -1059,7 +1069,7 @@ text = "Players Lobby"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Label" type="Label" parent="Label" unique_id=859066297]
+[node name="SubclassHintLabel" type="Label" parent="Label" unique_id=859066297]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7

@@ -1,6 +1,9 @@
 extends Control
 class_name ClassSelectionUI
 
+const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
+const ClassSelectionMainSlotScript := preload("res://scripts/ui/lobby/class_selection_main_slot.gd")
+
 ## Main-class-only selection screen.
 ## Subclass is chosen later in-game at level 10.
 
@@ -9,11 +12,9 @@ signal class_selected(p_class, sub_class)
 
 @export var auto_start_solo_game: bool = false
 @export_range(1, 11) var max_main_class_options: int = 5
-
 @export_file("*.tscn") var solo_game_scene_path: String
+@export var main_class_slot_paths: Array[NodePath] = []
 
-@onready var main_classes_vbox: VBoxContainer = %MainClassesVBox
-@onready var subclasses_vbox: VBoxContainer = %SubclassesVBox
 @onready var class_name_label: Label = %ClassNameLabel
 @onready var class_desc_label: Label = %ClassDescLabel
 @onready var stats_label: Label = %StatsLabel
@@ -22,13 +23,15 @@ signal class_selected(p_class, sub_class)
 @onready var select_button: Button = %SelectButton
 @onready var right_panel: PanelContainer = %RightPanel
 @onready var subclasses_subtitle_label: Label = %SubtitleLabel
+@onready var subclass_preview_label: Label = %SubclassPreviewLabel
 
 var available_main_classes: Array[PlayerClass] = []
 var selected_class: PlayerClass = null
 var player_level: int = 1
 
-var _active_main_class_button: Button = null
-var _hovered_main_class_button: Button = null
+var _main_class_slots: Array[Node] = []
+var _active_main_class_slot = null
+var _hovered_main_class_slot = null
 
 const DEFAULT_MAIN_BUTTON_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 const HOVERED_MAIN_BUTTON_COLOR := Color(1.08, 1.05, 0.92, 1.0)
@@ -49,108 +52,107 @@ const SUBCLASS_HINT := "Subclasses unlock in-game at Level 10"
 
 
 func _ready() -> void:
-	player_level = max(MultiplayerManager.player_level, 1)
+	player_level = maxi(MultiplayerManager.player_level, 1)
 	_load_available_classes()
 	_setup_ui()
 
 
 func _load_available_classes() -> void:
-	available_main_classes = ClassManager.get_main_classes()
+	available_main_classes = ClassManagerScript.get_main_classes()
 	if available_main_classes.size() > max_main_class_options:
 		available_main_classes = available_main_classes.slice(0, max_main_class_options)
 
 
 func _setup_ui() -> void:
-	if main_classes_vbox == null or select_button == null or right_panel == null:
+	if select_button == null or right_panel == null or subclass_preview_label == null:
 		push_error("ClassSelectionUI is missing required UI nodes.")
 		return
-	_populate_main_classes()
+	_resolve_main_class_slots()
+	_populate_main_class_slots()
 	_set_subclass_panel_visible(false)
 	select_button.disabled = true
 
 
-func _populate_main_classes() -> void:
-	for child in main_classes_vbox.get_children():
-		child.queue_free()
-
-	_active_main_class_button = null
-	for p_class in available_main_classes:
-		var card := Button.new()
-		card.custom_minimum_size = Vector2(0, 42)
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.toggle_mode = true
-		card.text = p_class.display_name
-		card.pressed.connect(_on_main_class_button_pressed.bind(p_class, card))
-		card.mouse_entered.connect(_on_main_class_hovered.bind(p_class, card))
-		card.mouse_exited.connect(_on_main_class_hover_exited.bind(card))
-		main_classes_vbox.add_child(card)
-
-	_refresh_main_class_button_visuals()
+func _resolve_main_class_slots() -> void:
+	_main_class_slots.clear()
+	for slot_path in main_class_slot_paths:
+		var slot: Node = get_node_or_null(slot_path)
+		if slot == null:
+			continue
+		if not slot.slot_pressed.is_connected(_on_main_class_slot_pressed):
+			slot.slot_pressed.connect(_on_main_class_slot_pressed)
+		if not slot.slot_hovered.is_connected(_on_main_class_slot_hovered):
+			slot.slot_hovered.connect(_on_main_class_slot_hovered)
+		if not slot.slot_unhovered.is_connected(_on_main_class_slot_unhovered):
+			slot.slot_unhovered.connect(_on_main_class_slot_unhovered)
+		_main_class_slots.append(slot)
 
 
-func _on_main_class_button_pressed(player_class: PlayerClass, btn: Button) -> void:
-	if _active_main_class_button and is_instance_valid(_active_main_class_button) and _active_main_class_button != btn:
-		_active_main_class_button.button_pressed = false
-	_active_main_class_button = btn
-	selected_class = player_class
+func _populate_main_class_slots() -> void:
+	_active_main_class_slot = null
+	_hovered_main_class_slot = null
+	for index in range(_main_class_slots.size()):
+		var slot: Node = _main_class_slots[index]
+		var next_class: PlayerClass = available_main_classes[index] if index < available_main_classes.size() else null
+		slot.configure(next_class)
+	_refresh_main_class_slot_visuals()
+
+
+func _on_main_class_slot_pressed(slot) -> void:
+	_active_main_class_slot = slot
+	selected_class = slot.player_class
 	_update_class_info(selected_class)
-	_refresh_main_class_button_visuals()
+	_refresh_main_class_slot_visuals()
 	select_button.disabled = false
-	select_button.text = confirm_button_format % player_class.display_name
+	select_button.text = confirm_button_format % selected_class.display_name
 
 
-func _on_main_class_hovered(player_class: PlayerClass, btn: Button) -> void:
-	_hovered_main_class_button = btn
-	_refresh_main_class_button_visuals()
-	_update_class_info(player_class)
+func _on_main_class_slot_hovered(slot) -> void:
+	_hovered_main_class_slot = slot
+	_refresh_main_class_slot_visuals()
+	_update_class_info(slot.player_class)
 
 
-func _on_main_class_hover_exited(btn: Button) -> void:
-	if _hovered_main_class_button == btn:
-		_hovered_main_class_button = null
-	_refresh_main_class_button_visuals()
+func _on_main_class_slot_unhovered(slot) -> void:
+	if _hovered_main_class_slot == slot:
+		_hovered_main_class_slot = null
+	_refresh_main_class_slot_visuals()
 	if selected_class != null:
 		_update_class_info(selected_class)
 
 
-func _refresh_main_class_button_visuals() -> void:
-	for child in main_classes_vbox.get_children():
-		var button := child as Button
-		if button == null:
-			continue
-		if button == _active_main_class_button:
-			button.modulate = active_main_button_color
-		elif button == _hovered_main_class_button:
-			button.modulate = hovered_main_button_color
+func _refresh_main_class_slot_visuals() -> void:
+	for slot in _main_class_slots:
+		if slot == _active_main_class_slot:
+			slot.set_state_color(active_main_button_color)
+		elif slot == _hovered_main_class_slot:
+			slot.set_state_color(hovered_main_button_color)
 		else:
-			button.modulate = default_main_button_color
+			slot.set_state_color(default_main_button_color)
 
 
 func _set_subclass_panel_visible(panel_visible: bool) -> void:
 	if right_panel == null:
 		return
 	right_panel.modulate = Color(1.0, 1.0, 1.0, 1.0 if panel_visible else 0.72)
-	if subclasses_vbox != null:
-		subclasses_vbox.visible = panel_visible
+	if subclass_preview_label != null:
+		subclass_preview_label.visible = panel_visible
 	if subclasses_subtitle_label != null:
 		subclasses_subtitle_label.text = subclass_hint_text
 
 
 func _populate_subclass_preview(main_class: PlayerClass) -> void:
-	if subclasses_vbox == null:
+	if subclass_preview_label == null:
 		return
-	for child in subclasses_vbox.get_children():
-		child.queue_free()
 	if main_class == null:
+		subclass_preview_label.text = ""
 		return
 
-	var subclasses := ClassManager.get_subclasses_for_main_class(main_class)
+	var subclasses: Array[PlayerClass] = ClassManagerScript.get_subclasses_for_main_class(main_class)
+	var lines: PackedStringArray = []
 	for subclass in subclasses:
-		var card := Label.new()
-		card.custom_minimum_size = Vector2(0, 42)
-		card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		card.text = "%s - %s" % [subclass.display_name, subclass.description]
-		subclasses_vbox.add_child(card)
+		lines.append("%s - %s" % [subclass.display_name, subclass.description])
+	subclass_preview_label.text = "\n\n".join(lines)
 
 
 func _update_class_info(target_class: PlayerClass) -> void:
@@ -176,6 +178,8 @@ func _update_class_info(target_class: PlayerClass) -> void:
 		stats_parts.append("ATKSPD %+.0f%%" % [(target_class.modifiers_attack_speed - 1.0) * 100])
 	if target_class.modifiers_crit_chance != 1.0:
 		stats_parts.append("CRIT %+.0f%%" % [(target_class.modifiers_crit_chance - 1.0) * 100])
+	if target_class.modifiers_crit_damage != 1.0:
+		stats_parts.append("CRIT DMG %+.0f%%" % [(target_class.modifiers_crit_damage - 1.0) * 100])
 
 	stats_label.text = stats_prefix + (" | ".join(stats_parts) if stats_parts.size() > 0 else base_values_text)
 	ability_label.text = ability_prefix + target_class.ability_name + "\n" + target_class.ability_description if target_class.ability_name else ""
@@ -218,7 +222,9 @@ func auto_select_random_class() -> PlayerClass:
 
 
 func _on_select_pressed_for_class(player_class: PlayerClass) -> void:
-	selected_class = player_class
+	var class_id := ClassManagerScript.get_class_id(player_class)
+	var resolved_class := ClassManagerScript.create_class_instance(class_id) if not class_id.is_empty() else player_class
+	selected_class = resolved_class
 	_update_class_info(selected_class)
 	MultiplayerManager.player_class = selected_class
 	MultiplayerManager.player_subclass = null

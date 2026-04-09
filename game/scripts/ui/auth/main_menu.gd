@@ -3,6 +3,7 @@ extends Control
 @onready var account_label: Label = %AccountLabel
 @onready var logout_button: Button = %LogoutButton
 @onready var start_button: Button = %StartButton
+@onready var continue_button: Button = %ContinueButton
 @onready var host_button: Button = %HostButton
 @onready var connect_button: Button = %ConnectButton
 @onready var code_input: LineEdit = %CodeInput
@@ -23,6 +24,7 @@ extends Control
 @export var offline_status_color: Color = Color(0.9, 0.7, 0.3)
 @export var preparing_solo_run_text: String = "Preparing solo run..."
 @export var preparing_solo_run_color: Color = Color(0.4, 0.65, 0.9)
+@export var continuing_solo_run_text: String = "Loading saved round..."
 @export var connecting_status_text: String = "Connecting..."
 @export var host_connecting_color: Color = Color(0.7, 0.55, 0.95)
 @export var guest_connecting_color: Color = Color(0.2, 0.8, 0.55)
@@ -36,6 +38,15 @@ extends Control
 @export var error_status_color: Color = Color(0.9, 0.4, 0.4)
 
 var _menu_busy: bool = false
+
+
+func _get_solo_run_save_manager() -> Node:
+	if not is_inside_tree():
+		return null
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		return null
+	return tree.root.get_node_or_null("/root/SoloRunSaveManager")
 
 func _ready() -> void:
 	if ign_input.text.strip_edges().is_empty():
@@ -56,6 +67,8 @@ func _set_status(text: String, color: Color = default_status_color) -> void:
 
 func _set_menu_busy(busy: bool) -> void:
 	_menu_busy = busy
+	if not is_inside_tree():
+		return
 	_update_auth_ui()
 
 
@@ -70,6 +83,8 @@ func _update_auth_ui() -> void:
 	account_label.text = account_label_format % account_name
 	logout_button.disabled = _menu_busy or not authenticated
 	start_button.disabled = _menu_busy
+	var save_manager := _get_solo_run_save_manager()
+	continue_button.disabled = _menu_busy or save_manager == null or not bool(save_manager.call("has_saved_run"))
 	host_button.disabled = _menu_busy or not authenticated
 	connect_button.disabled = _menu_busy or not authenticated
 
@@ -117,9 +132,28 @@ func _on_start_pressed() -> void:
 	_set_menu_busy(true)
 	_set_status(preparing_solo_run_text, preparing_solo_run_color)
 	await MultiplayerManager.disconnect_server()
+	var save_manager := _get_solo_run_save_manager()
+	if save_manager != null:
+		save_manager.call("clear_saved_run")
 	MultiplayerManager.player_ign = _get_ign()
 	MultiplayerManager.player_class = null
 	MultiplayerManager.player_subclass = null
+	get_tree().change_scene_to_file(main_game_scene_path)
+
+
+func _on_continue_pressed() -> void:
+	var save_manager := _get_solo_run_save_manager()
+	if save_manager == null or not bool(save_manager.call("has_saved_run")):
+		_update_auth_ui()
+		return
+	_set_menu_busy(true)
+	_set_status(continuing_solo_run_text, preparing_solo_run_color)
+	await MultiplayerManager.disconnect_server()
+	MultiplayerManager.player_ign = _get_ign()
+	if not bool(save_manager.call("prepare_continue_run")):
+		_set_menu_busy(false)
+		_update_auth_ui()
+		return
 	get_tree().change_scene_to_file(main_game_scene_path)
 
 func _on_host_pressed() -> void:
@@ -135,6 +169,7 @@ func _on_host_pressed() -> void:
 		var room_id = await MultiplayerManager.create_room()
 		if not room_id.is_empty():
 			get_tree().change_scene_to_file(room_lobby_scene_path)
+			return
 		else:
 			_set_status(create_room_failed_text, error_status_color)
 	else:
@@ -159,6 +194,7 @@ func _on_connect_pressed() -> void:
 		var joined = await MultiplayerManager.join_room(room_code)
 		if joined:
 			get_tree().change_scene_to_file(room_lobby_scene_path)
+			return
 		else:
 			_set_status(join_room_failed_text, error_status_color)
 	else:

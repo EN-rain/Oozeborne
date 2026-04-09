@@ -1,7 +1,7 @@
 extends Control
 
+const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
-# ── Node References (matching new prototype layout) ──────────────────────────
 @onready var room_code_button: Button = %RoomCode
 @onready var leave_button: Button = %LeaveLobby
 @onready var start_button: Button = %StartGame
@@ -27,38 +27,27 @@ extends Control
 @onready var speed_card: PanelContainer = %SpeedCard
 @onready var crit_card: PanelContainer = %CritCard
 @onready var evade_card: PanelContainer = %EvadeCard
-@onready var power_fill: ColorRect = %PowerFill
-@onready var power_rank_label: Label = %PowerRank
+@onready var power_fill: ColorRect = get_node_or_null("ClassStats/StatsVBox/PowerRow/PowerTrack/PowerFill") as ColorRect
+@onready var power_rank_label: Label = get_node_or_null("ClassStats/StatsVBox/PowerRow/PowerRank") as Label
 @onready var talent_cards: VBoxContainer = %TalentCards
 @onready var title_controller = %LobbyTitleController
 @onready var carousel_controller = %LobbyCarouselController
 @onready var chat_box = %ChatBox
 
-# ── Chat nodes ──────────────────────────────────────────────────────────────
 @onready var chat_log: RichTextLabel = %ChatLog
 @onready var chat_input: LineEdit = %ChatInput
 @onready var send_button: Button = %SendButton
 
-# ── Class slot nodes ─────────────────────────────────────────────────────────
-@onready var class_slots: Array[Control] = [
-	%Class1, %Class2, %Class3, %Class4, %Class5
+@onready var class_slots: Array = [
+	$Class1, $Class2, $Class3, $Class4, $Class5
 ]
 
 const CROWN_EMOJI = "👑 "
 
 @export_file("*.tscn") var main_game_scene_path: String
 @export_file("*.tscn") var main_menu_scene_path: String
-@export var system_sender_name: String = "System"
-@export var lobby_welcome_message: String = "Welcome to the lobby!"
-@export var lobby_welcome_color: Color = Color(0.9, 0.75, 0.3)
-@export var joined_lobby_format: String = "%s joined the lobby."
-@export var joined_lobby_color: Color = Color(0.35, 0.65, 0.45)
-@export var left_lobby_format: String = "%s left the lobby."
-@export var left_lobby_color: Color = Color(0.75, 0.35, 0.35)
-@export var selected_class_format: String = "Selected class: %s"
-@export var selected_class_color: Color = Color(0.4, 0.7, 0.9)
-@export var chat_message_default_color: Color = Color(0.7, 0.65, 0.85)
-@export var join_game_button_text: String = "Join Quest"
+
+const DEBUG_LOBBY_LOGS := false
 
 var _player_entries: Dictionary = {}
 var _last_state_log_time: int = 0
@@ -161,7 +150,7 @@ func _refresh_start_button_state() -> void:
 		var current_time = Time.get_ticks_msec()
 		if current_time - _last_btn_log_time > 2000:
 			_last_btn_log_time = current_time
-			print("[Lobby] Start button state: visible=", start_button.visible, " disabled=", start_button.disabled, " players=", _get_player_count())
+			_debug_log("Start button state: visible=%s disabled=%s players=%s" % [start_button.visible, start_button.disabled, _get_player_count()])
 
 func _update_player_count():
 	_refresh_party_cards()
@@ -194,7 +183,7 @@ func _ready():
 	_refresh_lobby_title()
 	chat_box.focus_input()
 
-	_add_chat_message(system_sender_name, lobby_welcome_message, lobby_welcome_color)
+	_add_chat_message("System", "Welcome to the lobby!", Color(0.9, 0.75, 0.3))
 
 	room_code_button.text = MultiplayerManager.room_code
 	
@@ -232,7 +221,7 @@ func _ready():
 		MultiplayerManager.send_match_state({"type": "player_info", "user_id": MultiplayerManager.session.user_id, "ign": MultiplayerManager.player_ign, "is_host": MultiplayerManager.is_host})
 		if MultiplayerManager.is_host:
 			_broadcast_lobby_name()
-	print("[Lobby] Ready, is_host: ", MultiplayerManager.is_host, " match_id: ", MultiplayerManager.match_id, " socket_connected: ", MultiplayerManager.socket.is_connected_to_host() if MultiplayerManager.socket else false)
+	_debug_log("Ready, is_host=%s match_id=%s socket_connected=%s" % [MultiplayerManager.is_host, MultiplayerManager.match_id, MultiplayerManager.socket.is_connected_to_host() if MultiplayerManager.socket else false])
 	
 	# Highlight current selected class slot
 	_update_class_highlight()
@@ -258,7 +247,7 @@ func _transition_to_game_scene(source: String) -> void:
 	if tree == null:
 		return
 	_is_transitioning = true
-	print("[Lobby] Transitioning to game scene from ", source, "...")
+	_debug_log("Transitioning to game scene from %s..." % source)
 	tree.change_scene_to_file(main_game_scene_path)
 
 # ── Player list management ───────────────────────────────────────────────────
@@ -283,18 +272,18 @@ func _add_player_entry(user_id: String, ign: String, _prefix: String, is_host_fl
 	_refresh_lobby_title()
 	
 	# Chat notification
-	_add_chat_message(system_sender_name, joined_lobby_format % ign, joined_lobby_color)
+	_add_chat_message("System", ign + " joined the lobby.", Color(0.35, 0.65, 0.45))
 
 func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool):
-	print("[Lobby] Player joined signal: ", ign)
+	_debug_log("Player joined signal: %s" % ign)
 	_add_player_entry(user_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
 	_refresh_start_button_state()
 
 func _on_player_left_signal(user_id: String):
-	print("[Lobby] Player left signal")
+	_debug_log("Player left signal")
 	if _player_entries.has(user_id):
 		var entry = _player_entries[user_id]
-		_add_chat_message(system_sender_name, left_lobby_format % entry.ign, left_lobby_color)
+		_add_chat_message("System", entry.ign + " left the lobby.", Color(0.75, 0.35, 0.35))
 		_player_entries.erase(user_id)
 	_refresh_start_button_state()
 	_refresh_party_cards()
@@ -318,7 +307,7 @@ func _get_chat_sender_name() -> String:
 		return "You"
 	return MultiplayerManager.player_ign
 
-func _add_chat_message(sender: String, message: String, color: Color = chat_message_default_color):
+func _add_chat_message(sender: String, message: String, color: Color = Color(0.7, 0.65, 0.85)):
 	chat_box.add_message(sender, message, color)
 
 func _on_send_chat():
@@ -343,8 +332,8 @@ func _on_select_class_pressed():
 	if _selected_class:
 		_selected_class.player_scene = MultiplayerManager.resolve_player_scene()
 		MultiplayerManager.player_class = _selected_class
-		_add_chat_message(system_sender_name, selected_class_format % active_class, selected_class_color)
-		print("[Lobby] Selected class: ", active_class, " with player_scene: ", _selected_class.player_scene)
+		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		_debug_log("Selected class: %s with player_scene: %s" % [active_class, _selected_class.player_scene])
 		# Broadcast class selection to other players
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 			MultiplayerManager.send_match_state({
@@ -353,13 +342,13 @@ func _on_select_class_pressed():
 				"class_name": active_class
 			})
 	else:
-		_add_chat_message(system_sender_name, selected_class_format % active_class, selected_class_color)
-		print("[Lobby] Selected class: ", active_class)
+		_add_chat_message("System", "Selected class: " + active_class, Color(0.4, 0.7, 0.9))
+		_debug_log("Selected class: %s" % active_class)
 
 func _get_player_class_for_name(selected_name: String) -> PlayerClass:
-	var class_id := ClassManager.display_name_to_class_id(selected_name)
+	var class_id := ClassManagerScript.display_name_to_class_id(selected_name)
 	if not class_id.is_empty():
-		return ClassManager.create_class_instance(class_id)
+		return ClassManagerScript.create_class_instance(class_id)
 	return null
 
 func _get_slime_scene_path_for_class(selected_name: String) -> String:
@@ -369,7 +358,7 @@ func _get_slime_scene_path_for_class(selected_name: String) -> String:
 func _on_match_state(match_state):
 	# Handle start game
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:
-		print("[Lobby] >>> RECEIVED START_GAME OP_CODE 5 <<<")
+		_debug_log("Received start_game op code")
 		_transition_to_game_scene("op_code_5")
 		return
 	
@@ -383,10 +372,10 @@ func _on_match_state(match_state):
 				var parsed_snapshot = JSON.parse_string(match_state.data)
 				if parsed_snapshot is Dictionary:
 					tick_value = parsed_snapshot.get("tick", "?")
-			print("[Lobby] State snapshot tick: ", tick_value)
+			_debug_log("State snapshot tick: %s" % tick_value)
 	
 	elif match_state.op_code != MultiplayerUtils.OP_STATE:
-		print("[Lobby] >>> MATCH STATE RECEIVED: op_code=", match_state.op_code, " data=", match_state.data)
+		_debug_log("Match state received: op_code=%s" % match_state.op_code)
 	
 	var data = JSON.parse_string(match_state.data)
 	if data == null:
@@ -395,7 +384,7 @@ func _on_match_state(match_state):
 	# Handle server state snapshots
 	if data.has("players") and data.has("tick"):
 		if str(data.get("phase", "lobby")) == "in_game":
-			print("[Lobby] Snapshot reports in_game phase")
+			_debug_log("Snapshot reports in_game phase")
 			_transition_to_game_scene("snapshot_phase")
 			return
 
@@ -454,7 +443,7 @@ func _on_match_state(match_state):
 			var sender = data.get("sender", "Unknown")
 			var message = data.get("message", "")
 			if not message.is_empty():
-				_add_chat_message(sender, message, chat_message_default_color)
+				_add_chat_message(sender, message, Color(0.7, 0.65, 0.85))
 		
 		"start_game":
 			pass
@@ -467,39 +456,36 @@ func _on_match_state(match_state):
 				var player_class = _get_player_class_for_name(selected_name)
 				if player_class:
 					MultiplayerManager.set_player_class(sender_id, player_class)
-					print("[Lobby] Player ", sender_id.substr(0, 8), " selected class: ", selected_name)
+					_debug_log("Player %s selected class: %s" % [sender_id.substr(0, 8), selected_name])
 
 func _on_start_pressed():
-	print("[Lobby] ========== START BUTTON PRESSED ==========")
-	print("[Lobby] is_host: ", MultiplayerManager.is_host)
-	print("[Lobby] socket: ", MultiplayerManager.socket != null)
-	print("[Lobby] match_id: ", MultiplayerManager.match_id)
+	_debug_log("Start button pressed")
 	
 	if MultiplayerManager.is_host:
 		if _get_player_count() < 2:
-			print("[Lobby] Cannot start game with fewer than 2 players")
+			_debug_log("Cannot start game with fewer than 2 players")
 			_refresh_start_button_state()
 			return
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
-			print("[Lobby] >>> SENDING START_GAME OP_CODE 5 <<<")
+			_debug_log("Sending start_game op code")
 			await MultiplayerManager.socket.send_match_state_async(
 				MultiplayerManager.match_id,
 				MultiplayerUtils.OP_START_GAME,
 				JSON.stringify({"type": "start_game"}),
 				null
 			)
-			print("[Lobby] Sent start_game with op_code 5 (awaited)")
+			_debug_log("Sent start_game with op code 5")
 		else:
-			print("[Lobby] ERROR: Cannot send - socket or match_id missing!")
+			_debug_log("Cannot send start_game; socket or match_id missing")
 			return
 		start_button.disabled = true
-		print("[Lobby] Waiting for authoritative phase change from server...")
+		_debug_log("Waiting for authoritative phase change from server...")
 	else:
-		print("[Lobby] Only host can start the game")
+		_debug_log("Only host can start the game")
 
 func _show_join_game_ui():
 	"""Show UI for late joiners - game is already in progress"""
-	print("[Lobby] Game already in progress - showing Join Game UI")
+	_debug_log("Game already in progress - showing Join Game UI")
 	room_code_button.text = MultiplayerManager.room_code
 	
 	leave_button.pressed.connect(_on_back_pressed)
@@ -526,7 +512,7 @@ func _show_join_game_ui():
 			MultiplayerManager.socket.received_match_state.connect(_on_match_state)
 
 func _on_join_game_pressed():
-	print("[Lobby] ========== JOIN GAME BUTTON PRESSED ==========")
+	_debug_log("Join game button pressed")
 	_transition_to_game_scene("join_game_button")
 
 func _on_back_pressed():
@@ -537,13 +523,13 @@ func _on_back_pressed():
 
 func _on_copy_code_pressed():
 	DisplayServer.clipboard_set(MultiplayerManager.room_code)
-	print("Room code copied: " + MultiplayerManager.room_code)
+	_debug_log("Room code copied")
 
 func _on_match_phase_changed(new_phase: String) -> void:
 	if new_phase == "in_game":
-		print("[Lobby] Manager phase changed to in_game")
+		_debug_log("Manager phase changed to in_game")
 		if not MultiplayerManager.is_host and start_button.visible:
-			print("[Lobby] Game started while in lobby - switching to Join Game UI")
+			_debug_log("Game started while in lobby - switching to Join Game UI")
 			_show_join_game_ui()
 		else:
 			_transition_to_game_scene("manager_phase")
@@ -554,3 +540,8 @@ func get_selected_class() -> PlayerClass:
 
 func get_selected_subclass() -> PlayerClass:
 	return null
+
+
+func _debug_log(message: String) -> void:
+	if DEBUG_LOBBY_LOGS:
+		print("[Lobby] %s" % message)

@@ -82,7 +82,7 @@ func _on_buy_pressed(item: ShopItem):
 		shop_manager.purchase_item(item)
 
 
-func _on_item_purchased(item: ShopItem, success: bool):
+func _on_item_purchased(_item: ShopItem, success: bool):
 	if success:
 		_update_buy_button_states()
 
@@ -121,6 +121,10 @@ func close():
 	if shop_manager != null:
 		shop_manager.notify_shop_closed()
 	closed.emit()
+
+
+func _gui_input(_event: InputEvent) -> void:
+	pass
 
 
 func _coin_manager() -> Node:

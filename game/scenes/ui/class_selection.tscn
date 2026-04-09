@@ -1,6 +1,15 @@
 [gd_scene format=3 uid="uid://byney87c1siuq"]
 
-[ext_resource type="Script" uid="uid://c33m01dntmsk0" path="res://scripts/ui/class_selection_ui.gd" id="1_classui"]
+[ext_resource type="Script" uid="uid://c33m01dntmsk0" path="res://scripts/ui/lobby/class_selection_ui.gd" id="1_classui"]
+[ext_resource type="Texture2D" uid="uid://x6lmrq8h31xf" path="res://assets/class_icons/tank/tank_icon.png" id="2_yvrhb"]
+[ext_resource type="Script" uid="uid://lfp2wbqjbu3s" path="res://scripts/ui/lobby/class_selection_main_slot.gd" id="3_mainslot"]
+[ext_resource type="Texture2D" uid="uid://b5av0s4if6ex6" path="res://assets/class_icons/dps/dps_icon.png" id="4_dpsicon"]
+[ext_resource type="Texture2D" uid="uid://r1cvimsm1dtt" path="res://assets/class_icons/support/support_icon.png" id="5_supporticon"]
+[ext_resource type="Texture2D" uid="uid://b6ih1bkiw00f7" path="res://assets/class_icons/hybrid/hybrid_icon.png" id="6_hybridicon"]
+[ext_resource type="Texture2D" uid="uid://b3r1gkveeh4jk" path="res://assets/class_icons/controller/controller_icon.png" id="7_controllericon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_class_cards_transparent"]
+bg_color = Color(0, 0, 0, 0)
 
 [node name="ClassSelectionUI" type="Control" unique_id=284609762]
 layout_mode = 3
@@ -12,6 +21,7 @@ grow_vertical = 2
 script = ExtResource("1_classui")
 auto_start_solo_game = true
 solo_game_scene_path = "res://scenes/levels/main.tscn"
+main_class_slot_paths = Array[NodePath]([NodePath("ClassCardsPanel/ClassCardsRow/ClassSlot1"), NodePath("ClassCardsPanel/ClassCardsRow/ClassSlot2"), NodePath("ClassCardsPanel/ClassCardsRow/ClassSlot3"), NodePath("ClassCardsPanel/ClassCardsRow/ClassSlot4"), NodePath("ClassCardsPanel/ClassCardsRow/ClassSlot5")])
 
 [node name="LeftPanel" type="PanelContainer" parent="." unique_id=1824159607]
 layout_mode = 1
@@ -20,10 +30,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -490.0
-offset_top = -169.0
-offset_right = -187.0
-offset_bottom = 140.0
+offset_left = -630.0
+offset_top = 106.25
+offset_right = -327.0
+offset_bottom = 415.25006
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
@@ -73,48 +83,6 @@ custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="SelectButton" type="Button" parent="LeftPanel/VBox" unique_id=564078076]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Confirm Class"
-
-[node name="CenterPanel" type="PanelContainer" parent="." unique_id=1617875923]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -158.0
-offset_top = -173.5
-offset_right = 158.0
-offset_bottom = 150.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 3
-
-[node name="VBox" type="VBoxContainer" parent="CenterPanel" unique_id=1788028005]
-layout_mode = 2
-
-[node name="TitleLabel" type="Label" parent="CenterPanel/VBox" unique_id=242132327]
-layout_mode = 2
-text = "MAIN CLASSES"
-horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="CenterPanel/VBox" unique_id=1307440314]
-layout_mode = 2
-
-[node name="ScrollContainer" type="ScrollContainer" parent="CenterPanel/VBox" unique_id=759609359]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="MainClassesVBox" type="VBoxContainer" parent="CenterPanel/VBox/ScrollContainer" unique_id=1078720879]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="RightPanel" type="PanelContainer" parent="." unique_id=781342464]
 unique_name_in_owner = true
 layout_mode = 1
@@ -123,10 +91,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 172.0
-offset_top = -171.0
-offset_right = 491.0
-offset_bottom = 72.5
+offset_left = 311.0
+offset_top = 127.25
+offset_right = 630.0
+offset_bottom = 370.75
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
@@ -154,9 +122,151 @@ layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="SubclassesVBox" type="VBoxContainer" parent="RightPanel/VBox/ScrollContainer" unique_id=846204729]
+[node name="SubclassPreviewLabel" type="Label" parent="RightPanel/VBox/ScrollContainer" unique_id=846204729]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+autowrap_mode = 2
 
-[connection signal="pressed" from="LeftPanel/VBox/SelectButton" to="." method="_on_select_pressed"]
+[node name="ClassCardsPanel" type="PanelContainer" parent="." unique_id=1799535594]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -793.0
+offset_top = -130.0
+offset_right = 807.0
+offset_bottom = 54.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_class_cards_transparent")
+
+[node name="ClassCardsRow" type="HBoxContainer" parent="ClassCardsPanel" unique_id=1447516561]
+layout_mode = 2
+theme_override_constants/separation = 70
+alignment = 1
+
+[node name="ClassSlot1" type="PanelContainer" parent="ClassCardsPanel/ClassCardsRow" unique_id=703946671]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+script = ExtResource("3_mainslot")
+icon_path = NodePath("VBoxContainer/TextureRect")
+title_label_path = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ClassCardsPanel/ClassCardsRow/ClassSlot1" unique_id=2116129534]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="ClassCardsPanel/ClassCardsRow/ClassSlot1/VBoxContainer" unique_id=1445177419]
+texture_filter = 1
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+texture = ExtResource("2_yvrhb")
+
+[node name="Label" type="Label" parent="ClassCardsPanel/ClassCardsRow/ClassSlot1/VBoxContainer" unique_id=944268163]
+layout_mode = 2
+text = "Tank"
+horizontal_alignment = 1
+
+[node name="ClassSlot2" type="PanelContainer" parent="ClassCardsPanel/ClassCardsRow" unique_id=733901057]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+script = ExtResource("3_mainslot")
+icon_path = NodePath("VBoxContainer/TextureRect")
+title_label_path = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ClassCardsPanel/ClassCardsRow/ClassSlot2" unique_id=731151102]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="ClassCardsPanel/ClassCardsRow/ClassSlot2/VBoxContainer" unique_id=552822994]
+texture_filter = 1
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+texture = ExtResource("4_dpsicon")
+
+[node name="Label" type="Label" parent="ClassCardsPanel/ClassCardsRow/ClassSlot2/VBoxContainer" unique_id=1381253215]
+layout_mode = 2
+text = "DPS"
+horizontal_alignment = 1
+
+[node name="ClassSlot3" type="PanelContainer" parent="ClassCardsPanel/ClassCardsRow" unique_id=976046873]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+script = ExtResource("3_mainslot")
+icon_path = NodePath("VBoxContainer/TextureRect")
+title_label_path = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ClassCardsPanel/ClassCardsRow/ClassSlot3" unique_id=644971680]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="ClassCardsPanel/ClassCardsRow/ClassSlot3/VBoxContainer" unique_id=268954985]
+texture_filter = 1
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+texture = ExtResource("5_supporticon")
+
+[node name="Label" type="Label" parent="ClassCardsPanel/ClassCardsRow/ClassSlot3/VBoxContainer" unique_id=371553748]
+layout_mode = 2
+text = "Support"
+horizontal_alignment = 1
+
+[node name="ClassSlot4" type="PanelContainer" parent="ClassCardsPanel/ClassCardsRow" unique_id=989553974]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+script = ExtResource("3_mainslot")
+icon_path = NodePath("VBoxContainer/TextureRect")
+title_label_path = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ClassCardsPanel/ClassCardsRow/ClassSlot4" unique_id=325934954]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="ClassCardsPanel/ClassCardsRow/ClassSlot4/VBoxContainer" unique_id=1118897731]
+texture_filter = 1
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+texture = ExtResource("6_hybridicon")
+
+[node name="Label" type="Label" parent="ClassCardsPanel/ClassCardsRow/ClassSlot4/VBoxContainer" unique_id=1678472479]
+layout_mode = 2
+text = "Hybrid"
+horizontal_alignment = 1
+
+[node name="ClassSlot5" type="PanelContainer" parent="ClassCardsPanel/ClassCardsRow" unique_id=346564233]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+script = ExtResource("3_mainslot")
+icon_path = NodePath("VBoxContainer/TextureRect")
+title_label_path = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ClassCardsPanel/ClassCardsRow/ClassSlot5" unique_id=928623724]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="ClassCardsPanel/ClassCardsRow/ClassSlot5/VBoxContainer" unique_id=1759840565]
+texture_filter = 1
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+texture = ExtResource("7_controllericon")
+
+[node name="Label" type="Label" parent="ClassCardsPanel/ClassCardsRow/ClassSlot5/VBoxContainer" unique_id=1390278811]
+layout_mode = 2
+text = "Controller"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="." unique_id=971801028]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -108.0
+offset_top = 84.0
+offset_right = 113.0
+offset_bottom = 186.25
+grow_horizontal = 2
+grow_vertical = 2
+text = "confirm class"
+
+[connection signal="pressed" from="SelectButton" to="." method="_on_select_pressed"]

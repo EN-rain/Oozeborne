@@ -1,14 +1,17 @@
-[gd_scene format=3 uid="uid://xhxwepnhhfr8"]
+[gd_scene format=3 uid="uid://b6k3g7w7alyaf"]
 
-[ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://scripts/ui/hud_ui.gd" id="1_hudui"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_menu.tscn" id="2_main_menu"]
-[ext_resource type="PackedScene" path="res://scenes/ui/class_selection.tscn" id="3_classselect"]
+[ext_resource type="PackedScene" uid="uid://byney87c1siuq" path="res://scenes/ui/class_selection.tscn" id="3_classselect"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="4_shop"]
-[ext_resource type="Script" uid="uid://15tjehs4i4i6" path="res://scripts/ui/death_overlay.gd" id="5_deathoverlay"]
-[ext_resource type="PackedScene" path="res://scenes/ui/skill_tree_ui.tscn" id="6_skilltree"]
-[ext_resource type="PackedScene" path="res://scenes/ui/dev_tools_panel.tscn" id="7_devtools"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud_active_skill_slot.tscn" id="8_hudactiveslot"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud_passive_skill_icon.tscn" id="9_hudpassiveslot"]
+[ext_resource type="PackedScene" uid="uid://cwpucu5aaht6t" path="res://scenes/ui/skill_tree_ui.tscn" id="6_skilltree"]
+[ext_resource type="PackedScene" uid="uid://ct1ttubvyuome" path="res://scenes/ui/dev_tools_panel.tscn" id="7_devtools"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_active_skill_slot.tscn" id="14_activeslot"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_passive_skill_icon.tscn" id="15_passiveicon"]
+[ext_resource type="Script" uid="uid://cqoajxogtf8m8" path="res://scripts/ui/gameplay/hud_player_panel.gd" id="8_hudplayer"]
+[ext_resource type="Script" uid="uid://681r60rpm5lq" path="res://scripts/ui/gameplay/hud_control_panel.gd" id="9_hudcontrol"]
+[ext_resource type="Script" uid="uid://cmjh143e40r17" path="res://scripts/ui/gameplay/hud_minimap.gd" id="10_hudminimap"]
+[ext_resource type="Script" uid="uid://cetw8kwb5kb8c" path="res://scripts/ui/gameplay/hud_stats_panel.gd" id="11_hudstats"]
+[ext_resource type="Script" uid="uid://dj1punf538m3e" path="res://scripts/ui/gameplay/hud_skill_bar.gd" id="12_hudskills"]
+[ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://scripts/ui/gameplay/hud_ui.gd" id="13_hudroot"]
 
 [sub_resource type="StyleBoxFlat" id="hp_bg"]
 content_margin_left = 3.0
@@ -36,22 +39,6 @@ corner_radius_top_left = 1
 corner_radius_top_right = 1
 corner_radius_bottom_right = 1
 corner_radius_bottom_left = 1
-
-[sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.08, 0.08, 0.12, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.5, 0.7, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="death_card"]
 content_margin_left = 44.0
@@ -229,10 +216,28 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ddcbq"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pog3r"]
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+
 [node name="HUD" type="CanvasLayer" unique_id=958867226]
-script = ExtResource("1_hudui")
-active_skill_slot_scene = ExtResource("8_hudactiveslot")
-passive_skill_icon_scene = ExtResource("9_hudpassiveslot")
+script = ExtResource("13_hudroot")
 
 [node name="MapBounds" type="ReferenceRect" parent="." unique_id=1590559970 groups=["map_bounds"]]
 offset_right = 5546.5
@@ -248,12 +253,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("9_hudcontrol")
 
 [node name="PlayerStats" type="Control" parent="Control" unique_id=1019271898]
 layout_mode = 1
 anchors_preset = 0
 offset_right = 589.0
 offset_bottom = 191.0
+script = ExtResource("8_hudplayer")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Control/PlayerStats" unique_id=888559358]
 layout_mode = 0
@@ -300,8 +307,8 @@ offset_left = 301.0
 offset_top = 60.0
 offset_right = 380.0
 offset_bottom = 85.0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 18
 text = "Lv.1"
 
 [node name="CoinDisplay" type="HBoxContainer" parent="Control/PlayerStats" unique_id=888999111]
@@ -318,8 +325,8 @@ stretch_mode = 4
 [node name="CoinLabel" type="Label" parent="Control/PlayerStats/CoinDisplay" unique_id=111222333]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 18
 text = "0"
 
 [node name="PlayerName" type="Label" parent="Control/PlayerStats" unique_id=939969195]
@@ -341,11 +348,11 @@ offset_top = 12.0
 offset_right = 120.0
 offset_bottom = 56.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 0.95)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 26
 text = "Score: 0"
 horizontal_alignment = 1
 
@@ -360,11 +367,11 @@ offset_top = 52.0
 offset_right = 120.0
 offset_bottom = 82.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
 text = "Mobs: 0"
 horizontal_alignment = 1
 
@@ -383,10 +390,10 @@ offset_right = 260.0
 offset_bottom = 28.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 34
 theme_override_colors/font_color = Color(1, 0.96, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.04, 0.02, 0.95)
 theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
 text = "Round 2
 +10 Mobs"
 horizontal_alignment = 1
@@ -402,6 +409,7 @@ anchor_right = 1.0
 offset_left = -212.0
 offset_bottom = 169.0
 grow_horizontal = 0
+script = ExtResource("10_hudminimap")
 
 [node name="PreviewBg" type="ColorRect" parent="Control/Map" unique_id=180952806]
 layout_mode = 1
@@ -490,47 +498,21 @@ offset_right = 1570.0
 offset_bottom = 34.0
 theme_override_font_sizes/font_size = 14
 
-[node name="SoloClassSelection" type="Control" parent="." unique_id=622513519 instance=ExtResource("3_classselect")]
+[node name="SoloClassSelection" parent="." unique_id=622513519 instance=ExtResource("3_classselect")]
 visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="ShopUI" type="Control" parent="." unique_id=411928006 instance=ExtResource("4_shop")]
+[node name="ShopUI" parent="." unique_id=411928006 instance=ExtResource("4_shop")]
 unique_name_in_owner = true
 visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
 
-[node name="SkillTreeUI" type="Control" parent="." unique_id=1280852712 instance=ExtResource("6_skilltree")]
+[node name="SkillTreeUI" parent="." unique_id=1280852712 instance=ExtResource("6_skilltree")]
 unique_name_in_owner = true
 visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="DevToolsPanel" type="PanelContainer" parent="." unique_id=595034582 instance=ExtResource("7_devtools")]
+[node name="DevToolsPanel" parent="." unique_id=595034582 instance=ExtResource("7_devtools")]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -280.0
-offset_top = 186.0
-offset_bottom = 546.0
-grow_horizontal = 0
-theme_override_styles/panel = SubResource("panel_style")
 
 [node name="Death" type="Control" parent="." unique_id=1587043198]
 unique_name_in_owner = true
@@ -542,8 +524,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("5_deathoverlay")
-main_menu_scene = ExtResource("2_main_menu")
 metadata/_edit_use_anchors_ = true
 
 [node name="ColorRect" type="ColorRect" parent="Death" unique_id=1468384267]
@@ -585,16 +565,16 @@ alignment = 1
 
 [node name="SkullIcon" type="Label" parent="Death/DeathCard/VBoxContainer" unique_id=450102845]
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
 theme_override_colors/font_color = Color(0.75, 0.15, 0.15, 0.8)
+theme_override_font_sizes/font_size = 40
 text = "💀"
 horizontal_alignment = 1
 
 [node name="YouDiedLabel" type="Label" parent="Death/DeathCard/VBoxContainer" unique_id=929598492]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 46
 theme_override_colors/font_color = Color(0.85, 0.18, 0.18, 1)
+theme_override_font_sizes/font_size = 46
 text = "Run Over"
 horizontal_alignment = 1
 
@@ -602,8 +582,8 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.92, 0.86, 0.94, 0.95)
+theme_override_font_sizes/font_size = 20
 text = "You were killed by something rude."
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -611,8 +591,8 @@ autowrap_mode = 3
 [node name="FinalScore" type="Label" parent="Death/DeathCard/VBoxContainer" unique_id=310591930]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.75, 0.7, 0.9, 0.9)
+theme_override_font_sizes/font_size = 20
 text = "Final Score: 00"
 horizontal_alignment = 1
 
@@ -623,21 +603,21 @@ layout_mode = 2
 [node name="Restart" type="Button" parent="Death/DeathCard/VBoxContainer" unique_id=1156698958]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("btn_restart_normal")
 theme_override_styles/pressed = SubResource("btn_restart_pressed")
 theme_override_styles/hover = SubResource("btn_restart_hover")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 18
 text = "⚔ Try Again"
 
 [node name="MenuButton" type="Button" parent="Death/DeathCard/VBoxContainer" unique_id=1156698959]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.45, 0.45, 0.9)
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("btn_menu_normal")
 theme_override_styles/pressed = SubResource("btn_menu_pressed")
 theme_override_styles/hover = SubResource("btn_menu_hover")
-theme_override_colors/font_color = Color(0.8, 0.45, 0.45, 0.9)
-theme_override_font_sizes/font_size = 16
 text = "← Retreat to Menu"
 
 [node name="Skills" type="Control" parent="." unique_id=742230347]
@@ -654,6 +634,9 @@ offset_right = 258.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
+script = ExtResource("12_hudskills")
+active_skill_slot_scene = ExtResource("14_activeslot")
+passive_skill_icon_scene = ExtResource("15_passiveicon")
 
 [node name="SkillSlots" type="HBoxContainer" parent="Skills" unique_id=1994296828]
 unique_name_in_owner = true
@@ -671,13 +654,13 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 12
 
-[node name="ActiveSkillStrip" type="HBoxContainer" parent="Skills/SkillSlots"]
+[node name="ActiveSkillStrip" type="HBoxContainer" parent="Skills/SkillSlots" unique_id=1161022364]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="SkillDivider" type="VSeparator" parent="Skills/SkillSlots"]
+[node name="SkillDivider" type="VSeparator" parent="Skills/SkillSlots" unique_id=2050652060]
 custom_minimum_size = Vector2(6, 72)
 layout_mode = 2
 mouse_filter = 2
@@ -706,13 +689,294 @@ unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
-mouse_filter = 2
 
+[node name="Stats" type="Control" parent="." unique_id=281895974]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("11_hudstats")
+
+[node name="ClassStats" type="PanelContainer" parent="Stats" unique_id=1374798923]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -304.0
+offset_top = -222.0
+offset_right = -13.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ddcbq")
+
+[node name="StatsVBox" type="VBoxContainer" parent="Stats/ClassStats" unique_id=668235259]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ClassTitle" type="Label" parent="Stats/ClassStats/StatsVBox" unique_id=1428025830]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_font_sizes/font_size = 15
+text = "Main Stats"
+
+[node name="StatsCards" type="GridContainer" parent="Stats/ClassStats/StatsVBox" unique_id=2013168856]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="HPCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=2003281869]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/HPCard" unique_id=935259379]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/HPCard/Margin" unique_id=1196506642]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=279139654]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "HP"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/HPCard/Margin/VBox" unique_id=741535248]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "1,450"
+
+[node name="AttackCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=1014829659]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/AttackCard" unique_id=974644805]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/AttackCard/Margin" unique_id=1986287189]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=1505300010]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "ATTACK"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/AttackCard/Margin/VBox" unique_id=55194051]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "245"
+
+[node name="DefenseCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=1636713182]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/DefenseCard" unique_id=1985015437]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/DefenseCard/Margin" unique_id=658125216]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=1499284905]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "DEFENSE"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/DefenseCard/Margin/VBox" unique_id=1379314530]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "180"
+
+[node name="SpeedCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=1699031656]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/SpeedCard" unique_id=1965264169]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/SpeedCard/Margin" unique_id=2069624667]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1770550700]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "SPEED"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/SpeedCard/Margin/VBox" unique_id=1746823777]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "95"
+
+[node name="CritCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=1735963702]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/CritCard" unique_id=86063090]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/CritCard/Margin" unique_id=1060152183]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=760623475]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "CRIT RATE"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/CritCard/Margin/VBox" unique_id=450842210]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "15%"
+
+[node name="EvadeCard" type="PanelContainer" parent="Stats/ClassStats/StatsVBox/StatsCards" unique_id=966714866]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pog3r")
+
+[node name="Margin" type="MarginContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/EvadeCard" unique_id=1207078798]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="Stats/ClassStats/StatsVBox/StatsCards/EvadeCard/Margin" unique_id=1486786752]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1101673090]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "CRIT DAMAGE"
+
+[node name="Value" type="Label" parent="Stats/ClassStats/StatsVBox/StatsCards/EvadeCard/Margin/VBox" unique_id=1880455321]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "5%"
+
+[node name="StatsContent" type="RichTextLabel" parent="Stats/ClassStats/StatsVBox" unique_id=584386603]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/default_color = Color(1, 1, 1, 0.96)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+text = "Select a class to view stats"
+
+[node name="StatBreakdownPopup" type="PanelContainer" parent="." unique_id=1560204698]
+visible = false
+z_index = 200
+offset_right = 244.0
+offset_bottom = 70.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ddcbq")
+
+[node name="Content" type="VBoxContainer" parent="StatBreakdownPopup" unique_id=1910101002]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="StatBreakdownPopup/Content" unique_id=1910101003]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 13
+
+[node name="Values" type="HBoxContainer" parent="StatBreakdownPopup/Content" unique_id=1910101004]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Token0" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101005]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56078434, 0.827451, 1, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Operator0" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101006]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.52)
+theme_override_font_sizes/font_size = 16
+
+[node name="Token1" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101007]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5568628, 0.9411765, 0.654902, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Operator1" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101008]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.52)
+theme_override_font_sizes/font_size = 16
+
+[node name="Token2" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101009]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.827451, 0.47843137, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Operator2" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101010]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.52)
+theme_override_font_sizes/font_size = 16
+
+[node name="Token3" type="Label" parent="StatBreakdownPopup/Content/Values" unique_id=1910101011]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5803922, 0.8117647, 1)
+theme_override_font_sizes/font_size = 18
+
+[connection signal="pressed" from="Control/Store" to="Control" method="_on_store_pressed"]
+[connection signal="pressed" from="Control/SkillTree" to="Control" method="_on_skill_tree_pressed"]
+[connection signal="pressed" from="Control/DevTools" to="Control" method="_on_dev_tools_pressed"]
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/Restart" to="Death" method="_on_restart_pressed"]
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/MenuButton" to="Death" method="_on_menu_pressed"]
-[connection signal="pressed" from="Control/Store" to="." method="_on_store_pressed"]
-[connection signal="pressed" from="Control/SkillTree" to="." method="_on_skill_tree_pressed"]
-[connection signal="pressed" from="Control/DevTools" to="." method="_on_dev_tools_pressed"]
-[connection signal="closed" from="ShopUI" to="." method="_on_overlay_closed"]
-[connection signal="closed" from="SkillTreeUI" to="." method="_on_overlay_closed"]
-[connection signal="closed" from="DevToolsPanel" to="." method="_on_overlay_closed"]

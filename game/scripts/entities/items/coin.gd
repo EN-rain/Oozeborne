@@ -74,12 +74,12 @@ func _find_nearby_player():
 
 func _on_body_entered(body):
 	if body.is_in_group(player_group_name):
-		_collect()
+		_collect(body)
 
 
-func _collect():
+func _collect(collector: Node = null):
 	# Add coins to manager
-	CoinManager.add_coins(value)
+	CoinManager.add_coins(value, CoinManager.get_player_coin_user_id(collector))
 	
 	# Spawn collect effect/number
 	DamageNumbers.spawn_custom(global_position, "+%d" % value, Color(1.0, 0.85, 0.2), 18)

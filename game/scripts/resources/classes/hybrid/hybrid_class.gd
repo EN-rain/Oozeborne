@@ -20,6 +20,8 @@ func _init():
 	modifiers_damage = 1.05   # +5% Damage
 	modifiers_defense = 1.0   # Base Defense
 	modifiers_attack_speed = 1.05   # +5% Attack Speed
+	modifiers_crit_chance = 1.06    # +6% Crit Chance
+	modifiers_crit_damage = 1.08    # +8% Crit Damage
 	
 	# Special ability
 	ability_name = "Adaptive Stance"

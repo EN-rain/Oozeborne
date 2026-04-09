@@ -1,74 +1,79 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ct1ttubvyuome"]
 
-[ext_resource type="Script" path="res://scripts/ui/dev_tools_panel.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ckogu4vya3j4g" path="res://scripts/ui/gameplay/dev_tools_panel.gd" id="1_script"]
 
-[sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.08, 0.08, 0.12, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.5, 0.7, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[node name="DevToolsPanel" type="PanelContainer"]
-process_mode = 2
-anchors_preset = 1
-anchor_left = 1.0
+[node name="DevToolsPanel" type="Control" unique_id=2008397097]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = -280.0
-offset_top = 186.0
-offset_bottom = 546.0
-grow_horizontal = 0
-theme_override_styles/panel = SubResource("panel_style")
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=768153730]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.01, 0.02, 0.04, 0.18)
+
+[node name="Panel" type="PanelContainer" parent="." unique_id=1315487873]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -421.0
+offset_top = -187.0
+offset_right = -24.0
+offset_bottom = 187.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=1547156175]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+[node name="Header" type="HBoxContainer" parent="Panel/VBoxContainer" unique_id=1086387002]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="VBoxContainer/Header"]
+[node name="Title" type="Label" parent="Panel/VBoxContainer/Header" unique_id=170778269]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.8, 1.0, 1)
+theme_override_colors/font_color = Color(0.7, 0.8, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "Dev Tools"
 
-[node name="CloseButton" type="Button" parent="VBoxContainer/Header"]
-process_mode = 2
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer/Header" unique_id=1493644831]
 unique_name_in_owner = true
+process_mode = 3
+custom_minimum_size = Vector2(56, 32)
 layout_mode = 2
 size_flags_horizontal = 8
-custom_minimum_size = Vector2(56, 32)
 text = "X"
 
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="Panel/VBoxContainer" unique_id=886928412]
 layout_mode = 2
 
-[node name="LevelSection" type="VBoxContainer" parent="VBoxContainer"]
+[node name="LevelSection" type="VBoxContainer" parent="Panel/VBoxContainer" unique_id=1299502281]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Label" type="Label" parent="VBoxContainer/LevelSection"]
+[node name="Label" type="Label" parent="Panel/VBoxContainer/LevelSection" unique_id=1653431317]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
 theme_override_font_sizes/font_size = 14
 text = "Player Level"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/LevelSection"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer/LevelSection" unique_id=9457527]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LevelInput" type="LineEdit" parent="VBoxContainer/LevelSection/HBoxContainer"]
+[node name="LevelInput" type="LineEdit" parent="Panel/VBoxContainer/LevelSection/HBoxContainer" unique_id=2020869644]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -76,42 +81,57 @@ text = "1"
 placeholder_text = "1-100"
 max_length = 3
 
-[node name="SetLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+[node name="SetLevelButton" type="Button" parent="Panel/VBoxContainer/LevelSection/HBoxContainer" unique_id=79205398]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Set"
 
-[node name="MaxLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+[node name="MaxLevelButton" type="Button" parent="Panel/VBoxContainer/LevelSection/HBoxContainer" unique_id=1492161420]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Max Level"
 
-[node name="ResetLevelButton" type="Button" parent="VBoxContainer/LevelSection/HBoxContainer"]
+[node name="ResetLevelButton" type="Button" parent="Panel/VBoxContainer/LevelSection/HBoxContainer" unique_id=1716984564]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Reset Lvl"
 
-[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="SpawnSection" type="VBoxContainer" parent="VBoxContainer"]
+[node name="CoinsSection" type="VBoxContainer" parent="Panel/VBoxContainer" unique_id=1742017001]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Label" type="Label" parent="VBoxContainer/SpawnSection"]
+[node name="Label" type="Label" parent="Panel/VBoxContainer/CoinsSection" unique_id=328001671]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Coins"
+
+[node name="AddCoinsButton" type="Button" parent="Panel/VBoxContainer/CoinsSection" unique_id=1008266774]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+100 Coins"
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/VBoxContainer" unique_id=1992914994]
+layout_mode = 2
+
+[node name="SpawnSection" type="VBoxContainer" parent="Panel/VBoxContainer" unique_id=960368674]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/SpawnSection" unique_id=1518553802]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
 theme_override_font_sizes/font_size = 14
 text = "Spawn Mobs"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/SpawnSection"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer/SpawnSection" unique_id=1211093070]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBoxContainer/SpawnSection/HBoxContainer"]
+[node name="Label" type="Label" parent="Panel/VBoxContainer/SpawnSection/HBoxContainer" unique_id=1460801219]
 layout_mode = 2
 text = "Count:"
 
-[node name="SpawnCountInput" type="LineEdit" parent="VBoxContainer/SpawnSection/HBoxContainer"]
+[node name="SpawnCountInput" type="LineEdit" parent="Panel/VBoxContainer/SpawnSection/HBoxContainer" unique_id=2027810070]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -119,47 +139,48 @@ text = "1"
 placeholder_text = "1-50"
 max_length = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer/SpawnSection"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="Panel/VBoxContainer/SpawnSection" unique_id=527099914]
 layout_mode = 2
 
-[node name="SpawnCommonButton" type="Button" parent="VBoxContainer/SpawnSection/HBoxContainer2"]
+[node name="SpawnCommonButton" type="Button" parent="Panel/VBoxContainer/SpawnSection/HBoxContainer2" unique_id=172290849]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Spawn Common"
 
-[node name="SpawnEliteButton" type="Button" parent="VBoxContainer/SpawnSection/HBoxContainer2"]
+[node name="SpawnEliteButton" type="Button" parent="Panel/VBoxContainer/SpawnSection/HBoxContainer2" unique_id=812827703]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Spawn Elite"
 
-[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+[node name="HSeparator3" type="HSeparator" parent="Panel/VBoxContainer" unique_id=232894885]
 layout_mode = 2
 
-[node name="ClassSection" type="VBoxContainer" parent="VBoxContainer"]
+[node name="ClassSection" type="VBoxContainer" parent="Panel/VBoxContainer" unique_id=412074170]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Label" type="Label" parent="VBoxContainer/ClassSection"]
+[node name="Label" type="Label" parent="Panel/VBoxContainer/ClassSection" unique_id=506222433]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
 theme_override_font_sizes/font_size = 14
 text = "Change Class"
 
-[node name="ClassOption" type="OptionButton" parent="VBoxContainer/ClassSection"]
+[node name="ClassOption" type="OptionButton" parent="Panel/VBoxContainer/ClassSection" unique_id=1365018125]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ApplyClassButton" type="Button" parent="VBoxContainer/ClassSection"]
+[node name="ApplyClassButton" type="Button" parent="Panel/VBoxContainer/ClassSection" unique_id=447514506]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Apply Class"
 
-[connection signal="pressed" from="VBoxContainer/Header/CloseButton" to="." method="_on_close_pressed"]
-[connection signal="text_submitted" from="VBoxContainer/LevelSection/HBoxContainer/LevelInput" to="." method="_on_level_input_submitted"]
-[connection signal="text_submitted" from="VBoxContainer/SpawnSection/HBoxContainer/SpawnCountInput" to="." method="_on_spawn_count_input_submitted"]
-[connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/SetLevelButton" to="." method="_on_set_level_pressed"]
-[connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/MaxLevelButton" to="." method="_on_max_level_pressed"]
-[connection signal="pressed" from="VBoxContainer/LevelSection/HBoxContainer/ResetLevelButton" to="." method="_on_reset_level_pressed"]
-[connection signal="pressed" from="VBoxContainer/SpawnSection/HBoxContainer2/SpawnCommonButton" to="." method="_on_spawn_common_pressed"]
-[connection signal="pressed" from="VBoxContainer/SpawnSection/HBoxContainer2/SpawnEliteButton" to="." method="_on_spawn_elite_pressed"]
-[connection signal="pressed" from="VBoxContainer/ClassSection/ApplyClassButton" to="." method="_on_apply_class_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/Header/CloseButton" to="." method="_on_close_pressed"]
+[connection signal="text_submitted" from="Panel/VBoxContainer/LevelSection/HBoxContainer/LevelInput" to="." method="_on_level_input_submitted"]
+[connection signal="pressed" from="Panel/VBoxContainer/LevelSection/HBoxContainer/SetLevelButton" to="." method="_on_set_level_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/LevelSection/HBoxContainer/MaxLevelButton" to="." method="_on_max_level_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/LevelSection/HBoxContainer/ResetLevelButton" to="." method="_on_reset_level_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/CoinsSection/AddCoinsButton" to="." method="_on_add_coins_pressed"]
+[connection signal="text_submitted" from="Panel/VBoxContainer/SpawnSection/HBoxContainer/SpawnCountInput" to="." method="_on_spawn_count_input_submitted"]
+[connection signal="pressed" from="Panel/VBoxContainer/SpawnSection/HBoxContainer2/SpawnCommonButton" to="." method="_on_spawn_common_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/SpawnSection/HBoxContainer2/SpawnEliteButton" to="." method="_on_spawn_elite_pressed"]
+[connection signal="pressed" from="Panel/VBoxContainer/ClassSection/ApplyClassButton" to="." method="_on_apply_class_pressed"]

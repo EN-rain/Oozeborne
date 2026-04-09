@@ -4,17 +4,27 @@ extends CanvasLayer
 @onready var overlay: ColorRect = %Overlay
 @onready var resume_button: Button = %ResumeButton
 @onready var restart_button: Button = %RestartButton
+@onready var save_round_button: Button = %SaveRoundButton
 @onready var menu_button: Button = %MenuButton
 
 @export_file("*.tscn") var main_menu_scene_path: String
 
+
+func _get_solo_run_save_manager() -> Node:
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		return null
+	return tree.root.get_node_or_null("/root/SoloRunSaveManager")
+
 func _ready():
+	show()
 	pause_panel.hide()
 	overlay.hide()
 
 func _input(event):
-	if event.is_action_pressed("pause"):
+	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		_toggle_pause()
+		get_viewport().set_input_as_handled()
 
 func _toggle_pause():
 	if get_tree().paused:
@@ -23,9 +33,12 @@ func _toggle_pause():
 		_pause()
 
 func _pause():
+	show()
 	get_tree().paused = true
 	pause_panel.show()
 	overlay.show()
+	if save_round_button != null:
+		save_round_button.text = "Save Round"
 
 func _resume():
 	get_tree().paused = false
@@ -39,11 +52,22 @@ func _on_restart_pressed():
 	await _restart_current_run()
 
 func _on_menu_pressed():
-	if get_tree() != null and get_tree().root != null and get_tree().root.has_node("SkillTreeManager"):
-		get_tree().root.get_node("SkillTreeManager").call("persist_to_disk")
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
 	get_tree().change_scene_to_file(main_menu_scene_path)
+
+
+func _on_save_round_pressed():
+	var tree := get_tree()
+	if tree == null:
+		return
+	var current_scene := tree.current_scene
+	if current_scene == null:
+		return
+	var save_manager := _get_solo_run_save_manager()
+	var saved: bool = save_manager != null and bool(save_manager.call("save_current_run_from_scene", current_scene))
+	if save_round_button != null:
+		save_round_button.text = "Saved" if saved else "Save Failed"
 
 
 func _restart_current_run() -> void:
@@ -55,6 +79,8 @@ func _restart_current_run() -> void:
 	restart_button.disabled = true
 	menu_button.disabled = true
 	resume_button.disabled = true
+	if save_round_button != null:
+		save_round_button.disabled = true
 	pause_panel.hide()
 	overlay.hide()
 
@@ -65,11 +91,11 @@ func _restart_current_run() -> void:
 		restart_button.disabled = false
 		menu_button.disabled = false
 		resume_button.disabled = false
+		if save_round_button != null:
+			save_round_button.disabled = false
 		return
 
 	var preserved_class: PlayerClass = MultiplayerManager.player_class
-	if tree.root != null and tree.root.has_node("SkillTreeManager"):
-		tree.root.get_node("SkillTreeManager").call("persist_to_disk")
 	await MultiplayerManager.disconnect_server()
 	MultiplayerManager.player_class = preserved_class
 	MultiplayerManager.player_subclass = null

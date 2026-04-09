@@ -17,7 +17,7 @@ config/icon="res://assets/icon.svg"
 
 [autoload]
 
-Nakama="*uid://bmf6nk0fuaur8"
+Nakama="*res://addons/com.heroiclabs.nakama/nakama_autoload.gd"
 MultiplayerManager="*res://scripts/globals/multiplayer_manager.gd"
 RemotePlayerManager="*res://scripts/globals/remote_player_manager.gd"
 ClientPrediction="*res://scripts/globals/client_prediction.gd"
@@ -34,11 +34,7 @@ ShopManager="*res://scripts/globals/shop_manager.gd"
 SlimePaletteRegistry="*res://scripts/globals/slime_palette_registry.gd"
 ClassManager="*res://scenes/autoload/class_manager.tscn"
 McpInteractionServer="*res://scripts/globals/mcp_interaction_server.gd"
-
-[display]
-
-window/size/viewport_width=1920
-window/size/viewport_height=1080
+SoloRunSaveManager="*res://scripts/globals/solo_run_save_manager.gd"
 
 [editor_plugins]
 

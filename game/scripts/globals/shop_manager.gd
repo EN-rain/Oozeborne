@@ -328,7 +328,6 @@ func _create_magnet_ring() -> ShopItem:
 
 func purchase_item(item: ShopItem) -> bool:
 	if not item.can_afford(CoinManager.get_coins()):
-		print("[Shop] Cannot afford %s (cost: %d, have: %d)" % [item.display_name, item.price, CoinManager.get_coins()])
 		item_purchased.emit(item, false)
 		return false
 	
@@ -364,7 +363,6 @@ func purchase_item(item: ShopItem) -> bool:
 			inventory[item.item_id] += 1
 			item.quantity = inventory[item.item_id]
 	
-	print("[Shop] Purchased %s for %d coins" % [item.display_name, item.price])
 	item_purchased.emit(item, true)
 	return true
 
