@@ -258,6 +258,9 @@ func _on_login_pressed() -> void:
 		_set_status(validation.get("error", "Invalid login data"), error_status_color)
 		return
 	
+	# Clear any existing session before logging in with new credentials
+	MultiplayerManager.clear_session()
+	
 	_set_busy(true)
 	_set_status(signing_in_text, checking_saved_session_color)
 	var login_result = await MultiplayerManager.login_with_email(validation["email"], validation["password"])

@@ -209,7 +209,7 @@ func perform_basic_attack():
 		dir = Vector2(facing, 0)
 
 	var slash := slash_effect_scene.instantiate()
-	get_tree().current_scene.add_child(slash)me
+	get_tree().current_scene.add_child(slash)
 	slash.global_position = global_position + dir * 12
 	slash.rotation = dir.angle()
 	slash.set_damage(attack_damage)

@@ -163,6 +163,12 @@ func _load_saved_auth_session() -> Dictionary:
 func is_authenticated() -> bool:
 	return session != null and not session.is_exception() and session.is_valid() and not session.is_expired()
 
+
+func clear_session() -> void:
+	session = null
+	player_ign = ""
+	_clear_saved_auth_session()
+
 func get_last_auth_error(session_result: NakamaSession) -> String:
 	if session_result == null:
 		return "Authentication failed"
@@ -339,18 +345,18 @@ func connect_to_server(device_id: String = "") -> bool:
 	var socket_adapter = NakamaSocketAdapter.new()
 	socket_adapter.name = "NakamaSocketAdapter"
 	add_child(socket_adapter)
-	
+
 	# Create socket
 	var socket_scheme = "wss" if _server_config["scheme"] == "https" else "ws"
 	socket = NakamaSocket.new(socket_adapter, _server_config["host"], _server_config["port"], socket_scheme)
-	
+
 	# Connect to server using session
 	await socket.connect_async(session)
-	
+
 	if not socket.is_connected_to_host():
 		_debug_log("Failed to connect socket")
 		return false
-	
+
 	_debug_log("Socket connected!")
 
 	# Connect match signals here so we never miss events between scene transitions
@@ -500,7 +506,7 @@ func _on_match_presence(p_presence):
 			player_classes.erase(leave.user_id)
 		if player_subclasses.has(leave.user_id):
 			player_subclasses.erase(leave.user_id)
-			player_left.emit(leave.user_id)
+		player_left.emit(leave.user_id)
 
 func disconnect_server():
 	if client != null and session != null and is_host and not room_code.is_empty():
@@ -514,15 +520,9 @@ func disconnect_server():
 func send_match_state(data: Dictionary):
 	if not is_socket_open() or match_id.is_empty():
 		return
-	
+
 	var json = JSON.stringify(data)
-	
-	# Rate limit: only print debug once every 2 seconds (2000ms)
-	var current_time = Time.get_ticks_msec()
-	if current_time - _last_debug_print_time > 2000:
-		_last_debug_print_time = current_time
-		_debug_log("Sending match state: %s" % json)
-	
+
 	# Always broadcast to entire match (null = all players)
 	# This is more reliable than targeting specific presences
 	socket.send_match_state_async(match_id, NetworkMessaging.OP_MESSAGE, json, null)
@@ -539,7 +539,6 @@ func get_player_subclass(user_id: String) -> PlayerClass:
 func set_player_subclass(user_id: String, assigned_subclass: PlayerClass) -> void:
 	player_subclasses[user_id] = assigned_subclass
 
-var _last_debug_print_time: int = 0  # Rate limit debug prints
 var _cached_player_scenes: Dictionary = {}
 
 func _set_match_phase(new_phase: String) -> void:
@@ -558,7 +557,7 @@ func _on_match_state(match_state) -> void:
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:
 		_set_match_phase("in_game")
 		return
-	
+
 	# Handle OP_PLAYER_JOIN (op code 3) - server broadcasts this when players join
 	if match_state.op_code == MultiplayerUtils.OP_PLAYER_JOIN:
 		var join_payload = JSON.parse_string(match_state.data)
@@ -568,7 +567,7 @@ func _on_match_state(match_state) -> void:
 			if server_phase == "in_game":
 				_set_match_phase("in_game")
 		return
-	
+
 	var data = JSON.parse_string(match_state.data)
 	if data == null:
 		return

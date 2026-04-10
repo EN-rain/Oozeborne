@@ -345,6 +345,16 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                         state.host_user_id = message.sender.user_id
                     end
                     player.is_host = message.sender.user_id == state.host_user_id
+                elseif info.type == "chat_message" then
+                    -- Relay chat messages to all players
+                    dispatcher.broadcast_message(0, nk.json_encode({
+                        type = "chat_message",
+                        sender = info.sender,
+                        message = info.message
+                    }))
+                elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" then
+                    -- Relay these message types to all players
+                    dispatcher.broadcast_message(0, message.data)
                 end
             end
         end

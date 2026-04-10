@@ -69,7 +69,10 @@ func bootstrap_party_entries() -> void:
 			continue
 		var info = MultiplayerManager.players[user_id]
 		var is_host_flag := bool(info.get("is_host", false))
-		var ign := str(info.get("ign", "Unknown"))
+		var ign := str(info.get("ign", "")).strip_edges()
+		# Skip players with unknown IGNs - they'll be added when player_info arrives
+		if ign.is_empty():
+			continue
 		add_player_entry(user_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
 
 	refresh_start_button_state()
@@ -215,8 +218,8 @@ func _refresh_select_class_button_state() -> void:
 			_select_class_button.disabled = is_taken
 
 
-func _is_class_taken_by_other_player(class_name: String) -> bool:
-	if class_name.is_empty():
+func _is_class_taken_by_other_player(class_display_name: String) -> bool:
+	if class_display_name.is_empty():
 		return false
 	var local_user_id := ""
 	if MultiplayerManager.session != null:
@@ -225,7 +228,7 @@ func _is_class_taken_by_other_player(class_name: String) -> bool:
 		if user_id == local_user_id:
 			continue
 		var assigned_class := MultiplayerManager.player_classes.get(user_id, null) as PlayerClass
-		if assigned_class != null and assigned_class.display_name == class_name:
+		if assigned_class != null and assigned_class.display_name == class_display_name:
 			return true
 	return false
 

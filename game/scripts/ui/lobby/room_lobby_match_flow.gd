@@ -10,7 +10,6 @@ var _join_game_button_text: String = "Join Quest"
 var _party_controller: RoomLobbyPartyController
 var _title_controller: Node
 var _is_transitioning: bool = false
-var _last_state_log_time: int = 0
 
 
 func setup(
@@ -36,7 +35,7 @@ func setup(
 func enter_lobby() -> void:
 	if is_instance_valid(_room_code_button):
 		_room_code_button.text = MultiplayerManager.room_code
-	_party_controller.bootstrap_party_entries()
+		_party_controller.bootstrap_party_entries()
 
 	if not MultiplayerManager.player_joined.is_connected(_on_player_joined_signal):
 		MultiplayerManager.player_joined.connect(_on_player_joined_signal)
@@ -125,7 +124,7 @@ func _transition_to_game_scene(source: String) -> void:
 
 
 func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool) -> void:
-	_party_controller.add_player_entry(user_id, ign, "👑 " if is_host_flag else "", is_host_flag)
+	_party_controller.add_player_entry(user_id, ign, "?? " if is_host_flag else "", is_host_flag)
 	_party_controller.refresh_start_button_state()
 
 
@@ -139,15 +138,7 @@ func _on_match_state(match_state) -> void:
 		return
 
 	if match_state.op_code == MultiplayerUtils.OP_STATE:
-		var current_time = Time.get_ticks_msec()
-		if current_time - _last_state_log_time > 2000:
-			_last_state_log_time = current_time
-			var tick_value = "?"
-			if match_state.data:
-				var parsed_snapshot = JSON.parse_string(match_state.data)
-				if parsed_snapshot is Dictionary:
-					tick_value = parsed_snapshot.get("tick", "?")
-			print("[Lobby] State snapshot tick: ", tick_value)
+		return
 
 	var data = JSON.parse_string(match_state.data)
 	if data == null:
@@ -165,14 +156,28 @@ func _on_match_state(match_state) -> void:
 		"player_info":
 			_party_controller.handle_player_info_state(data)
 		"request_players":
+			# Send our own info
 			MultiplayerManager.send_match_state({
 				"type": "player_info",
 				"user_id": MultiplayerManager.session.user_id,
 				"ign": MultiplayerManager.player_ign,
 				"is_host": MultiplayerManager.is_host
 			})
-			if MultiplayerManager.is_host and _title_controller != null and _title_controller.has_method("broadcast_lobby_name"):
-				_title_controller.broadcast_lobby_name()
+			# If host, also send info for all other known players
+			if MultiplayerManager.is_host:
+				for user_id in MultiplayerManager.players:
+					if user_id != MultiplayerManager.session.user_id:
+						var info = MultiplayerManager.players[user_id]
+						var ign = str(info.get("ign", ""))
+						if not ign.is_empty():
+							MultiplayerManager.send_match_state({
+								"type": "player_info",
+								"user_id": user_id,
+								"ign": ign,
+								"is_host": bool(info.get("is_host", false))
+							})
+				if _title_controller != null and _title_controller.has_method("broadcast_lobby_name"):
+					_title_controller.broadcast_lobby_name()
 		"lobby_name":
 			MultiplayerManager.lobby_name = str(data.get("name", "")).strip_edges()
 			if _title_controller != null and _title_controller.has_method("refresh_title"):
