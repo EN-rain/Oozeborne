@@ -1,0 +1,228 @@
+[gd_scene format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://scripts/ui/settings/settings.gd" id="1_settings"]
+
+[node name="Settings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 48
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Settings"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SettingsVBox" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="AudioSection" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AudioHeader" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Audio"
+
+[node name="MasterVolumeRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection"]
+layout_mode = 2
+
+[node name="MasterVolumeLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/MasterVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Master Volume"
+
+[node name="MasterVolumeSlider" type="HSlider" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/MasterVolumeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MusicVolumeRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection"]
+layout_mode = 2
+
+[node name="MusicVolumeLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/MusicVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Music Volume"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/MusicVolumeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="SFXVolumeRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection"]
+layout_mode = 2
+
+[node name="SFXVolumeLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/SFXVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SFX Volume"
+
+[node name="SFXVolumeSlider" type="HSlider" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/AudioSection/SFXVolumeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="VideoSection" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VideoHeader" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Video"
+
+[node name="FullscreenRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection"]
+layout_mode = 2
+
+[node name="FullscreenLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/FullscreenRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fullscreen"
+
+[node name="FullscreenCheck" type="CheckBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/FullscreenRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VsyncRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection"]
+layout_mode = 2
+
+[node name="VsyncLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/VsyncRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "V-Sync"
+
+[node name="VsyncCheck" type="CheckBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/VsyncRow"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+
+[node name="FPSLimitRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection"]
+layout_mode = 2
+
+[node name="FPSLimitLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/FPSLimitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "FPS Limit (0 = unlimited)"
+
+[node name="FPSLimitInput" type="SpinBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/VideoSection/FPSLimitRow"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.0
+max_value = 360.0
+value = 0.0
+
+[node name="GameplaySection" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GameplayHeader" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Gameplay"
+
+[node name="ScreenShakeRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection"]
+layout_mode = 2
+
+[node name="ScreenShakeLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection/ScreenShakeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Screen Shake"
+
+[node name="ScreenShakeCheck" type="CheckBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection/ScreenShakeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+
+[node name="DamageNumbersRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection"]
+layout_mode = 2
+
+[node name="DamageNumbersLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection/DamageNumbersRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Show Damage Numbers"
+
+[node name="ShowDamageNumbersCheck" type="CheckBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/GameplaySection/DamageNumbersRow"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+
+[node name="HUDSection" type="VBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HUDHeader" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "HUD"
+
+[node name="ShowFPSRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection"]
+layout_mode = 2
+
+[node name="ShowFPSLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection/ShowFPSRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Show FPS"
+
+[node name="ShowFPSCheck" type="CheckBox" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection/ShowFPSRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LanguageRow" type="HBoxContainer" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection"]
+layout_mode = 2
+
+[node name="LanguageLabel" type="Label" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection/LanguageRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Language"
+
+[node name="LanguageOption" type="OptionButton" parent="MarginContainer/VBox/ScrollContainer/SettingsVBox/HUDSection/LanguageRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"

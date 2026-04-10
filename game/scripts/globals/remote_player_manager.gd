@@ -215,9 +215,17 @@ func _update_player_animation(player_data: Dictionary, node: Node) -> void:
 	
 	sprite.flip_h = player_data.server_facing < 0
 	
+	if player_data.is_dashing:
+		if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
+			if sprite.animation != "dash":
+				sprite.play("dash")
+			return
 	if player_data.is_attacking:
-		pass  # Attack animation already playing
-	elif player_data.server_velocity.length() > 5.0:
+		if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+			if sprite.animation != "attack":
+				sprite.play("attack")
+			return
+	if player_data.server_velocity.length() > 5.0:
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:

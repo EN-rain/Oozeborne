@@ -9,6 +9,7 @@
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true
 script = ExtResource("6_mainscript")
+player_scene = ExtResource("4_player")
 
 [node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
 

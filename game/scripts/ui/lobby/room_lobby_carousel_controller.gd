@@ -1,4 +1,5 @@
 extends Node
+signal active_class_changed(active_class)
 
 const CAROUSEL_SLOT_RELS := [-2, -1, 0, 1, 2]
 const DRAG_SNAP_DISTANCE := 140.0
@@ -27,6 +28,13 @@ var _drag_start_pos := Vector2.ZERO
 var _drag_delta_x: float = 0.0
 var _carousel_tween: Tween = null
 var _carousel_idle_time: float = 0.0
+var _last_active_class_name: String = ""
+var _base_viewport_size: Vector2 = Vector2(1920.0, 1080.0)
+var _viewport_scale: float = 1.0
+var _base_sprite_position: Vector2 = Vector2(128, 170)
+var _base_label_offsets: Dictionary = {"left": -60.0, "top": 3.0, "right": 60.0, "bottom": 26.0}
+var _base_sprite_scale: Vector2 = Vector2.ONE
+var _base_font_size: int = 12
 func setup(view: RoomLobbyView, class_slots: Array, left_button: Button, right_button: Button) -> void:
 	_view = view
 	_class_slots = class_slots
@@ -82,6 +90,7 @@ func set_interaction_enabled(enabled: bool) -> void:
 
 func _process(delta: float) -> void:
 	_carousel_idle_time += delta
+	_update_viewport_scale()
 	if _carousel_nodes.is_empty() or _is_dragging_carousel:
 		return
 	if _carousel_tween != null and _carousel_tween.is_running():
@@ -139,11 +148,16 @@ func _setup_carousel() -> void:
 	baseline_y /= float(_carousel_nodes.size())
 	var center_sprite: AnimatedSprite2D = center_slot.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	var center_label: Label = center_slot.get_node_or_null("ClassName") as Label
-	var center_sprite_position: Vector2 = center_sprite.position if center_sprite else Vector2(128, 170)
-	var center_label_left: float = center_label.offset_left if center_label else -60.0
-	var center_label_top: float = center_label.offset_top if center_label else 3.0
-	var center_label_right: float = center_label.offset_right if center_label else 60.0
-	var center_label_bottom: float = center_label.offset_bottom if center_label else 26.0
+	_base_sprite_position = center_sprite.position if center_sprite else Vector2(128, 170)
+	if center_label:
+		_base_label_offsets = {
+			"left": center_label.offset_left,
+			"top": center_label.offset_top,
+			"right": center_label.offset_right,
+			"bottom": center_label.offset_bottom,
+		}
+	_base_sprite_scale = center_sprite.scale if center_sprite else Vector2.ONE
+	_base_font_size = center_label.get_theme_font_size("font_size") if center_label else 12
 
 	for slot in _carousel_nodes:
 		var sprite: AnimatedSprite2D = slot.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
@@ -163,18 +177,18 @@ func _setup_carousel() -> void:
 		var flat_position: Vector2 = Vector2(slot.position.x, baseline_y)
 		slot.position = flat_position
 		if sprite:
-			sprite.position = center_sprite_position
+			sprite.position = _base_sprite_position
 		if name_label:
-			name_label.offset_left = center_label_left
-			name_label.offset_top = center_label_top
-			name_label.offset_right = center_label_right
-			name_label.offset_bottom = center_label_bottom
+			name_label.offset_left = _base_label_offsets["left"]
+			name_label.offset_top = _base_label_offsets["top"]
+			name_label.offset_right = _base_label_offsets["right"]
+			name_label.offset_bottom = _base_label_offsets["bottom"]
 		_carousel_layouts.append({
 			"position": flat_position,
-			"scale": sprite.scale if sprite else Vector2.ONE,
-			"font_size": name_label.get_theme_font_size("font_size") if name_label else 12,
-			"label_top": name_label.offset_top if name_label else center_label_top,
-			"label_bottom": name_label.offset_bottom if name_label else center_label_bottom,
+			"scale": _base_sprite_scale,
+			"font_size": _base_font_size,
+			"label_top": _base_label_offsets["top"],
+			"label_bottom": _base_label_offsets["bottom"],
 		})
 
 
@@ -254,7 +268,11 @@ func _render_carousel(progress: float = 0.0) -> void:
 		slot.z_index = 10 - int(center_weight * 10.0)
 
 	if direction == 0 and _view != null:
-		_view.update_active_class_panels(get_active_class_name())
+		var active_class_name := get_active_class_name()
+		_view.update_active_class_panels(active_class_name)
+		if active_class_name != _last_active_class_name:
+			_last_active_class_name = active_class_name
+			active_class_changed.emit(active_class_name)
 
 
 func _animate_carousel_back_to_center(duration: float = 0.16) -> void:
@@ -293,11 +311,53 @@ func _run_carousel_shift_segment(direction: int, remaining_segments: int) -> voi
 	)
 
 
+func _update_viewport_scale() -> void:
+	var vp_size: Vector2 = get_viewport().get_visible_rect().size
+	if vp_size.x <= 0.0 or vp_size.y <= 0.0:
+		return
+	var new_scale: float = clampf(minf(vp_size.x / _base_viewport_size.x, vp_size.y / _base_viewport_size.y), 0.5, 1.5)
+	if not is_equal_approx(new_scale, _viewport_scale):
+		_viewport_scale = new_scale
+		if not _carousel_layouts.is_empty():
+			_recompute_carousel_layouts()
+			render_carousel(0.0)
+
+
+func _recompute_carousel_layouts() -> void:
+	if _carousel_slot_refs.is_empty():
+		return
+	var baseline_y: float = 0.0
+	for slot in _carousel_nodes:
+		baseline_y += slot.position.y
+	baseline_y /= float(_carousel_nodes.size())
+
+	for i in range(_carousel_slot_refs.size()):
+		var slot: Control = _carousel_slot_refs[i]["node"]
+		var sprite: AnimatedSprite2D = _carousel_slot_refs[i]["sprite"]
+		var name_label: Label = _carousel_slot_refs[i]["label"]
+		var flat_position: Vector2 = Vector2(slot.position.x, baseline_y)
+		slot.position = flat_position
+		if sprite:
+			sprite.position = _base_sprite_position * _viewport_scale
+		if name_label:
+			name_label.offset_left = _base_label_offsets["left"] * _viewport_scale
+			name_label.offset_top = _base_label_offsets["top"] * _viewport_scale
+			name_label.offset_right = _base_label_offsets["right"] * _viewport_scale
+			name_label.offset_bottom = _base_label_offsets["bottom"] * _viewport_scale
+		_carousel_layouts[i] = {
+			"position": flat_position,
+			"scale": _base_sprite_scale * _viewport_scale,
+			"font_size": roundi(float(_base_font_size) * _viewport_scale),
+			"label_top": _base_label_offsets["top"] * _viewport_scale,
+			"label_bottom": _base_label_offsets["bottom"] * _viewport_scale,
+		}
+
+
 func _is_in_carousel_area(point: Vector2) -> bool:
 	var root := get_parent() as Control
 	if root == null:
 		return false
-	return point.y > 90.0 and point.y < 560.0 and abs(point.x - root.size.x * 0.5) < 520.0
+	return point.y > 90.0 * _viewport_scale and point.y < 560.0 * _viewport_scale and abs(point.x - root.size.x * 0.5) < 520.0 * _viewport_scale
 
 
 func _get_clicked_carousel_slot_index(point: Vector2) -> int:

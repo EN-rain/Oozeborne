@@ -10,8 +10,10 @@ extends Control
 @onready var ign_input: LineEdit = %IGNInput
 @onready var status_label: Label = %StatusLabel
 @onready var quit_button: Button = %QuitButton
+@onready var settings_button: Button = %SettingsButton
 
 @export_file("*.tscn") var auth_menu_scene_path: String
+@export_file("*.tscn") var settings_scene_path: String
 @export_file("*.tscn") var main_game_scene_path: String
 @export_file("*.tscn") var room_lobby_scene_path: String
 @export var default_player_name_prefix: String = "Player"
@@ -200,6 +202,11 @@ func _on_connect_pressed() -> void:
 	else:
 		_set_status(connection_failed_format % MultiplayerManager.get_server_endpoint_summary(), error_status_color)
 	_set_menu_busy(false)
+
+func _on_settings_pressed() -> void:
+	if settings_scene_path.is_empty():
+		return
+	get_tree().change_scene_to_file(settings_scene_path)
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

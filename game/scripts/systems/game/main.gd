@@ -421,6 +421,7 @@ func _on_match_state(match_state):
 			# Store player info and spawn them if not already spawned
 			var ign = data.get("ign", "Unknown")
 			var is_host_flag = data.get("is_host", false)
+			var slime_variant = str(data.get("slime_variant", "blue"))
 			
 			# Skip if it's our own IGN
 			if ign == MultiplayerManager.player_ign:
@@ -434,12 +435,13 @@ func _on_match_state(match_state):
 			if MultiplayerManager.players.has(sender_id):
 				MultiplayerManager.players[sender_id]["ign"] = ign
 				MultiplayerManager.players[sender_id]["is_host"] = is_host_flag
+				MultiplayerManager.players[sender_id]["slime_variant"] = slime_variant
 			else:
-				MultiplayerManager.players[sender_id] = {"ign": ign, "is_host": is_host_flag, "presence": null}
+				MultiplayerManager.players[sender_id] = {"ign": ign, "is_host": is_host_flag, "presence": null, "slime_variant": slime_variant}
 
 			_apply_authoritative_player_info(sender_id, ign, is_host_flag)
-			if not MultiplayerUtils.has_remote_player(sender_id):
-				_spawn_player_for_user(sender_id)
+			# Don't spawn here - player_info doesn't have position data
+			# Players will be spawned from OP_PLAYER_JOIN and server snapshots
 		
 		
 		"player_attack":
@@ -523,9 +525,20 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 			if player.has_method("set_ign"):
 				player.set_ign(player_info.ign)
 	else:
-		# Spawn remote player - use their class's player_scene if available
+		# Spawn remote player - use their slime variant scene for correct color
+		var remote_variant: String = str(player_info.get("slime_variant", "blue"))
 		var remote_player_class: PlayerClass = MultiplayerManager.get_player_class(user_id)
-		var scene_to_use: PackedScene = remote_player_class.player_scene if remote_player_class and remote_player_class.player_scene else player_scene
+		var scene_to_use: PackedScene = null
+		if remote_player_class and remote_player_class.player_scene:
+			scene_to_use = remote_player_class.player_scene
+		elif not remote_variant.is_empty():
+			scene_to_use = MultiplayerManager._cached_player_scenes.get(remote_variant) as PackedScene
+			if scene_to_use == null:
+				scene_to_use = load(SlimePaletteRegistry.get_scene_path(remote_variant)) as PackedScene
+				if scene_to_use != null:
+					MultiplayerManager._cached_player_scenes[remote_variant] = scene_to_use
+		if scene_to_use == null:
+			scene_to_use = player_scene
 		if scene_to_use == null:
 			return
 		var remote_player = scene_to_use.instantiate()
@@ -561,9 +574,11 @@ func _spawn_remote_attack(user_id: String, pos: Vector2, rotation_angle: float):
 	var player_data = MultiplayerUtils.get_remote_players()[user_id]
 	var remote_player = player_data.node
 	
-	# Play attack animation on remote player
-	if is_instance_valid(remote_player) and remote_player.has_method("play_attack_animation"):
-		remote_player.play_attack_animation()
+	# Play attack animation on remote player sprite
+	if is_instance_valid(remote_player):
+		var sprite = remote_player.get_node_or_null("AnimatedSprite2D")
+		if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+			sprite.play("attack")
 	
 	if is_instance_valid(remote_player) and remote_player.has_method("emit_attack_particles_at"):
 		remote_player.emit_attack_particles_at(pos, rotation_angle)
@@ -803,7 +818,8 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		MultiplayerManager.players[user_id] = {
 			"ign": ign,
 			"is_host": is_host_flag,
-			"presence": existing_info.get("presence", null)
+			"presence": existing_info.get("presence", null),
+			"slime_variant": existing_info.get("slime_variant", "blue")
 		}
 		_apply_authoritative_player_info(user_id, ign, is_host_flag)
 		
@@ -814,13 +830,14 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		
 		# Handle remote player
 		if not MultiplayerUtils.has_remote_player(user_id):
-			# Player not yet spawned - spawn them
+			# Player not yet spawned - spawn them with initial position
 			MultiplayerManager.players[user_id] = {
 				"ign": ign,
 				"is_host": is_host_flag,
-				"presence": existing_info.get("presence", null)
+				"presence": existing_info.get("presence", null),
+				"slime_variant": existing_info.get("slime_variant", "blue")
 			}
-			_spawn_player_for_user(user_id)
+			_spawn_player_for_user(user_id, new_pos)
 		
 		if MultiplayerUtils.has_remote_player(user_id):
 			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation)

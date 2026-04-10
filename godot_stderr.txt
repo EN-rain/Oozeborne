@@ -1,0 +1,4 @@
+ERROR: McpInteractionServer: Failed to listen on port 9090, error: 22
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://addons/godot_mcp_server/build/scripts/mcp_interaction_server.gd:24)

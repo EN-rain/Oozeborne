@@ -6,6 +6,7 @@ var _leave_button: Button
 var _start_button: Button
 var _main_game_scene_path: String = ""
 var _main_menu_scene_path: String = ""
+var _loading_screen_path: String = "res://scenes/ui/loading_screen.tscn"
 var _join_game_button_text: String = "Join Quest"
 var _party_controller: RoomLobbyPartyController
 var _title_controller: Node
@@ -51,7 +52,8 @@ func enter_lobby() -> void:
 			"type": "player_info",
 			"user_id": MultiplayerManager.session.user_id,
 			"ign": MultiplayerManager.player_ign,
-			"is_host": MultiplayerManager.is_host
+			"is_host": MultiplayerManager.is_host,
+			"slime_variant": MultiplayerManager.player_slime_variant
 		})
 		if MultiplayerManager.is_host and _title_controller != null and _title_controller.has_method("broadcast_lobby_name"):
 			_title_controller.broadcast_lobby_name()
@@ -119,8 +121,9 @@ func _transition_to_game_scene(source: String) -> void:
 	if tree == null:
 		return
 	_is_transitioning = true
-	print("[Lobby] Transitioning to game scene from ", source, "...")
-	tree.change_scene_to_file(_main_game_scene_path)
+	print("[Lobby] Transitioning to loading screen from ", source, "...")
+	# Go to loading screen first, which will then transition to game
+	tree.change_scene_to_file(_loading_screen_path)
 
 
 func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool) -> void:
@@ -161,7 +164,8 @@ func _on_match_state(match_state) -> void:
 				"type": "player_info",
 				"user_id": MultiplayerManager.session.user_id,
 				"ign": MultiplayerManager.player_ign,
-				"is_host": MultiplayerManager.is_host
+				"is_host": MultiplayerManager.is_host,
+				"slime_variant": MultiplayerManager.player_slime_variant
 			})
 			# If host, also send info for all other known players
 			if MultiplayerManager.is_host:
@@ -174,7 +178,8 @@ func _on_match_state(match_state) -> void:
 								"type": "player_info",
 								"user_id": user_id,
 								"ign": ign,
-								"is_host": bool(info.get("is_host", false))
+								"is_host": bool(info.get("is_host", false)),
+								"slime_variant": str(info.get("slime_variant", "blue"))
 							})
 				if _title_controller != null and _title_controller.has_method("broadcast_lobby_name"):
 					_title_controller.broadcast_lobby_name()
@@ -185,10 +190,17 @@ func _on_match_state(match_state) -> void:
 		"chat_message":
 			var sender := str(data.get("sender", "Unknown"))
 			var message := str(data.get("message", ""))
-			if not message.is_empty():
+			if not message.is_empty() and sender != MultiplayerManager.player_ign.strip_edges():
 				_party_controller.add_chat_message(sender, message, Color(0.7, 0.65, 0.85))
 		"class_selected":
 			_party_controller.handle_remote_class_selected(str(data.get("user_id", "")), str(data.get("class_name", "")))
+		"admin_action":
+			_handle_admin_action(data)
+		"admin_broadcast":
+			var sender := str(data.get("sender", "ADMIN"))
+			var message := str(data.get("message", ""))
+			if not message.is_empty():
+				_party_controller.add_chat_message(sender, message, Color(0.9, 0.3, 0.3))
 
 
 func _on_match_phase_changed(new_phase: String) -> void:
@@ -197,3 +209,30 @@ func _on_match_phase_changed(new_phase: String) -> void:
 			show_join_game_ui()
 		else:
 			_transition_to_game_scene("manager_phase")
+
+
+func _handle_admin_action(data: Dictionary) -> void:
+	var action := str(data.get("action", ""))
+	var target_id := str(data.get("target_user_id", ""))
+
+	match action:
+		"kicked":
+			if target_id == MultiplayerManager.session.user_id:
+				_party_controller.add_chat_message("SYSTEM", "You were kicked from the lobby.", Color(0.9, 0.3, 0.3))
+				await get_tree().create_timer(2.0).timeout
+				get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+		"host_changed":
+			var new_host_id := str(data.get("new_host_id", ""))
+			MultiplayerManager.is_host = (new_host_id == MultiplayerManager.session.user_id)
+			_party_controller.add_chat_message("SYSTEM", "Host has been changed.", Color(0.9, 0.7, 0.3))
+		"lobby_closed":
+			var reason := str(data.get("reason", "Admin closed lobby"))
+			_party_controller.add_chat_message("SYSTEM", reason, Color(0.9, 0.3, 0.3))
+			await get_tree().create_timer(2.0).timeout
+			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+		"teleport":
+			if target_id == MultiplayerManager.session.user_id:
+				var x: float = data.get("x", 400.0)
+				var y: float = data.get("y", 300.0)
+				# Handle teleport in game if needed
+				print("[Admin] Teleported to %s, %s" % [x, y])

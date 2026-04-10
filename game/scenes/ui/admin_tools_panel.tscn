@@ -1,0 +1,117 @@
+[gd_scene format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://scripts/ui/admin/admin_tools_panel.gd" id="1_admin"]
+
+[node name="AdminToolsPanel" type="PanelContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_bottom = 400.0
+grow_horizontal = 0
+script = ExtResource("1_admin")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AdminTitle" type="Label" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.5, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "Admin Tools"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="PlayersLabel" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+text = "Players:"
+
+[node name="PlayersList" type="ItemList" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="ReasonInput" type="LineEdit" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Reason (optional)"
+
+[node name="ActionButtons" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="KickButton" type="Button" parent="MarginContainer/VBox/ActionButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Kick"
+
+[node name="BanButton" type="Button" parent="MarginContainer/VBox/ActionButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ban"
+
+[node name="PromoteHostButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Promote to Host"
+
+[node name="TeleportButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Teleport to Center"
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="BroadcastLabel" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+text = "Broadcast:"
+
+[node name="BroadcastRow" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="BroadcastInput" type="LineEdit" parent="MarginContainer/VBox/BroadcastRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Message to all players..."
+
+[node name="BroadcastButton" type="Button" parent="MarginContainer/VBox/BroadcastRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Send"
+
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="ForceStartButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Force Start Game"
+
+[node name="CloseLobbyButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close Lobby"
+
+[node name="HSeparator4" type="HSeparator" parent="MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="ToggleButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Hide Admin Panel"

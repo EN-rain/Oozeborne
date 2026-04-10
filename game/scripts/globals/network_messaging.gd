@@ -91,7 +91,8 @@ func send_player_info(ign: String, is_host: bool) -> void:
 		"type": "player_info",
 		"user_id": MultiplayerManager.session.user_id,
 		"ign": ign,
-		"is_host": is_host
+		"is_host": is_host,
+		"slime_variant": MultiplayerManager.player_slime_variant
 	})
 
 

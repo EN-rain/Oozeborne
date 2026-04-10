@@ -1,0 +1,74 @@
+[gd_resource type="BehaviorTree" format=3 uid="uid://voidwardenbt001"]
+
+[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_detect_player.gd" id="1_detect"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_condition_has_player.gd" id="2_hasplayer"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_boss_chase.gd" id="3_chase"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_shadow_strike.gd" id="4_shadow"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_void_pulse.gd" id="5_void"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_dark_chains.gd" id="6_chains"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_soul_drain.gd" id="7_drain"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_condition_phase.gd" id="8_phase"]
+[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_idle.gd" id="9_idle"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_boss"]
+
+[sub_resource type="BTAction" id="BTAction_detect"]
+script = ExtResource("1_detect")
+
+[sub_resource type="BTCondition" id="BTCondition_hasplayer"]
+script = ExtResource("2_hasplayer")
+
+[sub_resource type="BTAction" id="BTAction_chase"]
+script = ExtResource("3_chase")
+
+[sub_resource type="BTAction" id="BTAction_shadow"]
+script = ExtResource("4_shadow")
+damage = 80
+cooldown = 5.0
+
+[sub_resource type="BTAction" id="BTAction_void"]
+script = ExtResource("5_void")
+damage = 40
+cooldown = 8.0
+radius = 200.0
+
+[sub_resource type="BTCondition" id="BTCondition_phase2"]
+script = ExtResource("8_phase")
+min_phase = 2
+
+[sub_resource type="BTAction" id="BTAction_chains"]
+script = ExtResource("6_chains")
+duration = 3.0
+cooldown = 12.0
+
+[sub_resource type="BTSequence" id="BTSequence_chains"]
+children = [SubResource("BTCondition_phase2"), SubResource("BTAction_chains")]
+
+[sub_resource type="BTCondition" id="BTCondition_phase3"]
+script = ExtResource("8_phase")
+min_phase = 3
+
+[sub_resource type="BTAction" id="BTAction_drain"]
+script = ExtResource("7_drain")
+damage = 60
+heal_percent = 0.5
+cooldown = 15.0
+
+[sub_resource type="BTSequence" id="BTSequence_drain"]
+children = [SubResource("BTCondition_phase3"), SubResource("BTAction_drain")]
+
+[sub_resource type="BTRandomSelector" id="BTRandomSelector_skills"]
+children = [SubResource("BTAction_shadow"), SubResource("BTAction_void"), SubResource("BTSequence_chains"), SubResource("BTSequence_drain")]
+
+[sub_resource type="BTSequence" id="BTSequence_combat"]
+children = [SubResource("BTAction_detect"), SubResource("BTCondition_hasplayer"), SubResource("BTAction_chase"), SubResource("BTRandomSelector_skills")]
+
+[sub_resource type="BTAction" id="BTAction_idle"]
+script = ExtResource("9_idle")
+
+[sub_resource type="BTSelector" id="BTSelector_boss"]
+children = [SubResource("BTSequence_combat"), SubResource("BTAction_idle")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_boss")
+root_task = SubResource("BTSelector_boss")

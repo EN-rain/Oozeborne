@@ -1,13 +1,14 @@
-[gd_scene load_steps=24 format=3 uid="uid://bu8cpoti5dsrs"]
+[gd_scene format=3 uid="uid://bu8cpoti5dsrs"]
 
 [ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://scripts/ui/lobby/room_lobby.gd" id="1_roomlobby"]
 [ext_resource type="Texture2D" uid="uid://cmxlei5j5rtla" path="res://assets/bg/bg.png" id="2_2lpa5"]
 [ext_resource type="Script" uid="uid://bq3ksto6mdk5n" path="res://scripts/ui/lobby/room_lobby_title_controller.gd" id="2_titlecontroller"]
 [ext_resource type="Script" uid="uid://b3ngnxhbybi0o" path="res://scripts/ui/lobby/room_lobby_carousel_controller.gd" id="3_carouselcontroller"]
 [ext_resource type="Script" uid="uid://c50h1doi8ya5x" path="res://scripts/ui/lobby/room_lobby_chat_box.gd" id="4_chatbox"]
-[ext_resource type="Script" path="res://scripts/ui/lobby/room_lobby_party_controller.gd" id="5_partycontroller"]
-[ext_resource type="Shader" path="res://assets/shaders/slime_color.gdshader" id="5_slime_shader"]
-[ext_resource type="Script" path="res://scripts/ui/lobby/room_lobby_match_flow.gd" id="6_matchflow"]
+[ext_resource type="Script" uid="uid://8tmu2shdq85v" path="res://scripts/ui/lobby/room_lobby_party_controller.gd" id="5_partycontroller"]
+[ext_resource type="Shader" uid="uid://gr33ix60db3n" path="res://assets/shaders/slime_color.gdshader" id="5_slime_shader"]
+[ext_resource type="Script" uid="uid://kld1a1uy7nko" path="res://scripts/ui/lobby/room_lobby_match_flow.gd" id="6_matchflow"]
+[ext_resource type="PackedScene" path="res://scenes/ui/admin_tools_panel.tscn" id="7_adminpanel"]
 [ext_resource type="Texture2D" uid="uid://bdkimgwowyxxh" path="res://assets/sprites/Player/Slime/combined/dash/slime-dash-base.png" id="dash_01"]
 [ext_resource type="Texture2D" uid="uid://jenrhvjxo3sw" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="idle_01"]
 [ext_resource type="Texture2D" uid="uid://trh7butoi32x" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base2.png" id="idle_02"]
@@ -185,22 +186,6 @@ corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="chat_panel_style"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-bg_color = Color(0.18, 0.13, 0.08, 0.94)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.56, 0.39, 0.16, 0.8)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="chat_input_normal"]
 content_margin_left = 10.0
@@ -417,6 +402,22 @@ slime_preview_shader = ExtResource("5_slime_shader")
 [node name="LobbyPartyController" type="Node" parent="." unique_id=192331245]
 unique_name_in_owner = true
 script = ExtResource("5_partycontroller")
+system_sender_name = null
+lobby_welcome_message = null
+lobby_welcome_color = null
+joined_lobby_format = null
+joined_lobby_color = null
+left_lobby_format = null
+left_lobby_color = null
+selected_class_format = null
+selected_class_color = null
+change_class_hint_format = null
+change_class_hint_color = null
+select_class_button_text = null
+change_class_button_text = null
+taken_class_button_text = null
+taken_class_message_format = null
+taken_class_message_color = null
 
 [node name="LobbyMatchFlow" type="Node" parent="." unique_id=748835912]
 unique_name_in_owner = true
@@ -481,7 +482,6 @@ offset_right = 92.0
 offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
 theme_override_constants/outline_size = 6
@@ -525,7 +525,6 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -569,7 +568,6 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -613,7 +611,6 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -657,7 +654,6 @@ offset_right = 86.0
 offset_bottom = 30.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_constants/outline_size = 5
@@ -721,11 +717,10 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = -320.0
+offset_top = -324.0
 offset_right = 320.0
 offset_bottom = -12.0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("chat_panel_style")
 script = ExtResource("4_chatbox")
 
 [node name="VBox" type="VBoxContainer" parent="ChatBox" unique_id=692326315]
@@ -771,6 +766,8 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("btn_send_normal")
 theme_override_styles/hover = SubResource("btn_send_hover")
 text = "Send"
+
+[node name="AdminToolsPanel" parent="." unique_id=1961660517 instance=ExtResource("7_adminpanel")]
 
 [node name="ClassStats" type="PanelContainer" parent="." unique_id=1896781710]
 unique_name_in_owner = true
@@ -986,28 +983,6 @@ theme_override_colors/default_color = Color(1, 1, 1, 0.96)
 theme_override_font_sizes/normal_font_size = 13
 bbcode_enabled = true
 text = "Select a class to view stats"
-
-[node name="PowerRow" type="HBoxContainer" parent="ClassStats/StatsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="PowerTrack" type="PanelContainer" parent="ClassStats/StatsVBox/PowerRow"]
-size_flags_horizontal = 3
-layout_mode = 2
-
-[node name="PowerFill" type="ColorRect" parent="ClassStats/StatsVBox/PowerRow/PowerTrack"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 12)
-layout_mode = 2
-size_flags_horizontal = 3
-color = Color(0.95, 0.82, 0.35, 0.95)
-
-[node name="PowerRank" type="Label" parent="ClassStats/StatsVBox/PowerRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.9)
-theme_override_font_sizes/font_size = 12
-text = "C-Rank"
 
 [node name="LeftButton" type="Button" parent="." unique_id=142096212]
 unique_name_in_owner = true

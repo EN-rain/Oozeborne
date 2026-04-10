@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://r4dcymke0vlg"]
+
+[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/void_warden.gd" id="1_boss"]
+[ext_resource type="BehaviorTree" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/void_warden_bt.tres" id="2_bt"]
+[ext_resource type="Texture2D" uid="uid://jenrhvjxo3sw" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="3_idle"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_detection"]
+radius = 400.0
+
+[sub_resource type="CircleShape2D" id="CircleShape_attack"]
+radius = 80.0
+
+[sub_resource type="CircleShape2D" id="CircleShape_collision"]
+radius = 30.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
+animations = [{
+"frames": [{
+	"duration": 0.15,
+	"texture": ExtResource("3_idle")
+}, {
+	"duration": 0.15,
+	"texture": ExtResource("3_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+	"duration": 0.1,
+	"texture": ExtResource("3_idle")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}]
+
+[sub_resource type="GradientTexture1D" id="Gradient_health"]
+gradient = PackedColorArray(0, 0.8, 0.2, 1, 0.9, 0.9, 0.1, 1, 0.9, 0.2, 0.1, 1)
+
+[node name="VoidWarden" type="CharacterBody2D" groups=["enemy", "boss"]]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_boss")
+boss_display_name = "Void Warden"
+base_health = 2000
+enrage_time = 300.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_collision")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2.5, 2.5)
+sprite_frames = SubResource("SpriteFrames_boss")
+animation = &"idle"
+
+[node name="BossHealthBar" type="ProgressBar" parent="."]
+unique_name_in_owner = true
+offset_left = -150.0
+offset_top = -120.0
+offset_right = 150.0
+offset_bottom = -95.0
+theme_override_styles/background = null
+theme_override_styles/fill = null
+max_value = 2000.0
+value = 2000.0
+show_percentage = false
+
+[node name="DetectionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
+shape = SubResource("CircleShape_detection")
+
+[node name="AttackArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea"]
+shape = SubResource("CircleShape_attack")
+
+[node name="SightRay" type="RayCast2D" parent="."]
+target_position = Vector2(400, 0)
+collision_mask = 3
+
+[node name="DamageTimer" type="Timer" parent="."]
+wait_time = 1.0
+one_shot = true
+
+[node name="EnrageTimer" type="Timer" parent="."]
+wait_time = 300.0
+one_shot = true
+
+[node name="BTPlayer" type="BTPlayer" parent="."]
+behavior_tree = ExtResource("2_bt")
+
+[connection signal="body_entered" from="DetectionArea" to="." method="_on_detection_area_body_entered"]
+[connection signal="body_exited" from="DetectionArea" to="." method="_on_detection_area_body_exited"]

@@ -33,8 +33,13 @@ CoinManager="*res://scenes/autoload/coin_manager.tscn"
 ShopManager="*res://scripts/globals/shop_manager.gd"
 SlimePaletteRegistry="*res://scripts/globals/slime_palette_registry.gd"
 ClassManager="*res://scenes/autoload/class_manager.tscn"
-McpInteractionServer="*res://scripts/globals/mcp_interaction_server.gd"
 SoloRunSaveManager="*res://scripts/globals/solo_run_save_manager.gd"
+AdminManager="*res://scripts/globals/admin_manager.gd"
+
+[display]
+
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 

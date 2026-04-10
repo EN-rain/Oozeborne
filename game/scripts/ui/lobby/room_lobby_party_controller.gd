@@ -12,8 +12,10 @@ const CROWN_EMOJI = "👑 "
 @export var joined_lobby_color: Color = Color(0.35, 0.65, 0.45)
 @export var left_lobby_format: String = "%s left the lobby."
 @export var left_lobby_color: Color = Color(0.75, 0.35, 0.35)
-@export var selected_class_format: String = "Selected class: %s"
+@export var selected_class_format: String = "%s chose %s."
 @export var selected_class_color: Color = Color(0.4, 0.7, 0.9)
+@export var change_class_hint_format: String = "%s is changing class. Drag the carousel to pick a new class."
+@export var change_class_hint_color: Color = Color(0.82, 0.72, 0.42)
 @export var select_class_button_text: String = "Select Class"
 @export var change_class_button_text: String = "Change Class"
 @export var taken_class_button_text: String = "Class Taken"
@@ -43,6 +45,10 @@ func setup(refs: Dictionary, title_controller: Node, carousel_controller: Node, 
 		_title_controller.setup(Callable(self, "get_host_ign"))
 	if _carousel_controller != null and _carousel_controller.has_method("setup"):
 		_carousel_controller.setup(_view, class_slots, left_button, right_button)
+	if _carousel_controller != null and _carousel_controller.has_signal("active_class_changed"):
+		var on_active_changed := Callable(self, "_on_active_class_changed")
+		if not _carousel_controller.is_connected("active_class_changed", on_active_changed):
+			_carousel_controller.connect("active_class_changed", on_active_changed)
 	refresh_lobby_title()
 	if _chat_box != null and _chat_box.has_method("focus_input"):
 		_chat_box.focus_input()
@@ -70,9 +76,7 @@ func bootstrap_party_entries() -> void:
 		var info = MultiplayerManager.players[user_id]
 		var is_host_flag := bool(info.get("is_host", false))
 		var ign := str(info.get("ign", "")).strip_edges()
-		# Skip players with unknown IGNs - they'll be added when player_info arrives
-		if ign.is_empty():
-			continue
+		# Add all players, even with empty IGNs (will use placeholder)
 		add_player_entry(user_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
 
 	refresh_start_button_state()
@@ -125,15 +129,23 @@ func add_player_entry(user_id: String, ign: String, _prefix: String, is_host_fla
 		refresh_party_cards()
 		return
 
-	for entry in _player_entries.values():
-		if entry.ign == ign:
-			return
+	# Use placeholder name for empty IGNs
+	var display_ign = ign if not ign.is_empty() else "Player"
 
 	var accent_color = _view.get_next_player_accent(_player_entries.size())
-	_player_entries[user_id] = {"ign": ign, "is_host": is_host_flag, "accent_color": accent_color}
+	var p_class = MultiplayerManager.get_player_class(user_id)
+	var selected_class_name = ""
+	if p_class != null:
+		selected_class_name = p_class.display_name
+	_player_entries[user_id] = {
+		"ign": display_ign,
+		"is_host": is_host_flag,
+		"accent_color": accent_color,
+		"selected_class": selected_class_name
+	}
 	refresh_party_cards()
 	refresh_lobby_title()
-	add_chat_message(system_sender_name, joined_lobby_format % ign, joined_lobby_color)
+	add_chat_message(system_sender_name, joined_lobby_format % display_ign, joined_lobby_color)
 
 
 func remove_player_entry(user_id: String) -> void:
@@ -176,6 +188,7 @@ func move_right() -> void:
 
 func on_select_class_pressed() -> void:
 	if _class_selection_locked:
+		add_chat_message(system_sender_name, change_class_hint_format % _get_local_player_chat_name(), change_class_hint_color)
 		_set_class_selection_locked(false)
 		return
 	var active_class := get_active_class_name()
@@ -184,12 +197,16 @@ func on_select_class_pressed() -> void:
 		_refresh_select_class_button_state()
 		return
 	_selected_class = get_player_class_for_name(active_class)
-	add_chat_message(system_sender_name, selected_class_format % active_class, selected_class_color)
+	add_chat_message(system_sender_name, selected_class_format % [_get_local_player_chat_name(), active_class], selected_class_color)
 	if _selected_class != null:
 		_selected_class.player_scene = MultiplayerManager.resolve_player_scene()
 		MultiplayerManager.player_class = _selected_class
 		if MultiplayerManager.session != null:
 			MultiplayerManager.set_player_class(MultiplayerManager.session.user_id, _selected_class)
+		# Update local player entry with selected class
+		if MultiplayerManager.session != null and _player_entries.has(MultiplayerManager.session.user_id):
+			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = active_class
+			refresh_party_cards()
 		_set_class_selection_locked(true)
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 			MultiplayerManager.send_match_state({
@@ -221,16 +238,35 @@ func _refresh_select_class_button_state() -> void:
 func _is_class_taken_by_other_player(class_display_name: String) -> bool:
 	if class_display_name.is_empty():
 		return false
+	var normalized_target := class_display_name.to_lower().strip_edges()
 	var local_user_id := ""
 	if MultiplayerManager.session != null:
 		local_user_id = MultiplayerManager.session.user_id
-	for user_id in MultiplayerManager.player_classes.keys():
-		if user_id == local_user_id:
+
+	# Prefer authoritative lobby entries (what the UI actually shows).
+	for user_id in _player_entries.keys():
+		if not local_user_id.is_empty() and user_id == local_user_id:
 			continue
-		var assigned_class := MultiplayerManager.player_classes.get(user_id, null) as PlayerClass
-		if assigned_class != null and assigned_class.display_name == class_display_name:
+		var entry: Dictionary = _player_entries[user_id]
+		var selected_name := str(entry.get("selected_class", "")).to_lower().strip_edges()
+		if not selected_name.is_empty() and selected_name == normalized_target:
 			return true
+
+	# Fallback to manager cache if an entry has not been materialized yet.
+	for user_id in MultiplayerManager.player_classes.keys():
+		if not local_user_id.is_empty() and user_id == local_user_id:
+			continue
+		var assigned_class: PlayerClass = MultiplayerManager.player_classes.get(user_id, null)
+		if assigned_class == null:
+			continue
+		if assigned_class.display_name.to_lower().strip_edges() == normalized_target:
+			return true
+
 	return false
+
+
+func _on_active_class_changed(_class_name: String) -> void:
+	_refresh_select_class_button_state()
 
 
 func get_player_class_for_name(selected_name: String) -> PlayerClass:
@@ -266,11 +302,14 @@ func handle_player_info_state(data: Dictionary) -> void:
 	var entry_id := str(data.get("user_id", ""))
 	if entry_id.is_empty():
 		return
-	if MultiplayerManager.players.has(entry_id):
+	var slime_variant := str(data.get("slime_variant", "blue"))
+	var was_known = MultiplayerManager.players.has(entry_id)
+	if was_known:
 		MultiplayerManager.players[entry_id]["ign"] = ign
 		MultiplayerManager.players[entry_id]["is_host"] = is_host_flag
+		MultiplayerManager.players[entry_id]["slime_variant"] = slime_variant
 	else:
-		MultiplayerManager.players[entry_id] = {"ign": ign, "is_host": is_host_flag, "presence": null}
+		MultiplayerManager.players[entry_id] = {"ign": ign, "is_host": is_host_flag, "presence": null, "slime_variant": slime_variant}
 	add_player_entry(entry_id, ign, CROWN_EMOJI if is_host_flag else "", is_host_flag)
 	refresh_start_button_state()
 	_refresh_select_class_button_state()
@@ -282,9 +321,36 @@ func handle_remote_class_selected(sender_id: String, selected_name: String) -> v
 	var player_class := get_player_class_for_name(selected_name)
 	if player_class != null:
 		MultiplayerManager.set_player_class(sender_id, player_class)
+	# Update player entry with selected class
+	if _player_entries.has(sender_id):
+		_player_entries[sender_id]["selected_class"] = selected_name
+		refresh_party_cards()
+	add_chat_message(system_sender_name, selected_class_format % [_get_player_chat_name(sender_id), selected_name], selected_class_color)
 	_refresh_select_class_button_state()
 
 
 func add_chat_message(sender: String, message: String, color: Color) -> void:
 	if _chat_box != null and _chat_box.has_method("add_message"):
 		_chat_box.add_message(sender, message, color)
+
+
+func _get_local_player_chat_name() -> String:
+	if MultiplayerManager.player_ign.strip_edges().is_empty():
+		return "You"
+	return MultiplayerManager.player_ign.strip_edges()
+
+
+func _get_player_chat_name(user_id: String) -> String:
+	if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+		return _get_local_player_chat_name()
+	if _player_entries.has(user_id):
+		var entry: Dictionary = _player_entries[user_id]
+		var ign: String = str(entry.get("ign", "")).replace(" (You)", "").strip_edges()
+		if not ign.is_empty():
+			return ign
+	if MultiplayerManager.players.has(user_id):
+		var player_info: Dictionary = MultiplayerManager.players[user_id]
+		var player_ign: String = str(player_info.get("ign", "")).strip_edges()
+		if not player_ign.is_empty():
+			return player_ign
+	return "Player"

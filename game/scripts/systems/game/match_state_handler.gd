@@ -3,7 +3,7 @@ extends Node
 ## Add as child to your game scene to handle network events
 
 ## Signals for event dispatch
-signal player_info_received(user_id: String, ign: String, is_host: bool)
+signal player_info_received(user_id: String, ign: String, is_host: bool, slime_variant: String)
 signal player_attack_received(user_id: String, pos: Vector2, rotation: float)
 signal ping_received(sender_id: String, timestamp: float)
 signal pong_received(target_id: String, timestamp: float)
@@ -108,6 +108,7 @@ func _handle_player_info(data: Dictionary, sender_id: String) -> void:
 	
 	var ign = data.get("ign", "Unknown")
 	var is_host_flag = data.get("is_host", false)
+	var slime_variant = str(data.get("slime_variant", "blue"))
 	
 	if ign == MultiplayerManager.player_ign:
 		return
@@ -115,7 +116,7 @@ func _handle_player_info(data: Dictionary, sender_id: String) -> void:
 	if sender_id.is_empty():
 		return
 	
-	player_info_received.emit(sender_id, ign, is_host_flag)
+	player_info_received.emit(sender_id, ign, is_host_flag, slime_variant)
 
 
 func _handle_player_attack(data: Dictionary, sender_id: String) -> void:

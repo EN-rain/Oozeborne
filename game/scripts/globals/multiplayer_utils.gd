@@ -122,15 +122,20 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	
 	# Handle dash visual effect
 	var dash_particles = player_data.node.get_node_or_null("DashParticles")
+	var dash_trail = player_data.node.get_node_or_null("DashTrail")
 	if is_dashing:
 		if dash_particles and not dash_particles.emitting:
 			dash_particles.emitting = true
+		if dash_trail and not dash_trail.emitting:
+			dash_trail.emitting = true
 		var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 		if sprite:
 			sprite.modulate = Color(1.2, 1.2, 1.5)
 	else:
 		if dash_particles:
 			dash_particles.emitting = false
+		if dash_trail:
+			dash_trail.emitting = false
 		var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 		if sprite:
 			sprite.modulate = Color.WHITE
@@ -186,7 +191,7 @@ func interpolate_remote_players(delta: float, _lerp_speed: float = 8.0) -> void:
 			# Use server-facing direction for sprite flip
 			sprite.flip_h = player_data.server_facing < 0
 			
-			_update_remote_player_animation(sprite, player_data.server_velocity, player_data.is_attacking)
+			_update_remote_player_animation(sprite, player_data.server_velocity, player_data.is_attacking, player_data.is_dashing)
 
 
 ## Extract sender_id from match state, handling broadcast echoes
@@ -229,7 +234,8 @@ func send_player_info(ign: String, is_host: bool) -> void:
 		"type": "player_info",
 		"user_id": MultiplayerManager.session.user_id,
 		"ign": ign,
-		"is_host": is_host
+		"is_host": is_host,
+		"slime_variant": MultiplayerManager.player_slime_variant
 	})
 
 
@@ -547,7 +553,17 @@ func get_pending_attack(user_id: String) -> Dictionary:
 	return {}
 
 
-func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, _is_attacking: bool) -> void:
+func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, is_attacking: bool, is_dashing: bool = false) -> void:
+	if is_dashing:
+		if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
+			if sprite.animation != "dash":
+				sprite.play("dash")
+			return
+	if is_attacking:
+		if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
+			if sprite.animation != "attack":
+				sprite.play("attack")
+			return
 	var target_animation := "walk" if server_velocity.length() > 5.0 else "idle"
 	if sprite.animation != target_animation:
 		sprite.play(target_animation)

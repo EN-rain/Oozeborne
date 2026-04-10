@@ -1,0 +1,144 @@
+{
+  "subclass_descriptions": {
+    "Guardian": "Frontline protector with high defense and steady control.",
+    "Berserker": "Aggressive bruiser that trades safety for raw damage.",
+    "Paladin": "Holy defender mixing durability with support utility.",
+    "Assassin": "Fast burst killer focused on crits and target deletion.",
+    "Ranger": "Mobile ranged hunter with safe, consistent damage.",
+    "Mage": "Glass-cannon caster with powerful spell burst.",
+    "Samurai": "Precision duelist with fast strikes and disciplined offense.",
+    "Cleric": "Healing specialist that keeps allies alive under pressure.",
+    "Bard": "Buffer and enabler who boosts team tempo and survivability.",
+    "Alchemist": "Utility support using potions, toxins, and battlefield tricks.",
+    "Necromancer": "Dark caster with drain, decay, and soul-harvest sustain.",
+    "Spellblade": "Hybrid fighter weaving melee attacks with arcane power.",
+    "ShadowKnight": "Dark frontliner blending defense, drain, and pressure.",
+    "Monk": "Balanced close-range combatant with speed and self-discipline.",
+    "Chronomancer": "Time specialist that slows and desynchronizes enemy tempo.",
+    "Warden": "Zone defender that roots and controls movement lanes.",
+    "Hexbinder": "Curse caster that suppresses enemy output and scaling.",
+    "Stormcaller": "Displacement controller using chained shocks and knockback."
+  },
+  "class_panel_data": {
+    "DPS": {
+      "stats": {
+        "hp": "1,080",
+        "atk": "268",
+        "def": "104",
+        "spd": "128",
+        "crit": "19%",
+        "crit_damage": "170%",
+        "power": 0.74,
+        "rank": "A-Rank"
+      },
+      "talents": [
+        {
+          "name": "Falcon Mark",
+          "desc": "Critical hits mark enemies to take bonus team damage.",
+          "accent": {"r": 0.38, "g": 0.78, "b": 0.58, "a": 1.0}
+        },
+        {
+          "name": "Volley Step",
+          "desc": "Attacking after a dodge fires an extra piercing arrow.",
+          "accent": {"r": 0.33, "g": 0.67, "b": 0.95, "a": 1.0}
+        }
+      ]
+    },
+    "Support": {
+      "stats": {
+        "hp": "1,220",
+        "atk": "175",
+        "def": "126",
+        "spd": "101",
+        "crit": "9%",
+        "crit_damage": "130%",
+        "power": 0.68,
+        "rank": "B-Rank"
+      },
+      "talents": [
+        {
+          "name": "Mercy Bloom",
+          "desc": "Healing pulses grant allies a brief regeneration buff.",
+          "accent": {"r": 0.44, "g": 0.86, "b": 0.55, "a": 1.0}
+        },
+        {
+          "name": "Sanctuary Veil",
+          "desc": "Low-health allies gain a small protective barrier.",
+          "accent": {"r": 0.56, "g": 0.78, "b": 0.95, "a": 1.0}
+        }
+      ]
+    },
+    "Hybrid": {
+      "stats": {
+        "hp": "1,150",
+        "atk": "235",
+        "def": "118",
+        "spd": "112",
+        "crit": "14%",
+        "crit_damage": "150%",
+        "power": 0.77,
+        "rank": "A-Rank"
+      },
+      "talents": [
+        {
+          "name": "Adaptive Combo",
+          "desc": "Alternating mobility and offense grants stacking bonus output.",
+          "accent": {"r": 0.62, "g": 0.42, "b": 0.85, "a": 1.0}
+        },
+        {
+          "name": "Stance Echo",
+          "desc": "Skill use alternates defensive and offensive aftereffects.",
+          "accent": {"r": 0.38, "g": 0.78, "b": 0.62, "a": 1.0}
+        }
+      ]
+    },
+    "Tank": {
+      "stats": {
+        "hp": "1,680",
+        "atk": "190",
+        "def": "225",
+        "spd": "82",
+        "crit": "8%",
+        "crit_damage": "120%",
+        "power": 0.81,
+        "rank": "A-Rank"
+      },
+      "talents": [
+        {
+          "name": "Iron Bastion",
+          "desc": "Standing still builds armor and reflects minor damage.",
+          "accent": {"r": 0.95, "g": 0.74, "b": 0.32, "a": 1.0}
+        },
+        {
+          "name": "Groundbreaker",
+          "desc": "Heavy strikes create shockwaves that slow enemies.",
+          "accent": {"r": 0.75, "g": 0.62, "b": 0.42, "a": 1.0}
+        }
+      ]
+    },
+    "Controller": {
+      "stats": {
+        "hp": "1,040",
+        "atk": "248",
+        "def": "102",
+        "spd": "114",
+        "crit": "13%",
+        "crit_damage": "145%",
+        "power": 0.79,
+        "rank": "A-Rank"
+      },
+      "talents": [
+        {
+          "name": "Control Field",
+          "desc": "Control zones apply slow and damage suppression.",
+          "accent": {"r": 0.28, "g": 0.78, "b": 0.83, "a": 1.0}
+        },
+        {
+          "name": "Tempo Lock",
+          "desc": "Controlled targets take increased ability damage.",
+          "accent": {"r": 0.56, "g": 0.75, "b": 0.94, "a": 1.0}
+        }
+      ]
+    }
+  }
+}

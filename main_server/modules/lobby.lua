@@ -139,6 +139,56 @@ local function resolve_remaining_overlaps(state)
     end
 end
 
+-- Admin role constants
+local ADMIN_ROLE = {
+    NONE = 0,
+    MODERATOR = 1,
+    ADMIN = 2,
+    SUPER_ADMIN = 3
+}
+
+-- Check if user has admin role from their storage/metadata
+local function get_user_admin_role(user_id)
+    local admin_role = ADMIN_ROLE.NONE
+    
+    -- Try to read from user storage
+    local ok, objects = pcall(nk.storage_read, {
+        {collection = "user_roles", key = user_id}
+    })
+    
+    if ok and objects and #objects > 0 then
+        local data = objects[1].value
+        if data and data.role then
+            admin_role = data.role
+        end
+    end
+    
+    -- Also check user metadata as fallback
+    local ok2, users = pcall(nk.users_get_id, {user_id})
+    if ok2 and users and #users > 0 then
+        local user = users[1]
+        if user.metadata and user.metadata.admin_role then
+            admin_role = math.max(admin_role, tonumber(user.metadata.admin_role) or 0)
+        end
+    end
+    
+    if admin_role > ADMIN_ROLE.NONE then
+        nk.logger_info("User " .. user_id .. " has admin role: " .. tostring(admin_role))
+    end
+    
+    return admin_role
+end
+
+-- Check if user can perform admin actions
+local function is_admin(player)
+    return player and (player.is_host or (player.admin_role and player.admin_role >= ADMIN_ROLE.ADMIN))
+end
+
+-- Check if user can perform moderator actions
+local function is_moderator(player)
+    return player and (player.is_host or (player.admin_role and player.admin_role >= ADMIN_ROLE.MODERATOR))
+end
+
 local function move_players_with_blocking(state, dt)
     local player_ids = {}
     for user_id, _ in pairs(state.players) do
@@ -188,6 +238,7 @@ function M.match_init(context, setupstate)
 
     if gamestate.host_user_id ~= "" then
         local spawn_x, spawn_y = get_spawn_point_for_index(1)
+        local admin_role = get_user_admin_role(gamestate.host_user_id)
         gamestate.players[gamestate.host_user_id] = {
             pos_x = spawn_x,
             pos_y = spawn_y,
@@ -196,12 +247,13 @@ function M.match_init(context, setupstate)
             facing = 1,
             ign = setupstate.host_ign or "",
             is_host = true,
+            admin_role = admin_role,
             input_seq = 0,
             is_attacking = false,
             is_dashing = false,
             attack_rotation = 0.0
         }
-        nk.logger_info("match_init host=" .. gamestate.host_user_id .. " spawn=" .. spawn_x .. "," .. spawn_y)
+        nk.logger_info("match_init host=" .. gamestate.host_user_id .. " spawn=" .. spawn_x .. "," .. spawn_y .. " admin_role=" .. tostring(admin_role))
     end
 
     local label = "authoritative_game"
@@ -226,6 +278,8 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
     if spawn_x == nil or spawn_y == nil then
         spawn_x, spawn_y = get_next_spawn_point(state)
     end
+    
+    local admin_role = get_user_admin_role(presence.user_id)
     state.players[presence.user_id] = {
         pos_x = spawn_x,
         pos_y = spawn_y,
@@ -234,12 +288,13 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         facing = existing.facing or 1,
         ign = requested_ign,
         is_host = presence.user_id == state.host_user_id,
+        admin_role = admin_role,
         input_seq = existing.input_seq or 0,
         is_attacking = existing.is_attacking or false,
         is_dashing = existing.is_dashing or false,
         attack_rotation = existing.attack_rotation or 0.0
     }
-    nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " spawn=" .. spawn_x .. "," .. spawn_y)
+    nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
     return state, true
 end
 
@@ -357,6 +412,104 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" then
                     -- Relay these message types to all players
                     dispatcher.broadcast_message(0, message.data)
+                elseif info.type == "admin_action" then
+                    -- Admin actions - check if sender has admin privileges
+                    local sender = state.players[message.sender.user_id]
+                    if is_admin(sender) then
+                        nk.logger_info("Admin action: " .. tostring(info.action) .. " from " .. message.sender.user_id .. " (admin_role=" .. tostring(sender.admin_role) .. ")")
+                        if info.action == "kick" then
+                            -- Kick player from match
+                            local target_id = info.target_user_id
+                            if state.players[target_id] then
+                                dispatcher.broadcast_message(0, nk.json_encode({
+                                    type = "admin_action",
+                                    action = "kicked",
+                                    target_user_id = target_id,
+                                    reason = info.reason or ""
+                                }))
+                                state.players[target_id] = nil
+                            end
+                        elseif info.action == "ban" then
+                            -- Ban player (kick + store ban)
+                            local target_id = info.target_user_id
+                            if state.players[target_id] then
+                                -- Store ban in user storage
+                                nk.storage_write({
+                                    {collection = "bans", key = target_id, value = {banned = true, reason = info.reason or "", banned_by = message.sender.user_id}}
+                                })
+                                dispatcher.broadcast_message(0, nk.json_encode({
+                                    type = "admin_action",
+                                    action = "banned",
+                                    target_user_id = target_id,
+                                    reason = info.reason or ""
+                                }))
+                                state.players[target_id] = nil
+                            end
+                        elseif info.action == "change_host" then
+                            -- Change host
+                            local new_host = info.target_user_id
+                            if state.players[new_host] then
+                                state.host_user_id = new_host
+                                state.players[new_host].is_host = true
+                                if state.players[message.sender.user_id] then
+                                    state.players[message.sender.user_id].is_host = false
+                                end
+                                dispatcher.broadcast_message(0, nk.json_encode({
+                                    type = "admin_action",
+                                    action = "host_changed",
+                                    new_host_id = new_host
+                                }))
+                            end
+                        elseif info.action == "force_start" then
+                            -- Force start game
+                            state.phase = "in_game"
+                            dispatcher.broadcast_message(5, nk.json_encode({type = "force_start"}))
+                        elseif info.action == "close_lobby" then
+                            -- Close lobby - kick all players
+                            dispatcher.broadcast_message(0, nk.json_encode({
+                                type = "admin_action",
+                                action = "lobby_closed",
+                                reason = info.reason or "Admin closed lobby"
+                            }))
+                            state.players = {}
+                        elseif info.action == "teleport" then
+                            -- Teleport player
+                            dispatcher.broadcast_message(0, nk.json_encode({
+                                type = "admin_action",
+                                action = "teleport",
+                                target_user_id = info.target_user_id,
+                                x = info.x,
+                                y = info.y
+                            }))
+                        elseif info.action == "set_role" then
+                            -- Set player role (super admin only)
+                            if sender.admin_role and sender.admin_role >= ADMIN_ROLE.SUPER_ADMIN then
+                                local target_id = info.target_user_id
+                                local new_role = info.role or 0
+                                if state.players[target_id] then
+                                    state.players[target_id].admin_role = new_role
+                                    nk.storage_write({
+                                        {collection = "user_roles", key = target_id, value = {role = new_role}}
+                                    })
+                                    dispatcher.broadcast_message(0, nk.json_encode({
+                                        type = "admin_action",
+                                        action = "role_set",
+                                        target_user_id = target_id,
+                                        role = new_role
+                                    }))
+                                end
+                            end
+                        end
+                    else
+                        nk.logger_warn("Unauthorized admin action attempt from " .. message.sender.user_id)
+                    end
+                elseif info.type == "admin_broadcast" then
+                    -- Admin broadcast - relay to all players
+                    dispatcher.broadcast_message(0, nk.json_encode({
+                        type = "chat_message",
+                        sender = info.sender or "ADMIN",
+                        message = info.message
+                    }))
                 end
             else
                 nk.logger_warn("op_code=0 message from unknown player or invalid data")

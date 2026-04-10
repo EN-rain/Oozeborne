@@ -95,8 +95,6 @@ var _def_value_label: Label
 var _spd_value_label: Label
 var _crit_value_label: Label
 var _evade_value_label: Label
-var _power_fill: ColorRect
-var _power_rank_label: Label
 var _talent_cards: VBoxContainer
 var _stat_cards: Array = []
 
@@ -111,8 +109,6 @@ func _init(refs: Dictionary) -> void:
 	_spd_value_label = refs["spd_value_label"]
 	_crit_value_label = refs["crit_value_label"]
 	_evade_value_label = refs["evade_value_label"]
-	_power_fill = refs["power_fill"]
-	_power_rank_label = refs["power_rank_label"]
 	_talent_cards = refs["talent_cards"]
 	_stat_cards = refs["stat_cards"]
 
@@ -157,6 +153,7 @@ func refresh_party_cards(player_entries: Dictionary) -> void:
 			"ign": entry.get("ign", "Unknown"),
 			"is_host": entry.get("is_host", false),
 			"accent_color": entry.get("accent_color", Color(0.5, 0.6, 0.85)),
+			"selected_class": entry.get("selected_class", ""),
 		})
 
 	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -208,7 +205,7 @@ func _build_subclass_info_text(active_class: String) -> String:
 
 func _build_party_card(entry: Dictionary) -> Control:
 	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 58)
+	card.custom_minimum_size = Vector2(0, 72)
 
 	var style = StyleBoxFlat.new()
 	style.bg_color = PARTY_CARD_BG
@@ -268,6 +265,14 @@ func _build_party_card(entry: Dictionary) -> Control:
 	meta_label.add_theme_font_size_override("font_size", 11)
 	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
 	text_col.add_child(meta_label)
+
+	var class_label = Label.new()
+	var selected_class = entry.get("selected_class", "")
+	class_label.text = "Class: " + selected_class if not selected_class.is_empty() else "No class selected"
+	class_label.add_theme_font_size_override("font_size", 10)
+	var class_color = get_class_name_color(selected_class) if not selected_class.is_empty() else Color(0.5, 0.5, 0.5, 0.6)
+	class_label.add_theme_color_override("font_color", class_color)
+	text_col.add_child(class_label)
 
 	var badge = Label.new()
 	badge.text = "*" if entry.get("is_host", false) else "-"
@@ -389,10 +394,6 @@ func _update_class_panels(class_id: String) -> void:
 	_set_stat_card_value(_crit_value_label, str(stats.get("crit", "--")))
 	_set_stat_card_value(_evade_value_label, str(stats.get("crit_damage", "--")))
 
-	if is_instance_valid(_power_fill):
-		_power_fill.size_flags_stretch_ratio = float(stats.get("power", 0.45))
-	if is_instance_valid(_power_rank_label):
-		_power_rank_label.text = str(stats.get("rank", "C-Rank"))
 	if is_instance_valid(_talent_cards):
 		for child in _talent_cards.get_children():
 			child.queue_free()
