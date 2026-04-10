@@ -337,6 +337,7 @@ function M.match_loop(context, dispatcher, tick, state, messages)
             end
         elseif message.op_code == 0 then
             local info = nk.json_decode(message.data)
+            nk.logger_info("Received op_code=0 message type=" .. (info and info.type or "nil") .. " from=" .. message.sender.user_id)
             if info and state.players[message.sender.user_id] then
                 local player = state.players[message.sender.user_id]
                 if info.type == "player_info" then
@@ -347,6 +348,7 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                     player.is_host = message.sender.user_id == state.host_user_id
                 elseif info.type == "chat_message" then
                     -- Relay chat messages to all players
+                    nk.logger_info("Relaying chat_message: sender=" .. tostring(info.sender) .. " message=" .. tostring(info.message))
                     dispatcher.broadcast_message(0, nk.json_encode({
                         type = "chat_message",
                         sender = info.sender,
@@ -356,6 +358,8 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                     -- Relay these message types to all players
                     dispatcher.broadcast_message(0, message.data)
                 end
+            else
+                nk.logger_warn("op_code=0 message from unknown player or invalid data")
             end
         end
     end

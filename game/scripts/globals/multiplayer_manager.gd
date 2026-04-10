@@ -572,6 +572,10 @@ func _on_match_state(match_state) -> void:
 	if data == null:
 		return
 
+	# Log op_code=0 messages for debugging
+	if match_state.op_code == 0:
+		print("[Manager] Received op_code=0: type=%s" % str(data.get("type", "?")))
+
 	if match_state.op_code == MultiplayerUtils.OP_STATE:
 		if data.has("phase"):
 			_set_match_phase(str(data.phase))
