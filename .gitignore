@@ -14,3 +14,7 @@ game/addons/
 
 # Build artifacts (regenerate from Godot)
 exports/
+
+# IDE settings
+.vscode/
+.windsurf/skills/

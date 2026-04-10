@@ -17,7 +17,7 @@ config/icon="res://assets/icon.svg"
 
 [autoload]
 
-Nakama="*res://addons/com.heroiclabs.nakama/nakama_autoload.gd"
+Nakama="*uid://bmf6nk0fuaur8"
 MultiplayerManager="*res://scripts/globals/multiplayer_manager.gd"
 RemotePlayerManager="*res://scripts/globals/remote_player_manager.gd"
 ClientPrediction="*res://scripts/globals/client_prediction.gd"

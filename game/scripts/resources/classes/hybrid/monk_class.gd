@@ -8,7 +8,6 @@ func _init():
 	description = "A disciplined martial artist who fights with bare hands. Monks build combos for devastating finishers."
 	lore = "Students of the Hidden Monastery, Monks have trained their bodies to become living weapons."
 	
-	# Player scene - Red slime for martial artist classes
 	
 	# Class identity - hybrid is a subclass
 	is_main_class = false
@@ -20,8 +19,7 @@ func _init():
 	modifiers_damage = 1.14   # +14% Damage
 	modifiers_defense = 1.0   # Neutral Defense
 	modifiers_attack_speed = 1.2     # +20% Attack Speed
-	modifiers_crit_chance = 1.12     # +12% Crit Chance
-	modifiers_crit_damage = 1.20     # +20% Crit Damage
+	modifiers_crit_chance = 1.15     # +15% Crit Chance
 	
 	# Special ability
 	ability_name = "Seven-Point Strike"

@@ -1,14 +1,12 @@
 extends CharacterBody2D
 
+# Player controller script
+
 signal death_sequence_finished(killer_name: String)
 
-const PLAYER_VISUAL_CONTROLLER_SCRIPT := preload("res://scripts/entities/player/player_visual_controller.gd")
-const PLAYER_COMBAT_CONTROLLER_SCRIPT := preload("res://scripts/entities/player/player_combat_controller.gd")
-const PLAYER_STATS_CONTROLLER_SCRIPT := preload("res://scripts/entities/player/player_stats_controller.gd")
-
 @export var speed := 100.0
-@export var knockback_decay := 800.0
-@export var hit_stun_time := 0.2
+@export var knockback_decay := 800.0  
+@export var hit_stun_time := 0.2        
 @export var dash_speed := 400.0
 @export var dash_duration := 0.2
 @export var dash_cooldown := 3.0
@@ -16,8 +14,8 @@ const PLAYER_STATS_CONTROLLER_SCRIPT := preload("res://scripts/entities/player/p
 @export var camera_zoom_step := 0.25
 @export var camera_zoom_min := 0.8
 @export var camera_zoom_max := 6.0
-@export var slash_effect_scene: PackedScene
 
+# Attack damage is now managed by LevelSystem
 var attack_damage := 25
 
 @onready var player_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -29,11 +27,14 @@ var attack_damage := 25
 @onready var dash_particles: CPUParticles2D = $DashParticles
 @onready var dash_trail: CPUParticles2D = $DashTrail
 @onready var damage_particles: CPUParticles2D = $DamageParticles
-@onready var visual_controller: PlayerVisualController = _ensure_controller("PlayerVisualController", PLAYER_VISUAL_CONTROLLER_SCRIPT) as PlayerVisualController
-@onready var combat_controller: PlayerCombatController = _ensure_controller("PlayerCombatController", PLAYER_COMBAT_CONTROLLER_SCRIPT) as PlayerCombatController
-@onready var stats_controller: PlayerStatsController = _ensure_controller("PlayerStatsController", PLAYER_STATS_CONTROLLER_SCRIPT) as PlayerStatsController
+@export var slash_effect_scene: PackedScene
 
-var is_local_player := true
+var is_local_player := true  # Set to false for remote players
+
+const FLIP_DEADZONE := 8.0
+const MOVE_FLIP_DEADZONE := 0.08
+const SLIME_VISUAL_SCALE := 0.85
+const SLIME_COLLISION_SCALE := 0.9
 var is_taking_damage := false
 var last_attacker_name: String = ""
 var is_death_sequence_active := false
@@ -44,92 +45,127 @@ var is_dashing := false
 var can_dash := true
 var can_basic_attack := true
 var dash_direction := Vector2.ZERO
-var damage_flash_active := false
+var _damage_flash_active := false
+var _original_slime_shader_colors: Dictionary = {}
 
 
 func _get_player_skill_manager() -> Node:
 	return PlayerSkillManager
 
-
-func _ensure_controller(node_name: String, script_resource: Script) -> Node:
-	var controller: Node = get_node_or_null(node_name)
-	if controller == null:
-		controller = Node.new()
-		controller.name = node_name
-		controller.set_script(script_resource)
-		add_child(controller)
-		controller.owner = self
-	return controller
-
-
-func _ready() -> void:
-	visual_controller.setup(self, player_sprite, dash_particles, dash_trail, damage_particles)
-	combat_controller.setup(self, health, death_sequence, hit_stun_timer, dash_timer, visual_controller)
-	stats_controller.setup(self, health)
-	visual_controller.apply_ready_setup()
-
+func _ready():
+	_apply_slime_size_tuning()
+	_configure_dash_particles()
+	_capture_original_slime_shader_colors()
 	player_sprite.animation_finished.connect(_on_animation_finished)
 	hit_stun_timer.timeout.connect(_on_hit_stun_timeout)
 	health.died.connect(_on_player_died)
 	if death_sequence != null:
 		death_sequence.sequence_finished.connect(_on_death_sequence_finished)
-
-	call_deferred("_finalize_stats_runtime_setup")
-
+	
+	# Register with LevelSystem singleton
+	LevelSystem.register_player(self)
+	
+	# Apply class modifiers if a class is selected
+	_apply_class_modifiers()
+	
+	# Setup dash timers
 	dash_timer.wait_time = dash_duration
 	dash_timer.one_shot = true
 	dash_timer.timeout.connect(_on_dash_finished)
 	add_child(dash_timer)
-
 	if is_local_player:
-		var skill_manager: Node = _get_player_skill_manager()
+		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
 			skill_manager.bind_player(self)
 
 
-func _finalize_stats_runtime_setup() -> void:
-	stats_controller.register_player()
-	stats_controller.apply_class_modifiers()
+func _apply_slime_size_tuning() -> void:
+	if player_sprite:
+		player_sprite.scale = Vector2.ONE * SLIME_VISUAL_SCALE
 
+	var collision := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision and collision.shape is CapsuleShape2D:
+		var capsule := collision.shape as CapsuleShape2D
+		capsule.radius *= SLIME_COLLISION_SCALE
+		capsule.height *= SLIME_COLLISION_SCALE
 
-func _physics_process(delta: float) -> void:
+func _configure_dash_particles() -> void:
+	# Burst dust at dash start.
+	dash_particles.position = Vector2(0, 6)
+	dash_particles.z_index = -1
+	dash_particles.amount = 26
+	dash_particles.lifetime = 0.22
+	dash_particles.one_shot = false
+	dash_particles.explosiveness = 0.85
+	dash_particles.randomness = 0.7
+	dash_particles.spread = 30.0
+	dash_particles.gravity = Vector2(0, 20)
+	dash_particles.initial_velocity_min = 80.0
+	dash_particles.initial_velocity_max = 160.0
+	dash_particles.scale_amount_min = 0.9
+	dash_particles.scale_amount_max = 1.6
+	dash_particles.color = Color(1, 1, 1, 0.95)
+	dash_particles.emitting = false
+
+	# Softer white trail while dashing.
+	dash_trail.position = Vector2(0, 8)
+	dash_trail.z_index = -1
+	dash_trail.amount = 42
+	dash_trail.lifetime = 0.35
+	dash_trail.one_shot = false
+	dash_trail.explosiveness = 0.25
+	dash_trail.randomness = 0.9
+	dash_trail.spread = 55.0
+	dash_trail.gravity = Vector2(0, 25)
+	dash_trail.initial_velocity_min = 30.0
+	dash_trail.initial_velocity_max = 85.0
+	dash_trail.scale_amount_min = 0.6
+	dash_trail.scale_amount_max = 1.2
+	dash_trail.color = Color(1, 1, 1, 0.7)
+	dash_trail.emitting = false
+
+func _physics_process(delta):
+	# Remote players are controlled by network interpolation, not physics
 	if not is_local_player:
 		return
 	if is_death_sequence_active:
 		velocity = Vector2.ZERO
 		return
-	if _is_hud_blocking_input():
-		velocity = Vector2.ZERO
-		move_and_slide()
-		return
-
+	
 	var input_dir := Vector2.ZERO
+	
 	if can_move and not is_dashing:
 		input_dir.x = Input.get_action_strength("right") - Input.get_action_strength("left")
 		input_dir.y = Input.get_action_strength("down") - Input.get_action_strength("up")
+		
 		if input_dir != Vector2.ZERO:
 			input_dir = input_dir.normalized()
-
+	
+	# BASE MOVEMENT
 	if is_dashing:
 		velocity = dash_direction * dash_speed
 	else:
 		velocity = input_dir * speed
-
+	
+	# APPLY KNOCKBACK
 	if not is_dashing:
 		velocity += knockback_velocity
 		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
-
-	visual_controller.update_sprite_facing(input_dir if not is_dashing else dash_direction)
+	
+	_update_sprite_facing(input_dir if not is_dashing else dash_direction)
 	move_and_slide()
-
+	
 	if is_local_player:
-		var skill_manager: Node = _get_player_skill_manager()
+		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
 			skill_manager.process_local_input(self, input_dir)
-
-	if is_taking_damage or is_dashing:
+	
+	if is_taking_damage:
 		return
-
+	
+	if is_dashing:
+		return
+	
 	if velocity.length() > 0.0:
 		if player_sprite.animation != "walk":
 			player_sprite.play("walk")
@@ -139,10 +175,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local_player or is_death_sequence_active:
+	if not is_local_player:
 		return
-	if _is_hud_blocking_input():
-		get_viewport().set_input_as_handled()
+	if is_death_sequence_active:
 		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -150,8 +185,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-			if _is_pointer_over_ui():
-				return
 			start_basic_attack()
 			return
 
@@ -162,25 +195,36 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_apply_camera_zoom(camera_zoom_step)
 
-
-func start_basic_attack() -> void:
+func start_basic_attack():
 	if is_death_sequence_active:
 		return
-	if _is_hud_blocking_input():
-		return
-	if get_tree() != null and get_tree().paused:
-		return
-	var skill_manager: Node = _get_player_skill_manager()
+	var skill_manager := _get_player_skill_manager()
 	if skill_manager != null:
 		skill_manager.request_basic_attack(self)
 
 
-func perform_basic_attack() -> void:
-	combat_controller.perform_basic_attack()
+func perform_basic_attack():
+	var dir := (get_global_mouse_position() - global_position).normalized()
+	if dir == Vector2.ZERO:
+		dir = Vector2(facing, 0)
+
+	var slash := slash_effect_scene.instantiate()
+	get_tree().current_scene.add_child(slash)me
+	slash.global_position = global_position + dir * 12
+	slash.rotation = dir.angle()
+	slash.set_damage(attack_damage)
+	
+	# Sync attack to other players
+	var main = get_tree().current_scene
+	if main.has_method("send_attack"):
+		main.send_attack(global_position, dir.angle())
 
 
 func emit_attack_particles_at(world_pos: Vector2, rotation_angle: float) -> void:
-	combat_controller.emit_attack_particles_at(world_pos, rotation_angle)
+	var slash := slash_effect_scene.instantiate()
+	get_tree().current_scene.add_child(slash)
+	slash.global_position = world_pos
+	slash.rotation = rotation_angle
 
 
 func _apply_camera_zoom(delta_zoom: float) -> void:
@@ -188,108 +232,276 @@ func _apply_camera_zoom(delta_zoom: float) -> void:
 	player_camera.zoom = Vector2.ONE * next_zoom
 
 
-func start_dash(dir: Vector2) -> void:
+
+
+func start_dash(dir):
 	if is_death_sequence_active:
 		return
-	if _is_hud_blocking_input():
-		return
-	var skill_manager: Node = _get_player_skill_manager()
+	var skill_manager := _get_player_skill_manager()
 	if skill_manager != null:
 		skill_manager.request_dash(self, dir)
 
 
-func _get_hud() -> Node:
-	var scene_tree := get_tree()
-	if scene_tree == null:
-		return null
-	var current_scene := scene_tree.current_scene
-	if current_scene == null:
-		return null
-	return current_scene.get_node_or_null("HUD")
+func perform_dash(dir):
+	if dir == Vector2.ZERO:
+		# Dash in facing direction if no input
+		dir = Vector2(facing, 0)
+	
+	is_dashing = true
+	dash_direction = dir.normalized()
+	_update_sprite_facing(dash_direction)
+	if player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation("dash"):
+		player_sprite.play("dash")
+	
+	# Visual feedback - blue tint while dashing + particles
+	player_sprite.modulate = Color(1.2, 1.2, 1.5)
+	
+	# Set particle direction based on dash direction
+	var angle = dash_direction.angle()
+	if dash_particles:
+		dash_particles.direction = Vector2(cos(angle), sin(angle))
+	if dash_trail:
+		dash_trail.direction = Vector2(cos(angle), sin(angle))
+	
+	# Emit particles
+	if dash_particles:
+		dash_particles.emitting = true
+	if dash_trail:
+		dash_trail.emitting = true
+	
+	dash_timer.start()
 
+func _on_dash_finished():
+	is_dashing = false
+	player_sprite.modulate = Color.WHITE
+	if dash_particles:
+		dash_particles.emitting = false
+	if dash_trail:
+		dash_trail.emitting = false
 
-func _is_hud_blocking_input() -> bool:
-	var hud := _get_hud()
-	return hud != null and hud.has_method("has_blocking_overlay_open") and bool(hud.call("has_blocking_overlay_open"))
-
-
-func _is_pointer_over_ui() -> bool:
-	var viewport := get_viewport()
-	if viewport == null:
-		return false
-	var hud := _get_hud()
-	if hud != null and hud.has_method("is_pointer_over_ui"):
-		return bool(hud.call("is_pointer_over_ui", viewport.get_mouse_position()))
-	return viewport.gui_get_hovered_control() != null
-
-
-func perform_dash(dir: Vector2) -> void:
-	combat_controller.perform_dash(dir)
-
-
-func _on_dash_finished() -> void:
-	combat_controller.on_dash_finished()
-
-
-func set_ign(_ign: String) -> void:
+func set_ign(_ign: String):
+	# IGN is now displayed in the main UI, not on the player
 	pass
 
+func _on_animation_finished():
+	if player_sprite.animation == "took_damage" and not _damage_flash_active:
+		is_taking_damage = false
 
-func _on_animation_finished() -> void:
-	visual_controller.on_animation_finished()
+#DAMAGE & KNOCKBACK-
+func apply_damage(amount: int, source_position: Vector2, force: float, attacker_name: String = ""):
+	# Prevent damage spam animation
+	if is_taking_damage or is_death_sequence_active:
+		return
+	
+	# Apply vulnerability modifier if active
+	if has_meta("damage_modifier"):
+		var modifier = get_meta("damage_modifier")
+		amount = int(amount * modifier)
+		print("[Player] Damage modified by %.0f%% to %d" % [modifier * 100, amount])
+
+	last_attacker_name = attacker_name.strip_edges()
+	
+	health.take_damage(amount)
+	
+	# Spawn damage number
+	DamageNumbers.spawn_damage(global_position + Vector2(0, -20), amount, false, true)
+	
+	is_taking_damage = true
+	_play_hit_flash()
+	
+	# Emit damage particles
+	if damage_particles:
+		damage_particles.emitting = true
+	
+	# Knockback
+	var dir := (global_position - source_position).normalized()
+	knockback_velocity = dir * force
+	
+	can_move = false
+	hit_stun_timer.start(hit_stun_time)
 
 
-func apply_damage(amount: int, source_position: Vector2, force: float, attacker_name: String = "") -> void:
-	combat_controller.apply_damage(amount, source_position, force, attacker_name)
+func _play_hit_flash() -> void:
+	if _damage_flash_active:
+		return
+
+	_damage_flash_active = true
+	if player_sprite.sprite_frames != null and player_sprite.sprite_frames.has_animation("dash"):
+		player_sprite.play("dash")
+	else:
+		player_sprite.play("took_damage")
+
+	_apply_white_hit_flash()
+	call_deferred("_finish_hit_flash")
 
 
-func _on_hit_stun_timeout() -> void:
-	combat_controller.on_hit_stun_timeout()
+func _finish_hit_flash() -> void:
+	await get_tree().process_frame
+	_restore_slime_shader_colors()
+	_damage_flash_active = false
+	is_taking_damage = false
 
+	if is_death_sequence_active or is_dashing:
+		return
 
-func _on_player_died() -> void:
-	combat_controller.on_player_died()
+	if velocity.length() > 0.0:
+		player_sprite.play("walk")
+	else:
+		player_sprite.play("idle")
+
+func _on_hit_stun_timeout():
+	can_move = true
+
+func _on_player_died():
+	if is_death_sequence_active:
+		return
+	if is_local_player:
+		var skill_manager := _get_player_skill_manager()
+		if death_sequence != null:
+			death_sequence.start(self, last_attacker_name, skill_manager)
+		else:
+			death_sequence_finished.emit(_resolve_death_killer_name())
+			queue_free()
+		return
+	queue_free()
 
 
 func is_targetable() -> bool:
-	return combat_controller.is_targetable()
+	return not is_death_sequence_active and health != null and int(health.current_health) > 0
+
+
+func _resolve_death_killer_name() -> String:
+	if not last_attacker_name.is_empty():
+		return last_attacker_name
+	return "something rude"
 
 
 func _on_death_sequence_finished(killer_name: String) -> void:
-	combat_controller.on_death_sequence_finished(killer_name)
-
-
-func notify_death_sequence_finished(killer_name: String) -> void:
 	death_sequence_finished.emit(killer_name)
 
 
 func _exit_tree() -> void:
-	stats_controller.unregister_player()
 	if is_local_player:
-		var skill_manager: Node = _get_player_skill_manager()
+		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
 			skill_manager.unbind_player(self)
 
 
-func get_slime_effect_palette() -> Dictionary:
-	return visual_controller.get_slime_effect_palette()
+func _update_sprite_facing(motion_dir: Vector2 = Vector2.ZERO) -> void:
+	if not is_local_player:
+		return
+	
+	var horizontal_dir: float = motion_dir.x
+	if abs(horizontal_dir) <= MOVE_FLIP_DEADZONE:
+		var mouse_dir := get_global_mouse_position() - global_position
+		horizontal_dir = mouse_dir.x
+	
+	if horizontal_dir > MOVE_FLIP_DEADZONE:
+		facing = 1
+		player_sprite.flip_h = true
+	elif horizontal_dir < -MOVE_FLIP_DEADZONE:
+		facing = -1
+		player_sprite.flip_h = false
 
 
-func get_slash_effect_color() -> Color:
-	return visual_controller.get_slash_effect_color()
+func _capture_original_slime_shader_colors() -> void:
+	var shader_material := player_sprite.material as ShaderMaterial
+	if shader_material == null:
+		return
+
+	for parameter_name in [
+		"highlight_color",
+		"mid_color",
+		"shadow_color",
+		"outline_color",
+		"iris_color",
+		"eye_highlight_color"
+	]:
+		_original_slime_shader_colors[parameter_name] = shader_material.get_shader_parameter(parameter_name)
 
 
-func get_explosion_effect_color() -> Color:
-	return visual_controller.get_explosion_effect_color()
+func _apply_white_hit_flash() -> void:
+	var shader_material := player_sprite.material as ShaderMaterial
+	if shader_material == null:
+		player_sprite.modulate = Color.WHITE
+		return
+
+	for parameter_name in _original_slime_shader_colors.keys():
+		shader_material.set_shader_parameter(parameter_name, Color.WHITE)
 
 
-func _apply_class_modifiers() -> void:
-	stats_controller.apply_class_modifiers()
+func _restore_slime_shader_colors() -> void:
+	var shader_material := player_sprite.material as ShaderMaterial
+	if shader_material == null:
+		player_sprite.modulate = Color.WHITE
+		return
+
+	for parameter_name in _original_slime_shader_colors.keys():
+		shader_material.set_shader_parameter(parameter_name, _original_slime_shader_colors[parameter_name])
+
+
+# ---------------- CLASS MODIFIERS ----------------
+func _apply_class_modifiers():
+	var level_stats: Dictionary = LevelSystem.get_current_stats(self)
+	reapply_class_modifiers_after_level_sync(level_stats)
+	var main_class = MultiplayerManager.player_class
+	if main_class != null:
+		print("[Player] Applied class modifiers: %s" % main_class.display_name)
 
 
 func apply_subclass_modifiers(player_subclass: PlayerClass) -> void:
-	stats_controller.apply_subclass_modifiers(player_subclass)
+	if player_subclass == null:
+		return
+	reapply_class_modifiers_after_level_sync(LevelSystem.get_current_stats(self))
+	print("[Player] Applied subclass modifiers: %s" % player_subclass.display_name)
 
 
 func reapply_class_modifiers_after_level_sync(base_stats: Dictionary) -> void:
-	stats_controller.reapply_class_modifiers_after_level_sync(base_stats)
+	var main_class: PlayerClass = MultiplayerManager.player_class
+	var player_subclass: PlayerClass = MultiplayerManager.player_subclass
+
+	if main_class == null:
+		return
+
+	var speed_mult: float = main_class.modifiers_speed
+	var damage_mult: float = main_class.modifiers_damage
+	var hp_mult: float = main_class.modifiers_hp
+	var defense_mult: float = main_class.modifiers_defense
+	var atk_speed_mult: float = main_class.modifiers_attack_speed
+	var crit_chance_mult: float = main_class.modifiers_crit_chance
+	var crit_damage_mult: float = main_class.modifiers_crit_damage
+	var lifesteal: float = main_class.passive_lifesteal / 100.0
+	var dodge: float = main_class.passive_dodge_chance / 100.0
+
+	if player_subclass != null:
+		speed_mult *= 1.0 + (player_subclass.modifiers_speed - 1.0) * 0.5
+		damage_mult *= 1.0 + (player_subclass.modifiers_damage - 1.0) * 0.5
+		hp_mult *= 1.0 + (player_subclass.modifiers_hp - 1.0) * 0.5
+		defense_mult *= 1.0 + (player_subclass.modifiers_defense - 1.0) * 0.5
+		atk_speed_mult *= 1.0 + (player_subclass.modifiers_attack_speed - 1.0) * 0.5
+		crit_chance_mult *= 1.0 + (player_subclass.modifiers_crit_chance - 1.0) * 0.5
+		crit_damage_mult *= 1.0 + (player_subclass.modifiers_crit_damage - 1.0) * 0.5
+		lifesteal += (player_subclass.passive_lifesteal / 100.0) * 0.5
+		dodge += (player_subclass.passive_dodge_chance / 100.0) * 0.5
+
+	var raw_speed: float = float(base_stats.get("speed", speed))
+	var raw_dash_speed: float = float(base_stats.get("dash_speed", dash_speed))
+	var raw_dash_cd: float = float(base_stats.get("dash_cooldown", dash_cooldown))
+	var raw_attack_damage: int = int(base_stats.get("attack_damage", attack_damage))
+
+	speed = raw_speed * speed_mult
+	dash_speed = raw_dash_speed * speed_mult
+	dash_cooldown = raw_dash_cd / max(atk_speed_mult, 0.01)
+	attack_damage = int(raw_attack_damage * damage_mult)
+
+	if health:
+		var raw_max_health: int = int(base_stats.get("max_health", health.max_health))
+		var ratio: float = float(health.current_health) / float(max(health.max_health, 1))
+		health.max_health = int(raw_max_health * hp_mult)
+		health.current_health = int(health.max_health * clamp(ratio, 0.0, 1.0))
+
+	set_meta("lifesteal", lifesteal)
+	set_meta("dodge_chance", dodge)
+	set_meta("crit_chance", (crit_chance_mult - 1.0) * 0.5)
+	set_meta("crit_damage", crit_damage_mult)
+	set_meta("defense_modifier", defense_mult)
