@@ -83,18 +83,28 @@ func show_join_game_ui() -> void:
 
 
 func on_start_pressed() -> void:
+	print("[Lobby] on_start_pressed called: is_host=%s player_count=%d socket_open=%s match_id=%s" % [
+		MultiplayerManager.is_host,
+		_party_controller.get_player_count(),
+		MultiplayerManager.is_socket_open(),
+		MultiplayerManager.match_id
+	])
 	if not MultiplayerManager.is_host:
+		push_warning("[Lobby] Start pressed but not host!")
 		return
-	if _party_controller.get_player_count() < 2:
+	if _party_controller.get_player_count() < 1:
+		push_warning("[Lobby] Start pressed but not enough players: %d" % _party_controller.get_player_count())
 		_party_controller.refresh_start_button_state()
 		return
 	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
+		print("[Lobby] Sending OP_START_GAME to server...")
 		await MultiplayerManager.socket.send_match_state_async(
 			MultiplayerManager.match_id,
 			MultiplayerUtils.OP_START_GAME,
 			JSON.stringify({"type": "start_game"}),
 			null
 		)
+		print("[Lobby] OP_START_GAME sent successfully")
 		if is_instance_valid(_start_button):
 			_start_button.disabled = true
 
@@ -139,6 +149,7 @@ func _on_player_left_signal(user_id: String) -> void:
 
 func _on_match_state(match_state) -> void:
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:
+		print("[Lobby] Received OP_START_GAME from server, transitioning...")
 		_transition_to_game_scene("op_code_5")
 		return
 

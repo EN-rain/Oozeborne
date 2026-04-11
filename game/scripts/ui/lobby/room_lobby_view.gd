@@ -267,7 +267,7 @@ func _build_party_card(entry: Dictionary) -> Control:
 	text_col.add_child(name_label)
 
 	var meta_label = Label.new()
-	meta_label.text = "Host" if entry.get("is_host", false) else "Party Member"
+	meta_label.text = "Party Leader" if entry.get("is_host", false) else "Party Member"
 	meta_label.add_theme_font_size_override("font_size", 11)
 	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
 	text_col.add_child(meta_label)

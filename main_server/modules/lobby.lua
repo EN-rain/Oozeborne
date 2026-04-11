@@ -13,7 +13,7 @@ local OP_START_GAME = 5
 local TICKRATE = 20
 local PLAYER_SPEED = 100.0
 local SNAP_THRESHOLD = 50.0
-local MIN_PLAYERS_TO_START = 2
+local MIN_PLAYERS_TO_START = 1
 local PLAYER_RADIUS = 6.0
 local PLAYER_SEPARATION_EPSILON = 0.01
 local WORLD_MIN_X = 0.0
@@ -251,7 +251,9 @@ function M.match_init(context, setupstate)
             input_seq = 0,
             is_attacking = false,
             is_dashing = false,
-            attack_rotation = 0.0
+            attack_rotation = 0.0,
+            attack_seq = 0,
+            slime_variant = "blue"
         }
         nk.logger_info("match_init host=" .. gamestate.host_user_id .. " spawn=" .. spawn_x .. "," .. spawn_y .. " admin_role=" .. tostring(admin_role))
     end
@@ -312,7 +314,9 @@ function M.match_join(context, dispatcher, tick, state, presences)
                 is_host = p.user_id == state.host_user_id,
                 input_seq = 0,
                 is_attacking = false, is_dashing = false,
-                attack_rotation = 0.0
+                attack_rotation = 0.0,
+                attack_seq = 0,
+                slime_variant = "blue"
             }
             state.players[p.user_id] = player
         end

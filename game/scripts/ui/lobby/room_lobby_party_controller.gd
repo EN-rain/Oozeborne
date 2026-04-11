@@ -130,7 +130,7 @@ func refresh_start_button_state() -> void:
 	if not is_instance_valid(_start_button):
 		return
 	_start_button.visible = MultiplayerManager.is_host
-	_start_button.disabled = not MultiplayerManager.is_host or get_player_count() < 2
+	_start_button.disabled = not MultiplayerManager.is_host or get_player_count() < 1
 
 
 func add_player_entry(user_id: String, ign: String, _prefix: String, is_host_flag: bool) -> void:
@@ -200,7 +200,12 @@ func move_right() -> void:
 
 func on_select_class_pressed() -> void:
 	if _class_selection_locked:
-		add_chat_message(system_sender_name, change_class_hint_format % _get_local_player_chat_name(), change_class_hint_color)
+		# Clear current selection so user can freely re-select any class
+		_selected_class = null
+		MultiplayerManager.player_class = null
+		if MultiplayerManager.session != null and _player_entries.has(MultiplayerManager.session.user_id):
+			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = ""
+		refresh_party_cards()
 		_set_class_selection_locked(false)
 		return
 	var active_class := get_active_class_name()
