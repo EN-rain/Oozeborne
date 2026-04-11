@@ -181,6 +181,8 @@ func _refresh_ready_flags(player: Node) -> void:
 	var now_sec: float = _get_now_sec()
 	if "can_basic_attack" in player and now_sec >= _basic_attack_ready_at_sec:
 		player.can_basic_attack = true
+		if "is_attacking" in player:
+			player.is_attacking = false
 	if "can_dash" in player and now_sec >= _dash_ready_at_sec:
 		player.can_dash = true
 

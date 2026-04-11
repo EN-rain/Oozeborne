@@ -23,7 +23,7 @@ var attack_damage := 25
 @onready var hit_stun_timer: Timer = $HitStunTimer
 @onready var health = $Health
 @onready var death_sequence = $DeathSequence
-@onready var dash_timer: Timer = Timer.new()
+@onready var dash_timer: Timer = $DashTimer
 @onready var dash_particles: CPUParticles2D = $DashParticles
 @onready var dash_trail: CPUParticles2D = $DashTrail
 @onready var damage_particles: CPUParticles2D = $DamageParticles
@@ -42,6 +42,9 @@ var facing := 1
 var knockback_velocity := Vector2.ZERO
 var can_move := true
 var is_dashing := false
+var is_attacking := false
+var attack_rotation := 0.0
+var attack_seq := 0  # Incremented on each attack for reliable remote sync
 var can_dash := true
 var can_basic_attack := true
 var dash_direction := Vector2.ZERO
@@ -70,9 +73,7 @@ func _ready():
 	
 	# Setup dash timers
 	dash_timer.wait_time = dash_duration
-	dash_timer.one_shot = true
 	dash_timer.timeout.connect(_on_dash_finished)
-	add_child(dash_timer)
 	if is_local_player:
 		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
@@ -208,6 +209,9 @@ func perform_basic_attack():
 	if dir == Vector2.ZERO:
 		dir = Vector2(facing, 0)
 
+	attack_rotation = dir.angle()
+	is_attacking = true
+	attack_seq += 1
 	var slash := slash_effect_scene.instantiate()
 	get_tree().current_scene.add_child(slash)
 	slash.global_position = global_position + dir * 12
@@ -221,7 +225,13 @@ func perform_basic_attack():
 
 
 func emit_attack_particles_at(world_pos: Vector2, rotation_angle: float) -> void:
+	if slash_effect_scene == null:
+		push_error("Player slash_effect_scene is null! Cannot spawn attack effect.")
+		return
 	var slash := slash_effect_scene.instantiate()
+	if slash == null:
+		push_error("Failed to instantiate slash_effect_scene!")
+		return
 	get_tree().current_scene.add_child(slash)
 	slash.global_position = world_pos
 	slash.rotation = rotation_angle

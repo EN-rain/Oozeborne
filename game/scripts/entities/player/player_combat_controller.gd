@@ -47,8 +47,12 @@ func perform_basic_attack() -> void:
 
 
 func emit_attack_particles_at(world_pos: Vector2, rotation_angle: float) -> void:
+	if _player.slash_effect_scene == null:
+		push_error("Player slash_effect_scene is null! Cannot spawn attack effect.")
+		return
 	var slash: Node2D = _player.slash_effect_scene.instantiate() as Node2D
 	if slash == null:
+		push_error("Failed to instantiate slash_effect_scene!")
 		return
 	_player.get_tree().current_scene.add_child(slash)
 	slash.global_position = world_pos

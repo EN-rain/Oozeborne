@@ -1,18 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://loadingscreen001"]
+[gd_scene format=3 uid="uid://loadingscreen001"]
 
 [ext_resource type="Script" path="res://scripts/ui/loading_screen.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://jenrhvjxo3sw" path="res://assets/sprites/Player/Slime/combined/idle/slime-idle-base1.png" id="2_idle"]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
-animations = [{
-"frames": [{
-	"duration": 1.0,
-	"texture": ExtResource("2_idle")
-}],
-"loop": true,
-"name": &"idle",
-"speed": 5.0
-}]
 
 [node name="LoadingScreen" type="Control"]
 layout_mode = 3
@@ -22,6 +10,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
+main_game_scene_path = "res://scenes/levels/main.tscn"
+class_selection_scene_path = "res://scenes/ui/class_selection.tscn"
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -88,9 +78,6 @@ vertical_alignment = 1
 [node name="PlayerDisplay" type="AnimatedSprite2D" parent="."]
 position = Vector2(576, 500)
 scale = Vector2(2, 2)
-sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"
 
 [node name="EnvironmentContainer" type="Node2D" parent="."]
 visible = false

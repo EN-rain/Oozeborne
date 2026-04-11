@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bu8cpoti5dsrs"]
+[gd_scene format=3 uid="uid://bu8cpoti5dsrs" load_steps=30]
 
 [ext_resource type="Script" uid="uid://cuwyf6kwu2akm" path="res://scripts/ui/lobby/room_lobby.gd" id="1_roomlobby"]
 [ext_resource type="Texture2D" uid="uid://cmxlei5j5rtla" path="res://assets/bg/bg.png" id="2_2lpa5"]
@@ -422,6 +422,9 @@ taken_class_message_color = null
 [node name="LobbyMatchFlow" type="Node" parent="." unique_id=748835912]
 unique_name_in_owner = true
 script = ExtResource("6_matchflow")
+main_game_scene_path = "res://scenes/levels/main.tscn"
+main_menu_scene_path = "res://scenes/ui/main_menu.tscn"
+loading_screen_scene_path = "res://scenes/ui/loading_screen.tscn"
 
 [node name="Background" type="TextureRect" parent="." unique_id=1291819552]
 texture_filter = 1

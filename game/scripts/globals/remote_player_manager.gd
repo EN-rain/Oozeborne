@@ -193,10 +193,17 @@ func _update_dash_visuals(player_data: Dictionary, is_dashing: bool) -> void:
 	var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 	
 	if is_dashing:
-		if dash_particles and not dash_particles.emitting:
-			dash_particles.emitting = true
-		if dash_trail and not dash_trail.emitting:
-			dash_trail.emitting = true
+		# Set particle direction based on velocity (like solo play)
+		var dash_vel = player_data.server_velocity if player_data.server_velocity.length() > 1.0 else Vector2(player_data.server_facing, 0)
+		var angle = dash_vel.angle()
+		if dash_particles:
+			dash_particles.direction = Vector2(cos(angle), sin(angle))
+			if not dash_particles.emitting:
+				dash_particles.emitting = true
+		if dash_trail:
+			dash_trail.direction = Vector2(cos(angle), sin(angle))
+			if not dash_trail.emitting:
+				dash_trail.emitting = true
 		if sprite:
 			sprite.modulate = Color(1.2, 1.2, 1.5)
 	else:
@@ -213,18 +220,17 @@ func _update_player_animation(player_data: Dictionary, node: Node) -> void:
 	if not sprite:
 		return
 	
-	sprite.flip_h = player_data.server_facing < 0
+	sprite.flip_h = player_data.server_facing > 0
 	
 	if player_data.is_dashing:
 		if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
 			if sprite.animation != "dash":
 				sprite.play("dash")
-			return
+		return
+	# Attack visual is the slash effect, not a sprite animation
+	# Keep current animation during attack (idle or walk)
 	if player_data.is_attacking:
-		if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
-			if sprite.animation != "attack":
-				sprite.play("attack")
-			return
+		return
 	if player_data.server_velocity.length() > 5.0:
 		if sprite.animation != "walk":
 			sprite.play("walk")

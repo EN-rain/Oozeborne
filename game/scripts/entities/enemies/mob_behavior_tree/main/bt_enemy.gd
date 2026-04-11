@@ -41,7 +41,7 @@ signal died(xp_reward: int)
 @onready var blink_cooldown_timer: Timer = get_node_or_null("BlinkCooldownTimer") as Timer
 @onready var teleport_particles: GPUParticles2D = get_node_or_null("TeleportParticles") as GPUParticles2D
 @onready var bt_player: BTPlayer = get_node_or_null("BTPlayer") as BTPlayer
-@onready var attack_animation_timer: Timer = Timer.new()
+@onready var attack_animation_timer: Timer = $AttackAnimationTimer
 
 var player: CharacterBody2D = null
 var can_damage := true
@@ -94,9 +94,7 @@ func _ready() -> void:
 	detection_area.body_exited.connect(_on_detection_area_exited)
 	attack_area.body_entered.connect(_on_attack_area_entered)
 	animated_sprite.animation_finished.connect(_on_animation_finished)
-	attack_animation_timer.one_shot = true
 	attack_animation_timer.timeout.connect(_on_attack_animation_timeout)
-	add_child(attack_animation_timer)
 
 	if bt_player == null and behavior_tree != null:
 		bt_player = BTPlayer.new()
@@ -136,9 +134,7 @@ func take_damage(amount: int) -> void:
 
 	var was_killed := health.take_damage(amount)
 
-	var damage_numbers := get_node_or_null("/root/DamageNumbers")
-	if damage_numbers:
-		damage_numbers.spawn_damage(global_position + Vector2(0, -20), amount, false, false)
+	DamageNumbers.spawn_damage(global_position + Vector2(0, -20), amount, false, false)
 
 	if not was_killed:
 		# Don't interrupt attack animation

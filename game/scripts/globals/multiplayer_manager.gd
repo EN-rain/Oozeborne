@@ -376,7 +376,7 @@ func create_room() -> String:
 	room_code = _generate_room_code()
 	lobby_name = "%s's Lobby" % player_ign
 	is_host = true
-	players[session.user_id] = {"ign": player_ign, "is_host": true}
+	players[session.user_id] = {"ign": player_ign, "is_host": true, "slime_variant": player_slime_variant}
 
 	# Call RPC to create authoritative match and register room
 	var payload = JSON.stringify({
@@ -410,7 +410,7 @@ func create_room() -> String:
 	if join_result.self_user != null:
 		players[session.user_id]["presence"] = join_result.self_user
 	
-	send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": true})
+	send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": true, "slime_variant": player_slime_variant})
 	match_joined.emit()
 	return room_code
 
@@ -458,7 +458,7 @@ func join_room(join_code: String) -> bool:
 	_debug_log("Joined room: %s | Match: %s" % [room_code, match_id])
 	
 	# Add ourselves to players list
-	players[session.user_id] = {"ign": player_ign, "is_host": false}
+	players[session.user_id] = {"ign": player_ign, "is_host": false, "slime_variant": player_slime_variant}
 	
 	# Store our own presence from join result
 	if join_result.self_user != null:
@@ -469,10 +469,10 @@ func join_room(join_code: String) -> bool:
 		for presence in join_result.presences:
 			if presence.user_id != session.user_id:
 				_debug_log("Found existing player presence: %s" % presence.user_id.substr(0, 8))
-				players[presence.user_id] = {"ign": "", "is_host": false, "presence": presence}
+				players[presence.user_id] = {"ign": "", "is_host": false, "presence": presence, "slime_variant": "blue"}
 	
 	# Send player info to others
-	send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": false})
+	send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": false, "slime_variant": player_slime_variant})
 	# Request other players' info
 	send_match_state({"type": "request_players"})
 	
@@ -487,13 +487,13 @@ func _on_match_presence(p_presence):
 			continue
 		_debug_log("Player joined match: %s" % join.user_id.substr(0, 8))
 		if not players.has(join.user_id):
-			players[join.user_id] = {"ign": "", "is_host": false, "presence": join}
+			players[join.user_id] = {"ign": "", "is_host": false, "presence": join, "slime_variant": "blue"}
 			var display_name = join.username if not join.username.is_empty() else "Player"
 			player_joined.emit(join.user_id, display_name, false)
 		else:
 			players[join.user_id]["presence"] = join
 		# Send our info to the new player immediately
-		send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": is_host})
+		send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": is_host, "slime_variant": player_slime_variant})
 	
 	for leave in p_presence.leaves:
 		# Skip if this is ourselves (Nakama sometimes sends our own leave event)
@@ -595,7 +595,8 @@ func _on_match_state(match_state) -> void:
 			players[user_id] = {
 				"ign": authoritative_ign,
 				"is_host": authoritative_is_host,
-				"presence": presence
+				"presence": presence,
+				"slime_variant": existing.get("slime_variant", "blue")
 			}
 
 			if user_id != session.user_id and (not was_known or previous_ign != authoritative_ign):
@@ -615,7 +616,8 @@ func _on_match_state(match_state) -> void:
 		players[entry_id] = {
 			"ign": authoritative_ign,
 			"is_host": authoritative_is_host,
-			"presence": existing.get("presence", null)
+			"presence": existing.get("presence", null),
+			"slime_variant": existing.get("slime_variant", str(data.get("slime_variant", "blue")))
 		}
 
 		if session != null and entry_id != session.user_id and (not was_known or previous_ign != authoritative_ign):

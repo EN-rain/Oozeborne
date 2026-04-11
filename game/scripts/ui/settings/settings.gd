@@ -14,7 +14,7 @@ signal settings_closed
 @onready var show_fps_check: CheckBox = %ShowFPSCheck
 @onready var language_option: OptionButton = %LanguageOption
 
-@export var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 
 const SETTINGS_PATH := "user://settings.cfg"
 

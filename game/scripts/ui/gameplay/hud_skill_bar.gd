@@ -8,14 +8,14 @@ class_name HudSkillBar
 @export var active_skill_slot_scene: PackedScene
 @export var passive_skill_icon_scene: PackedScene
 
-const COOLDOWN_REFRESH_INTERVAL_SEC := 0.05
+@export var cooldown_refresh_interval_sec: float = 0.05
 
 var _hud_active_icon_nodes: Array[HudActiveSkillSlot] = []
 var _hud_passive_icon_nodes: Array[HudPassiveSkillIcon] = []
 var _hud_passive_strip: HBoxContainer
 var _hud_passive_signature: String = ""
 var _hud_needs_refresh: bool = true
-var _cooldown_refresh_timer: Timer = null
+@onready var _cooldown_refresh_timer: Timer = $CooldownRefreshTimer
 
 
 func _ready() -> void:
@@ -54,14 +54,10 @@ func _setup_skill_hud() -> void:
 
 
 func _setup_refresh_timer() -> void:
-	if _cooldown_refresh_timer != null:
+	if _cooldown_refresh_timer == null:
 		return
-	_cooldown_refresh_timer = Timer.new()
-	_cooldown_refresh_timer.one_shot = false
-	_cooldown_refresh_timer.wait_time = COOLDOWN_REFRESH_INTERVAL_SEC
-	_cooldown_refresh_timer.autostart = true
+	_cooldown_refresh_timer.wait_time = cooldown_refresh_interval_sec
 	_cooldown_refresh_timer.timeout.connect(_refresh_skill_hud_if_needed)
-	add_child(_cooldown_refresh_timer)
 
 
 func _connect_skill_tree_signals() -> void:

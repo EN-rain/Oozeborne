@@ -7,8 +7,8 @@ class_name LoadingScreen
 signal loading_complete
 signal all_players_ready
 
-@export var main_game_scene_path: String = "res://scenes/levels/main.tscn"
-@export var class_selection_scene_path: String = "res://scenes/ui/class_selection.tscn"
+@export_file("*.tscn") var main_game_scene_path: String = "res://scenes/levels/main.tscn"
+@export_file("*.tscn") var class_selection_scene_path: String = "res://scenes/ui/class_selection.tscn"
 @export var min_loading_time: float = 2.0
 @export var fade_in_delay: float = 0.3
 @export var environment_fade_interval: float = 0.15
@@ -21,11 +21,12 @@ signal all_players_ready
 @onready var background: ColorRect = $Background
 @onready var fade_overlay: ColorRect = $FadeOverlay
 
+var _remote_player_displays: Array[AnimatedSprite2D] = []
+
 var _is_loading: bool = false
 var _loading_progress: float = 0.0
 var _players_loaded: Dictionary = {}  # user_id -> bool
 var _expected_player_count: int = 0
-var _scene_to_load: String = ""
 var _needs_class_selection: bool = false
 
 
@@ -46,24 +47,91 @@ func _setup_signals() -> void:
 
 
 func _setup_player_display() -> void:
-	# Set player sprite based on selected class
-	var player_class = MultiplayerManager.player_class
-	if player_class != null and player_class.player_scene != null:
-		# Use class-specific player scene
-		var instance = player_class.player_scene.instantiate()
+	# Set local player sprite based on slime variant
+	var local_variant: String = MultiplayerManager.player_slime_variant
+	var scene_path: String = SlimePaletteRegistry.get_scene_path(local_variant)
+	var player_scene_res = load(scene_path) as PackedScene
+	if player_scene_res != null:
+		var instance = player_scene_res.instantiate()
 		if instance.has_node("AnimatedSprite2D"):
 			var sprite = instance.get_node("AnimatedSprite2D")
-			player_display.sprite_frames = sprite.sprite_frames
-			player_display.play("idle")
+			# Copy the shader material for correct slime color
+			if sprite.material != null:
+				player_display.material = sprite.material.duplicate()
+			if sprite.sprite_frames != null:
+				player_display.sprite_frames = sprite.sprite_frames.duplicate()
+				if player_display.sprite_frames.has_animation("idle"):
+					player_display.play("idle")
+			player_display.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		instance.queue_free()
-	else:
-		# Default idle animation
-		if player_display.sprite_frames != null:
-			player_display.play("idle")
 	
-	# Position player at bottom center
+	# Position local player at bottom center
 	player_display.position = Vector2(get_viewport_rect().size.x / 2, get_viewport_rect().size.y - 100)
 	player_display.modulate.a = 0.0
+	
+	# Show remote players alongside local player
+	_setup_remote_player_displays()
+
+
+func _setup_remote_player_displays() -> void:
+	# Clear any existing remote displays
+	for old_display in _remote_player_displays:
+		if is_instance_valid(old_display):
+			old_display.queue_free()
+	_remote_player_displays.clear()
+	
+	var viewport_width = get_viewport_rect().size.x
+	var all_players = MultiplayerManager.players.keys()
+	# Include local player in the count for positioning
+	var total_count = all_players.size()
+	if total_count <= 1:
+		return  # Only local player, no remote displays needed
+	
+	# Calculate spacing: spread players evenly across bottom
+	var spacing = viewport_width / (total_count + 1)
+	
+	# Reposition local player display
+	var local_index = 0
+	if MultiplayerManager.session != null:
+		local_index = all_players.find(MultiplayerManager.session.user_id)
+		if local_index < 0:
+			local_index = 0
+	player_display.position = Vector2(spacing * (local_index + 1), get_viewport_rect().size.y - 100)
+	
+	# Create displays for each remote player
+	var _remote_idx = 0
+	for i in range(all_players.size()):
+		var user_id = all_players[i]
+		if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+			continue  # Skip local player
+		
+		var player_info = MultiplayerManager.players.get(user_id, {})
+		var variant: String = str(player_info.get("slime_variant", "blue"))
+		var r_scene_path: String = SlimePaletteRegistry.get_scene_path(variant)
+		var r_scene = load(r_scene_path) as PackedScene
+		if r_scene == null:
+			continue
+		
+		var r_instance = r_scene.instantiate()
+		var r_sprite: AnimatedSprite2D = null
+		if r_instance.has_node("AnimatedSprite2D"):
+			var source_sprite = r_instance.get_node("AnimatedSprite2D")
+			if source_sprite.sprite_frames != null:
+				r_sprite = AnimatedSprite2D.new()
+				# Copy the shader material for correct slime color
+				if source_sprite.material != null:
+					r_sprite.material = source_sprite.material.duplicate()
+				r_sprite.sprite_frames = source_sprite.sprite_frames.duplicate()
+				r_sprite.scale = player_display.scale
+				r_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+				if r_sprite.sprite_frames.has_animation("idle"):
+					r_sprite.play("idle")
+				r_sprite.position = Vector2(spacing * (i + 1), get_viewport_rect().size.y - 100)
+				r_sprite.modulate.a = 0.0
+				add_child(r_sprite)
+				_remote_player_displays.append(r_sprite)
+		r_instance.queue_free()
+		_remote_idx += 1
 
 
 func _start_loading() -> void:
@@ -71,8 +139,8 @@ func _start_loading() -> void:
 	_loading_progress = 0.0
 	_expected_player_count = _get_expected_player_count()
 	
-	# Check if player needs class selection
-	_needs_class_selection = MultiplayerManager.player_class == null
+	# Check if player needs class selection (only for solo play, multiplayer selects in lobby)
+	_needs_class_selection = MultiplayerManager.player_class == null and not MultiplayerManager.is_socket_open()
 	
 	# Register self as loaded
 	var my_user_id = MultiplayerManager.session.user_id if MultiplayerManager.session else "local"
@@ -86,9 +154,13 @@ func _start_loading() -> void:
 
 
 func _animate_loading() -> void:
-	# Fade in player
+	# Fade in player(s)
 	var tween = create_tween()
 	tween.tween_property(player_display, "modulate:a", 1.0, 0.5)
+	for r_display in _remote_player_displays:
+		if is_instance_valid(r_display):
+			var r_tween = create_tween()
+			r_tween.tween_property(r_display, "modulate:a", 1.0, 0.5)
 	
 	# Animate loading bar
 	while _loading_progress < 1.0:
@@ -142,6 +214,28 @@ func _on_match_state(match_state) -> void:
 			if not user_id.is_empty():
 				_players_loaded[user_id] = true
 				_update_player_count_display()
+		elif msg_type == "player_info":
+			var user_id = str(data.get("user_id", ""))
+			var slime_variant = str(data.get("slime_variant", "blue"))
+			if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+				# Local player echo - don't overwrite, just ensure display is using current variant
+				_setup_player_display()
+			else:
+				# Update remote player's slime variant in MultiplayerManager.players
+				if MultiplayerManager.players.has(user_id):
+					MultiplayerManager.players[user_id]["slime_variant"] = slime_variant
+				# Refresh remote player displays
+				_setup_remote_player_displays()
+		elif msg_type == "class_selected":
+			var user_id = str(data.get("user_id", ""))
+			var slime_variant = str(data.get("slime_variant", ""))
+			if not user_id.is_empty() and not slime_variant.is_empty():
+				if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+					_setup_player_display()
+				else:
+					if MultiplayerManager.players.has(user_id):
+						MultiplayerManager.players[user_id]["slime_variant"] = slime_variant
+					_setup_remote_player_displays()
 		return
 
 	if match_state.op_code == MultiplayerUtils.OP_STATE and data.has("players"):
@@ -202,17 +296,19 @@ func _transition_to_next_scene() -> void:
 	loading_complete.emit()
 	
 	# Determine which scene to load
+	var scene_to_load_path: String = ""
 	if _needs_class_selection:
-		_scene_to_load = class_selection_scene_path
+		scene_to_load_path = class_selection_scene_path
 	else:
-		_scene_to_load = main_game_scene_path
+		scene_to_load_path = main_game_scene_path
 	
 	# Fade out and change scene
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 1.0, 0.5)
 	await tween.finished
 	
-	get_tree().change_scene_to_file(_scene_to_load)
+	if not scene_to_load_path.is_empty():
+		get_tree().change_scene_to_file(scene_to_load_path)
 
 
 func _exit_tree() -> void:

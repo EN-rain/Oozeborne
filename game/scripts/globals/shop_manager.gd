@@ -26,6 +26,8 @@ var permanent_upgrades: Dictionary = {}  # stat_type -> total_value
 var equipped_items: Dictionary = {}  # slot -> item
 
 
+@export_file("*.json") var items_json_path: String = "res://resources/data/shop_items.json"
+
 func _ready():
 	_initialize_shop_items()
 
@@ -39,32 +41,27 @@ func notify_shop_closed() -> void:
 
 
 func _initialize_shop_items():
-	# === CONSUMABLES ===
-	_register_item(_create_health_potion_small(), consumables)
-	_register_item(_create_health_potion_large(), consumables)
-	_register_item(_create_shield_potion(), consumables)
-	_register_item(_create_speed_potion(), consumables)
-	_register_item(_create_iron_skin_potion(), consumables)
+	var file = FileAccess.open(items_json_path, FileAccess.READ)
+	if file == null:
+		push_error("[ShopManager] Failed to open items JSON: %s" % items_json_path)
+		return
+	var json_text = file.get_as_text()
+	file.close()
 	
-	# === PERMANENT UPGRADES ===
-	_register_item(_create_max_hp_10(), upgrades)
-	_register_item(_create_max_hp_25(), upgrades)
-	_register_item(_create_attack_5(), upgrades)
-	_register_item(_create_speed_5(), upgrades)
-	_register_item(_create_crit_5(), upgrades)
-	_register_item(_create_lifesteal_3(), upgrades)
+	var json = JSON.new()
+	if json.parse(json_text) != OK:
+		push_error("[ShopManager] Failed to parse items JSON: %s" % json.get_error_message())
+		return
+	var data = json.data
+	if data == null:
+		push_error("[ShopManager] Items JSON parsed to null")
+		return
 	
-	# === EQUIPMENT ===
-	_register_item(_create_iron_sword(), equipment)
-	_register_item(_create_swift_boots(), equipment)
-	_register_item(_create_warrior_ring(), equipment)
-	_register_item(_create_assassin_dagger(), equipment)
-	
-	# === SPECIAL ===
-	_register_item(_create_revive_stone(), special_items)
-	_register_item(_create_xp_tome(), special_items)
-	_register_item(_create_gold_booster(), special_items)
-	_register_item(_create_magnet_ring(), special_items)
+	# Load items from each category
+	_load_category(data, "consumables", consumables)
+	_load_category(data, "upgrades", upgrades)
+	_load_category(data, "equipment", equipment)
+	_load_category(data, "special", special_items)
 	
 	# Combine all
 	for item in consumables:
@@ -77,251 +74,56 @@ func _initialize_shop_items():
 		all_items.append(item)
 
 
-func _register_item(item: ShopItem, category: Array):
-	category.append(item)
+func _load_category(data: Dictionary, category_key: String, target_array: Array[ShopItem]) -> void:
+	var items_array = data.get(category_key, [])
+	for item_data in items_array:
+		var item = _item_from_dict(item_data)
+		if item != null:
+			target_array.append(item)
 
 
-# === ITEM FACTORIES ===
-
-func _create_health_potion_small() -> ShopItem:
+func _item_from_dict(d: Dictionary) -> ShopItem:
 	var item = ShopItem.new()
-	item.item_id = "health_potion_small"
-	item.display_name = "Health Potion"
-	item.description = "A small red potion that restores health."
-	item.item_type = ShopItem.ItemType.CONSUMABLE
-	item.price = 8
-	item.max_stacks = 99
-	item.instant_heal = 50
+	item.item_id = str(d.get("item_id", ""))
+	item.display_name = str(d.get("display_name", "Item"))
+	item.description = str(d.get("description", ""))
+	item.item_type = _parse_item_type(str(d.get("item_type", "CONSUMABLE")))
+	item.price = int(d.get("price", 10))
+	item.max_stacks = int(d.get("max_stacks", 99))
+	item.stat_type = _parse_stat_type(str(d.get("stat_type", "NONE")))
+	item.stat_value = float(d.get("stat_value", 0.0))
+	item.is_percentage = bool(d.get("is_percentage", false))
+	item.duration = float(d.get("duration", 0.0))
+	item.instant_heal = int(d.get("instant_heal", 0))
+	item.equipment_slot = str(d.get("equipment_slot", ""))
+	item.restricted_to_class = str(d.get("restricted_to_class", ""))
 	return item
 
 
-func _create_health_potion_large() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "health_potion_large"
-	item.display_name = "Large Health Potion"
-	item.description = "A potent red potion that restores significant health."
-	item.item_type = ShopItem.ItemType.CONSUMABLE
-	item.price = 20
-	item.max_stacks = 99
-	item.instant_heal = 100
-	return item
+func _parse_item_type(type_str: String) -> ShopItem.ItemType:
+	match type_str:
+		"CONSUMABLE": return ShopItem.ItemType.CONSUMABLE
+		"PERMANENT_UPGRADE": return ShopItem.ItemType.PERMANENT_UPGRADE
+		"EQUIPMENT": return ShopItem.ItemType.EQUIPMENT
+		"SPECIAL": return ShopItem.ItemType.SPECIAL
+		_: return ShopItem.ItemType.CONSUMABLE
 
 
-func _create_shield_potion() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "shield_potion"
-	item.display_name = "Shield Potion"
-	item.description = "Grants temporary damage resistance."
-	item.item_type = ShopItem.ItemType.CONSUMABLE
-	item.price = 25
-	item.max_stacks = 20
-	item.stat_type = ShopItem.StatType.DEFENSE
-	item.stat_value = 50.0
-	item.is_percentage = true
-	item.duration = 30.0
-	return item
-
-
-func _create_speed_potion() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "speed_potion"
-	item.display_name = "Speed Potion"
-	item.description = "Grants temporary movement speed boost."
-	item.item_type = ShopItem.ItemType.CONSUMABLE
-	item.price = 15
-	item.max_stacks = 20
-	item.stat_type = ShopItem.StatType.SPEED
-	item.stat_value = 30.0
-	item.is_percentage = true
-	item.duration = 60.0
-	return item
-
-
-func _create_iron_skin_potion() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "iron_skin_potion"
-	item.display_name = "Iron Skin Potion"
-	item.description = "Grants knockback immunity."
-	item.item_type = ShopItem.ItemType.CONSUMABLE
-	item.price = 35
-	item.max_stacks = 10
-	return item  # Special effect handled separately
-
-
-func _create_max_hp_10() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "max_hp_10"
-	item.display_name = "Max HP +10"
-	item.description = "Permanently increases maximum health."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 40
-	item.stat_type = ShopItem.StatType.MAX_HP
-	item.stat_value = 10.0
-	return item
-
-
-func _create_max_hp_25() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "max_hp_25"
-	item.display_name = "Max HP +25"
-	item.description = "Permanently increases maximum health."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 85
-	item.stat_type = ShopItem.StatType.MAX_HP
-	item.stat_value = 25.0
-	return item
-
-
-func _create_attack_5() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "attack_5"
-	item.display_name = "Attack +5"
-	item.description = "Permanently increases base damage."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 50
-	item.stat_type = ShopItem.StatType.ATTACK
-	item.stat_value = 5.0
-	return item
-
-
-func _create_speed_5() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "speed_5"
-	item.display_name = "Speed +5%"
-	item.description = "Permanently increases movement speed."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 35
-	item.stat_type = ShopItem.StatType.SPEED
-	item.stat_value = 5.0
-	item.is_percentage = true
-	return item
-
-
-func _create_crit_5() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "crit_5"
-	item.display_name = "Crit Chance +5%"
-	item.description = "Permanently increases critical hit chance."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 70
-	item.stat_type = ShopItem.StatType.CRIT_CHANCE
-	item.stat_value = 5.0
-	item.is_percentage = true
-	return item
-
-
-func _create_lifesteal_3() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "lifesteal_3"
-	item.display_name = "Lifesteal +3%"
-	item.description = "Permanently increases lifesteal."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 90
-	item.stat_type = ShopItem.StatType.LIFESTEAL
-	item.stat_value = 3.0
-	item.is_percentage = true
-	return item
-
-
-func _create_iron_sword() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "iron_sword"
-	item.display_name = "Iron Sword"
-	item.description = "A sturdy iron sword that increases damage."
-	item.item_type = ShopItem.ItemType.EQUIPMENT
-	item.price = 65
-	item.stat_type = ShopItem.StatType.ATTACK
-	item.stat_value = 10.0
-	item.equipment_slot = "weapon"
-	return item
-
-
-func _create_swift_boots() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "swift_boots"
-	item.display_name = "Swift Boots"
-	item.description = "Lightweight boots that increase speed."
-	item.item_type = ShopItem.ItemType.EQUIPMENT
-	item.price = 50
-	item.stat_type = ShopItem.StatType.SPEED
-	item.stat_value = 15.0
-	item.is_percentage = true
-	item.equipment_slot = "boots"
-	return item
-
-
-func _create_warrior_ring() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "warrior_ring"
-	item.display_name = "Warrior's Ring"
-	item.description = "A ring that boosts damage but slows movement."
-	item.item_type = ShopItem.ItemType.EQUIPMENT
-	item.price = 100
-	item.stat_type = ShopItem.StatType.ATTACK
-	item.stat_value = 15.0
-	item.equipment_slot = "ring"
-	return item
-
-
-func _create_assassin_dagger() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "assassin_dagger"
-	item.display_name = "Assassin's Dagger"
-	item.description = "A deadly dagger that boosts critical hits."
-	item.item_type = ShopItem.ItemType.EQUIPMENT
-	item.price = 85
-	item.stat_type = ShopItem.StatType.CRIT_CHANCE
-	item.stat_value = 10.0
-	item.is_percentage = true
-	item.equipment_slot = "weapon"
-	return item
-
-
-func _create_revive_stone() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "revive_stone"
-	item.display_name = "Revive Stone"
-	item.description = "Automatically revive with 50% HP on death. One use."
-	item.item_type = ShopItem.ItemType.SPECIAL
-	item.price = 180
-	item.max_stacks = 1
-	return item
-
-
-func _create_xp_tome() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "xp_tome"
-	item.display_name = "XP Tome"
-	item.description = "Instantly gain 50 XP."
-	item.item_type = ShopItem.ItemType.SPECIAL
-	item.price = 25
-	item.max_stacks = 10
-	return item
-
-
-func _create_gold_booster() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "gold_booster"
-	item.display_name = "Gold Booster"
-	item.description = "Permanently increases coin drop rate."
-	item.item_type = ShopItem.ItemType.PERMANENT_UPGRADE
-	item.price = 130
-	item.stat_type = ShopItem.StatType.COIN_BOOST
-	item.stat_value = 25.0
-	item.is_percentage = true
-	return item
-
-
-func _create_magnet_ring() -> ShopItem:
-	var item = ShopItem.new()
-	item.item_id = "magnet_ring"
-	item.display_name = "Magnet Ring"
-	item.description = "Increases coin attraction range."
-	item.item_type = ShopItem.ItemType.SPECIAL
-	item.price = 45
-	item.stat_type = ShopItem.StatType.NONE
-	item.max_stacks = 1
-	return item
+func _parse_stat_type(stat_str: String) -> ShopItem.StatType:
+	match stat_str:
+		"NONE": return ShopItem.StatType.NONE
+		"MAX_HP": return ShopItem.StatType.MAX_HP
+		"ATTACK": return ShopItem.StatType.ATTACK
+		"SPEED": return ShopItem.StatType.SPEED
+		"DEFENSE": return ShopItem.StatType.DEFENSE
+		"CRIT_CHANCE": return ShopItem.StatType.CRIT_CHANCE
+		"CRIT_DAMAGE": return ShopItem.StatType.CRIT_DAMAGE
+		"LIFESTEAL": return ShopItem.StatType.LIFESTEAL
+		"DODGE_CHANCE": return ShopItem.StatType.DODGE_CHANCE
+		"COIN_BOOST": return ShopItem.StatType.COIN_BOOST
+		"XP_BOOST": return ShopItem.StatType.XP_BOOST
+		"ABILITY_COOLDOWN": return ShopItem.StatType.ABILITY_COOLDOWN
+		_: return ShopItem.StatType.NONE
 
 
 # === PURCHASE LOGIC ===

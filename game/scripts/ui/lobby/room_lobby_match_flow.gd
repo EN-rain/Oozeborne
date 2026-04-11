@@ -4,9 +4,9 @@ class_name RoomLobbyMatchFlow
 var _room_code_button: Button
 var _leave_button: Button
 var _start_button: Button
-var _main_game_scene_path: String = ""
-var _main_menu_scene_path: String = ""
-var _loading_screen_path: String = "res://scenes/ui/loading_screen.tscn"
+@export_file("*.tscn") var main_game_scene_path: String = "res://scenes/levels/main.tscn"
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
+@export_file("*.tscn") var loading_screen_scene_path: String = "res://scenes/ui/loading_screen.tscn"
 var _join_game_button_text: String = "Join Quest"
 var _party_controller: RoomLobbyPartyController
 var _title_controller: Node
@@ -17,8 +17,8 @@ func setup(
 	room_code_button: Button,
 	leave_button: Button,
 	start_button: Button,
-	main_game_scene_path: String,
-	main_menu_scene_path: String,
+	main_game_scene_arg: String,
+	main_menu_scene_arg: String,
 	join_game_button_text: String,
 	party_controller: RoomLobbyPartyController,
 	title_controller: Node
@@ -26,8 +26,8 @@ func setup(
 	_room_code_button = room_code_button
 	_leave_button = leave_button
 	_start_button = start_button
-	_main_game_scene_path = main_game_scene_path
-	_main_menu_scene_path = main_menu_scene_path
+	main_game_scene_path = main_game_scene_arg
+	main_menu_scene_path = main_menu_scene_arg
 	_join_game_button_text = join_game_button_text
 	_party_controller = party_controller
 	_title_controller = title_controller
@@ -107,7 +107,8 @@ func on_back_pressed() -> void:
 	MultiplayerManager.disconnect_server()
 	var tree := get_tree()
 	if tree != null:
-		tree.change_scene_to_file(_main_menu_scene_path)
+		if not main_menu_scene_path.is_empty():
+			tree.change_scene_to_file(main_menu_scene_path)
 
 
 func on_copy_code_pressed() -> void:
@@ -123,7 +124,8 @@ func _transition_to_game_scene(source: String) -> void:
 	_is_transitioning = true
 	print("[Lobby] Transitioning to loading screen from ", source, "...")
 	# Go to loading screen first, which will then transition to game
-	tree.change_scene_to_file(_loading_screen_path)
+	if not loading_screen_scene_path.is_empty():
+		tree.change_scene_to_file(loading_screen_scene_path)
 
 
 func _on_player_joined_signal(user_id: String, ign: String, is_host_flag: bool) -> void:
@@ -193,7 +195,11 @@ func _on_match_state(match_state) -> void:
 			if not message.is_empty() and sender != MultiplayerManager.player_ign.strip_edges():
 				_party_controller.add_chat_message(sender, message, Color(0.7, 0.65, 0.85))
 		"class_selected":
-			_party_controller.handle_remote_class_selected(str(data.get("user_id", "")), str(data.get("class_name", "")))
+			_party_controller.handle_remote_class_selected(
+				str(data.get("user_id", "")),
+				str(data.get("class_name", "")),
+				str(data.get("slime_variant", ""))
+			)
 		"admin_action":
 			_handle_admin_action(data)
 		"admin_broadcast":
@@ -220,7 +226,8 @@ func _handle_admin_action(data: Dictionary) -> void:
 			if target_id == MultiplayerManager.session.user_id:
 				_party_controller.add_chat_message("SYSTEM", "You were kicked from the lobby.", Color(0.9, 0.3, 0.3))
 				await get_tree().create_timer(2.0).timeout
-				get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+				if not main_menu_scene_path.is_empty():
+					get_tree().change_scene_to_file(main_menu_scene_path)
 		"host_changed":
 			var new_host_id := str(data.get("new_host_id", ""))
 			MultiplayerManager.is_host = (new_host_id == MultiplayerManager.session.user_id)
@@ -229,7 +236,8 @@ func _handle_admin_action(data: Dictionary) -> void:
 			var reason := str(data.get("reason", "Admin closed lobby"))
 			_party_controller.add_chat_message("SYSTEM", reason, Color(0.9, 0.3, 0.3))
 			await get_tree().create_timer(2.0).timeout
-			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+			if not main_menu_scene_path.is_empty():
+				get_tree().change_scene_to_file(main_menu_scene_path)
 		"teleport":
 			if target_id == MultiplayerManager.session.user_id:
 				var x: float = data.get("x", 400.0)

@@ -148,11 +148,15 @@ func refresh_party_cards(player_entries: Dictionary) -> void:
 	var entries: Array = []
 	for user_id in player_entries:
 		var entry = player_entries[user_id]
+		var slime_variant = "blue"
+		if MultiplayerManager.players.has(user_id):
+			slime_variant = str(MultiplayerManager.players[user_id].get("slime_variant", "blue"))
 		entries.append({
 			"user_id": user_id,
 			"ign": entry.get("ign", "Unknown"),
 			"is_host": entry.get("is_host", false),
 			"accent_color": entry.get("accent_color", Color(0.5, 0.6, 0.85)),
+			"slime_variant": slime_variant,
 			"selected_class": entry.get("selected_class", ""),
 		})
 
@@ -237,7 +241,9 @@ func _build_party_card(entry: Dictionary) -> Control:
 
 	var avatar = ColorRect.new()
 	avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	avatar.color = entry.get("accent_color", Color(0.45, 0.55, 0.85))
+	var slime_variant = entry.get("slime_variant", "blue")
+	var palette = SlimePaletteRegistry.get_preview_palette(slime_variant)
+	avatar.color = palette.get("mid", Color(0.45, 0.55, 0.85))
 	avatar_holder.add_child(avatar)
 
 	var avatar_letter = Label.new()

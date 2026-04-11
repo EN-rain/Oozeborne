@@ -10,7 +10,7 @@ extends Control
 @onready var restart_button: Button = %Restart
 @onready var menu_button: Button = %MenuButton
 
-@export var main_menu_scene: PackedScene
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 @export_file("*.json") var death_messages_json_path: String = "res://resources/data/death_messages.json"
 @export var death_title_text: String = "Run Over"
 @export var final_score_format: String = "Final Score: %d"
@@ -130,8 +130,8 @@ func _on_restart_pressed() -> void:
 func _on_menu_pressed() -> void:
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
-	if main_menu_scene != null:
-		get_tree().change_scene_to_packed(main_menu_scene)
+	if not main_menu_scene_path.is_empty():
+		get_tree().change_scene_to_file(main_menu_scene_path)
 
 
 func _restart_current_run() -> void:

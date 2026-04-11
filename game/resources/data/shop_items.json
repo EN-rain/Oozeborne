@@ -1,0 +1,193 @@
+{
+	"consumables": [
+		{
+			"item_id": "health_potion_small",
+			"display_name": "Health Potion",
+			"description": "A small red potion that restores health.",
+			"item_type": "CONSUMABLE",
+			"price": 8,
+			"max_stacks": 99,
+			"instant_heal": 50
+		},
+		{
+			"item_id": "health_potion_large",
+			"display_name": "Large Health Potion",
+			"description": "A potent red potion that restores significant health.",
+			"item_type": "CONSUMABLE",
+			"price": 20,
+			"max_stacks": 99,
+			"instant_heal": 100
+		},
+		{
+			"item_id": "shield_potion",
+			"display_name": "Shield Potion",
+			"description": "Grants temporary damage resistance.",
+			"item_type": "CONSUMABLE",
+			"price": 25,
+			"max_stacks": 20,
+			"stat_type": "DEFENSE",
+			"stat_value": 50.0,
+			"is_percentage": true,
+			"duration": 30.0
+		},
+		{
+			"item_id": "speed_potion",
+			"display_name": "Speed Potion",
+			"description": "Grants temporary movement speed boost.",
+			"item_type": "CONSUMABLE",
+			"price": 15,
+			"max_stacks": 20,
+			"stat_type": "SPEED",
+			"stat_value": 30.0,
+			"is_percentage": true,
+			"duration": 60.0
+		},
+		{
+			"item_id": "iron_skin_potion",
+			"display_name": "Iron Skin Potion",
+			"description": "Grants knockback immunity.",
+			"item_type": "CONSUMABLE",
+			"price": 35,
+			"max_stacks": 10
+		}
+	],
+	"upgrades": [
+		{
+			"item_id": "max_hp_10",
+			"display_name": "Max HP +10",
+			"description": "Permanently increases maximum health.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 40,
+			"stat_type": "MAX_HP",
+			"stat_value": 10.0
+		},
+		{
+			"item_id": "max_hp_25",
+			"display_name": "Max HP +25",
+			"description": "Permanently increases maximum health.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 85,
+			"stat_type": "MAX_HP",
+			"stat_value": 25.0
+		},
+		{
+			"item_id": "attack_5",
+			"display_name": "Attack +5",
+			"description": "Permanently increases base damage.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 50,
+			"stat_type": "ATTACK",
+			"stat_value": 5.0
+		},
+		{
+			"item_id": "speed_5",
+			"display_name": "Speed +5%",
+			"description": "Permanently increases movement speed.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 35,
+			"stat_type": "SPEED",
+			"stat_value": 5.0,
+			"is_percentage": true
+		},
+		{
+			"item_id": "crit_5",
+			"display_name": "Crit Chance +5%",
+			"description": "Permanently increases critical hit chance.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 70,
+			"stat_type": "CRIT_CHANCE",
+			"stat_value": 5.0,
+			"is_percentage": true
+		},
+		{
+			"item_id": "lifesteal_3",
+			"display_name": "Lifesteal +3%",
+			"description": "Permanently increases lifesteal.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 90,
+			"stat_type": "LIFESTEAL",
+			"stat_value": 3.0,
+			"is_percentage": true
+		}
+	],
+	"equipment": [
+		{
+			"item_id": "iron_sword",
+			"display_name": "Iron Sword",
+			"description": "A sturdy iron sword that increases damage.",
+			"item_type": "EQUIPMENT",
+			"price": 65,
+			"stat_type": "ATTACK",
+			"stat_value": 10.0,
+			"equipment_slot": "weapon"
+		},
+		{
+			"item_id": "swift_boots",
+			"display_name": "Swift Boots",
+			"description": "Lightweight boots that increase speed.",
+			"item_type": "EQUIPMENT",
+			"price": 50,
+			"stat_type": "SPEED",
+			"stat_value": 15.0,
+			"is_percentage": true,
+			"equipment_slot": "boots"
+		},
+		{
+			"item_id": "warrior_ring",
+			"display_name": "Warrior's Ring",
+			"description": "A ring that boosts damage but slows movement.",
+			"item_type": "EQUIPMENT",
+			"price": 100,
+			"stat_type": "ATTACK",
+			"stat_value": 15.0,
+			"equipment_slot": "ring"
+		},
+		{
+			"item_id": "assassin_dagger",
+			"display_name": "Assassin's Dagger",
+			"description": "A deadly dagger that boosts critical hits.",
+			"item_type": "EQUIPMENT",
+			"price": 85,
+			"stat_type": "CRIT_CHANCE",
+			"stat_value": 10.0,
+			"is_percentage": true,
+			"equipment_slot": "weapon"
+		}
+	],
+	"special": [
+		{
+			"item_id": "revive_stone",
+			"display_name": "Revive Stone",
+			"description": "Automatically revive with 50% HP on death. One use.",
+			"item_type": "SPECIAL",
+			"price": 180,
+			"max_stacks": 1
+		},
+		{
+			"item_id": "xp_tome",
+			"display_name": "XP Tome",
+			"description": "Instantly gain 50 XP.",
+			"item_type": "SPECIAL",
+			"price": 25,
+			"max_stacks": 10
+		},
+		{
+			"item_id": "gold_booster",
+			"display_name": "Gold Booster",
+			"description": "Permanently increases coin drop rate.",
+			"item_type": "PERMANENT_UPGRADE",
+			"price": 130,
+			"stat_type": "COIN_BOOST",
+			"stat_value": 25.0,
+			"is_percentage": true
+		},
+		{
+			"item_id": "magnet_ring",
+			"display_name": "Magnet Ring",
+			"description": "Increases coin attraction range.",
+			"item_type": "SPECIAL",
+			"price": 45,
+			"max_stacks": 1
+		}
+	]
+}

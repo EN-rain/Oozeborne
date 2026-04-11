@@ -151,11 +151,17 @@ process_callback = 0
 [node name="Health" type="Node2D" parent="." unique_id=1717290315]
 script = ExtResource("14_health")
 
+[node name="HideTimer" type="Timer" parent="Health" unique_id=55667788]
+one_shot = true
+
 [node name="DeathSequence" type="Node2D" parent="." unique_id=556147998]
 script = ExtResource("15_death_sequence")
 death_explosion_scene = ExtResource("20_dmgparticles")
 
 [node name="HitStunTimer" type="Timer" parent="." unique_id=1635102171]
+
+[node name="DashTimer" type="Timer" parent="." unique_id=99887766]
+one_shot = true
 
 [node name="DamageParticles" parent="." unique_id=1526079973 instance=ExtResource("20_dmgparticles")]
 position = Vector2(0, -8)

@@ -37,8 +37,8 @@ extends Control
 @onready var party_controller: RoomLobbyPartyController = %LobbyPartyController
 @onready var match_flow: RoomLobbyMatchFlow = %LobbyMatchFlow
 
-@export_file("*.tscn") var main_game_scene_path: String
-@export_file("*.tscn") var main_menu_scene_path: String
+@export_file("*.tscn") var main_game_scene_path: String = "res://scenes/levels/main.tscn"
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 @export var join_game_button_text: String = "Join Quest"
 @export var responsive_base_resolution: Vector2 = Vector2(1920.0, 1080.0)
 @export var responsive_min_scale: float = 0.72

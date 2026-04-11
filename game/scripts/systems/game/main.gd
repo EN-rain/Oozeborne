@@ -20,7 +20,6 @@ var round_manager: RoundManager
 const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
 const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
 const DEBUG_STATS_LABEL_NODE_PATH := "Control/DebugStatsLabel"
-const SOLO_RUN_SAVE_MANAGER_NODE_PATH := "/root/SoloRunSaveManager"
 const DEBUG_MAIN_LOGS := false
 
 var _solo_class_selection_ui: ClassSelectionUI = null
@@ -136,10 +135,7 @@ func build_solo_run_snapshot() -> Dictionary:
 
 
 func _restore_saved_solo_run_if_needed() -> void:
-	var save_manager := _get_solo_run_save_manager()
-	if save_manager == null:
-		return
-	var snapshot: Dictionary = save_manager.call("consume_pending_continue_snapshot")
+	var snapshot: Dictionary = SoloRunSaveManager.consume_pending_continue_snapshot()
 	if snapshot.is_empty():
 		return
 	var class_id := str(snapshot.get("player_class_id", ""))
@@ -163,13 +159,6 @@ func _restore_saved_solo_run_if_needed() -> void:
 	if round_manager != null:
 		round_manager.current_round = max(1, int(snapshot.get("round", 1)))
 	_refresh_local_player_runtime_state(player)
-
-
-func _get_solo_run_save_manager() -> Node:
-	var tree := get_tree()
-	if tree == null or tree.root == null:
-		return null
-	return tree.root.get_node_or_null(SOLO_RUN_SAVE_MANAGER_NODE_PATH)
 
 
 func _bind_local_player(target_player: Node) -> void:
@@ -263,10 +252,20 @@ func _play_local_spawn_intro() -> void:
 	tween.tween_property(player, "modulate:a", 1.0, LOCAL_PLAYER_SPAWN_FADE_TIME)
 
 func _replace_local_player_with_class_scene():
-	# Replace the default player with the class-specific slime scene
-	var player_class: PlayerClass = MultiplayerManager.player_class
-	if player_class and player_class.player_scene:
-		_apply_local_player_class(player_class)
+	# Apply the correct slime variant visuals to the existing player
+	# Always use the lobby-assigned slime_variant, NOT the class's player_scene
+	# (the class's player_scene may point to a different variant color)
+	var variant: String = MultiplayerManager.player_slime_variant
+	
+	var scene_to_use: PackedScene = null
+	if not variant.is_empty():
+		var variant_scene_path: String = SlimePaletteRegistry.get_scene_path(variant)
+		var variant_scene = load(variant_scene_path) as PackedScene
+		if variant_scene != null:
+			scene_to_use = variant_scene
+	
+	if scene_to_use != null:
+		_apply_variant_visuals_to_player(scene_to_use)
 
 
 func _get_local_spawn_position() -> Vector2:
@@ -278,22 +277,58 @@ func _get_local_spawn_position() -> Vector2:
 func _apply_local_player_class(player_class: PlayerClass) -> void:
 	if player_class == null or player_class.player_scene == null or not is_instance_valid(player):
 		return
-	if player.scene_file_path == player_class.player_scene.resource_path:
-		_refresh_local_player_runtime_state(player)
+	_apply_variant_visuals_to_player(player_class.player_scene)
+
+
+func _apply_variant_visuals_to_player(scene: PackedScene) -> void:
+	# Instantiate the variant scene temporarily to extract visual components
+	var ref_node = scene.instantiate()
+	var ref_sprite = ref_node.get_node_or_null("AnimatedSprite2D")
+	var local_sprite = player.get_node_or_null("AnimatedSprite2D")
+	
+	if ref_sprite and local_sprite:
+		# Copy sprite frames (animations)
+		if ref_sprite.sprite_frames:
+			local_sprite.sprite_frames = ref_sprite.sprite_frames.duplicate(true)
+		# Copy shader material (slime color)
+		if ref_sprite.material:
+			local_sprite.material = ref_sprite.material.duplicate()
+		# Reset animation
+		local_sprite.animation = &"idle"
+		local_sprite.frame = 0
+	
+	# Free the temporary reference node (never added to tree)
+	ref_node.free()
+	_debug_log("Applied variant visuals from scene: %s" % scene.resource_path)
+
+
+func _apply_remote_variant_visuals(remote_player: Node, variant: String, _remote_class: PlayerClass) -> void:
+	# Always use the slime_variant from player data (lobby-assigned), NOT the class's player_scene
+	# The class's player_scene may point to a different variant than what the player chose in the lobby
+	var scene_to_use: PackedScene = null
+	if not variant.is_empty():
+		scene_to_use = MultiplayerManager._cached_player_scenes.get(variant) as PackedScene
+		if scene_to_use == null:
+			scene_to_use = load(SlimePaletteRegistry.get_scene_path(variant)) as PackedScene
+			if scene_to_use != null:
+				MultiplayerManager._cached_player_scenes[variant] = scene_to_use
+	if scene_to_use == null:
 		return
 	
-	var old_player = player
-	var new_player = player_class.player_scene.instantiate()
-	new_player.global_position = old_player.global_position
-	new_player.name = old_player.name
-	new_player.is_local_player = true
-	new_player.modulate = old_player.modulate
-	if old_player.has_method("get_ign") and new_player.has_method("set_ign"):
-		new_player.set_ign(old_player.get_ign())
-	add_child(new_player)
-	old_player.queue_free()
-	_bind_local_player(new_player)
-	_debug_log("Replaced player with class scene: %s" % player_class.display_name)
+	var ref_node = scene_to_use.instantiate()
+	var ref_sprite = ref_node.get_node_or_null("AnimatedSprite2D")
+	var remote_sprite = remote_player.get_node_or_null("AnimatedSprite2D")
+	
+	if ref_sprite and remote_sprite:
+		if ref_sprite.sprite_frames:
+			remote_sprite.sprite_frames = ref_sprite.sprite_frames.duplicate(true)
+		if ref_sprite.material:
+			remote_sprite.material = ref_sprite.material.duplicate()
+		remote_sprite.animation = &"idle"
+		remote_sprite.frame = 0
+	
+	ref_node.free()
+	_debug_log("Applied remote variant visuals: %s" % variant)
 
 
 func _should_show_solo_class_selection() -> bool:
@@ -423,10 +458,6 @@ func _on_match_state(match_state):
 			var is_host_flag = data.get("is_host", false)
 			var slime_variant = str(data.get("slime_variant", "blue"))
 			
-			# Skip if it's our own IGN
-			if ign == MultiplayerManager.player_ign:
-				return
-			
 			# Skip if still empty after trying to get from data
 			if sender_id.is_empty():
 				return
@@ -525,23 +556,12 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 			if player.has_method("set_ign"):
 				player.set_ign(player_info.ign)
 	else:
-		# Spawn remote player - use their slime variant scene for correct color
+		# Spawn remote player - use base player scene and apply variant visuals
 		var remote_variant: String = str(player_info.get("slime_variant", "blue"))
 		var remote_player_class: PlayerClass = MultiplayerManager.get_player_class(user_id)
-		var scene_to_use: PackedScene = null
-		if remote_player_class and remote_player_class.player_scene:
-			scene_to_use = remote_player_class.player_scene
-		elif not remote_variant.is_empty():
-			scene_to_use = MultiplayerManager._cached_player_scenes.get(remote_variant) as PackedScene
-			if scene_to_use == null:
-				scene_to_use = load(SlimePaletteRegistry.get_scene_path(remote_variant)) as PackedScene
-				if scene_to_use != null:
-					MultiplayerManager._cached_player_scenes[remote_variant] = scene_to_use
-		if scene_to_use == null:
-			scene_to_use = player_scene
-		if scene_to_use == null:
+		if player_scene == null:
 			return
-		var remote_player = scene_to_use.instantiate()
+		var remote_player = player_scene.instantiate()
 		var has_initial_pos := initial_pos is Vector2
 		var spawn_pos: Vector2 = initial_pos if has_initial_pos else Vector2(-9999, -9999)
 		remote_player.global_position = spawn_pos
@@ -559,6 +579,8 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		var remote_subclass: PlayerClass = MultiplayerManager.get_player_subclass(user_id)
 		if remote_subclass != null and remote_player.has_method("apply_subclass_modifiers"):
 			remote_player.apply_subclass_modifiers(remote_subclass)
+		# Apply variant visuals (sprite frames + shader material) for correct color
+		_apply_remote_variant_visuals(remote_player, remote_variant, remote_player_class)
 		add_child(remote_player)
 		# Register with MultiplayerUtils for interpolation
 		MultiplayerUtils.register_remote_player(user_id, remote_player, spawn_pos, has_initial_pos)
@@ -566,22 +588,25 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		_add_player_minimap_indicator(user_id, spawn_pos)
 		_apply_authoritative_player_info(user_id, player_info.get("ign", ""), player_info.get("is_host", false))
 
-func _spawn_remote_attack(user_id: String, pos: Vector2, rotation_angle: float):
+func _spawn_remote_attack(user_id: String, _pos: Vector2, rotation_angle: float):
 	# Spawn slash particles for remote player
 	if not MultiplayerUtils.has_remote_player(user_id):
+		_debug_log("Remote player not found for attack: %s" % user_id)
 		return
 	
 	var player_data = MultiplayerUtils.get_remote_players()[user_id]
+	# Clear pending_attack to prevent double-spawn from snapshot path
+	player_data.pending_attack = null
 	var remote_player = player_data.node
 	
-	# Play attack animation on remote player sprite
-	if is_instance_valid(remote_player):
-		var sprite = remote_player.get_node_or_null("AnimatedSprite2D")
-		if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
-			sprite.play("attack")
-	
+	# Use the remote player's current visual position for the slash
 	if is_instance_valid(remote_player) and remote_player.has_method("emit_attack_particles_at"):
-		remote_player.emit_attack_particles_at(pos, rotation_angle)
+		var attack_dir := Vector2(cos(rotation_angle), sin(rotation_angle))
+		var slash_pos: Vector2 = remote_player.global_position + attack_dir * 12
+		_debug_log("Spawning remote attack for %s at %s rotation %s" % [user_id, slash_pos, rotation_angle])
+		remote_player.emit_attack_particles_at(slash_pos, rotation_angle)
+	else:
+		_debug_log("Remote player %s invalid or missing emit_attack_particles_at method" % user_id)
 
 
 func _find_remote_player_near_position(pos: Vector2, max_distance: float = 64.0) -> Node:
@@ -616,7 +641,7 @@ func _on_match_presence(presence_event):
 		if join.user_id == MultiplayerManager.session.user_id:
 			continue
 		if not MultiplayerManager.players.has(join.user_id):
-			MultiplayerManager.players[join.user_id] = {"ign": "", "is_host": false, "presence": join}
+			MultiplayerManager.players[join.user_id] = {"ign": "", "is_host": false, "presence": join, "slime_variant": "blue"}
 			_debug_log("Added to players dict. Total players: %d" % MultiplayerManager.players.size())
 			MultiplayerManager.player_joined.emit(join.user_id, "Player", false)
 		else:
@@ -811,15 +836,19 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		var is_attacking = player_data.get("is_attacking", false)
 		var is_dashing = player_data.get("is_dashing", false)
 		var attack_rotation = player_data.get("attack_rotation", 0.0)
+		var attack_seq = int(player_data.get("attack_seq", 0))
 		var ign = player_data.get("ign", "Unknown")
 		var is_host_flag = player_data.get("is_host", false)
+		var snapshot_variant = str(player_data.get("slime_variant", ""))
 
 		var existing_info = MultiplayerManager.players.get(user_id, {})
+		# Prefer snapshot variant, fall back to existing, then default
+		var resolved_variant = snapshot_variant if not snapshot_variant.is_empty() else str(existing_info.get("slime_variant", "blue"))
 		MultiplayerManager.players[user_id] = {
 			"ign": ign,
 			"is_host": is_host_flag,
 			"presence": existing_info.get("presence", null),
-			"slime_variant": existing_info.get("slime_variant", "blue")
+			"slime_variant": resolved_variant
 		}
 		_apply_authoritative_player_info(user_id, ign, is_host_flag)
 		
@@ -835,12 +864,12 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 				"ign": ign,
 				"is_host": is_host_flag,
 				"presence": existing_info.get("presence", null),
-				"slime_variant": existing_info.get("slime_variant", "blue")
+				"slime_variant": resolved_variant
 			}
 			_spawn_player_for_user(user_id, new_pos)
 		
 		if MultiplayerUtils.has_remote_player(user_id):
-			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation)
+			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation, attack_seq)
 			_update_player_minimap_indicator(user_id, new_pos)
 			
 			# Check for pending attack (slash effect)
@@ -880,7 +909,8 @@ func _handle_player_join(data: Dictionary) -> void:
 	MultiplayerManager.players[user_id] = {
 		"ign": ign,
 		"is_host": is_host_flag,
-		"presence": existing_info.get("presence", null)
+		"presence": existing_info.get("presence", null),
+		"slime_variant": existing_info.get("slime_variant", "blue")
 	}
 	
 	if not MultiplayerUtils.has_remote_player(user_id):

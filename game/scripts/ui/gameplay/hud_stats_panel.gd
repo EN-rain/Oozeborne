@@ -2,10 +2,10 @@ extends Control
 class_name HudStatsPanel
 
 const SkillTreeData := preload("res://scripts/globals/skill_tree_runtime_data.gd")
-const BREAKDOWN_BASE_COLOR := Color("8fd3ff")
-const BREAKDOWN_LEVEL_COLOR := Color("8ef0a7")
-const BREAKDOWN_CLASS_COLOR := Color("ffd37a")
-const BREAKDOWN_TREE_COLOR := Color("ff94cf")
+@export var breakdown_base_color: Color = Color("8fd3ff")
+@export var breakdown_level_color: Color = Color("8ef0a7")
+@export var breakdown_class_color: Color = Color("ffd37a")
+@export var breakdown_tree_color: Color = Color("ff94cf")
 
 @onready var hp_stat_card: PanelContainer = %HPCard
 @onready var attack_stat_card: PanelContainer = %AttackCard
@@ -217,7 +217,7 @@ func _render_breakdown_tokens(components: Array) -> void:
 		_set_breakdown_label(
 			_stat_breakdown_component_labels[index],
 			str(component.get("value", "0")),
-			component.get("color", BREAKDOWN_BASE_COLOR),
+			component.get("color", breakdown_base_color),
 			str(component.get("tooltip", ""))
 		)
 		if index < component_count - 1 and index < _stat_breakdown_operator_labels.size():
@@ -226,7 +226,7 @@ func _render_breakdown_tokens(components: Array) -> void:
 
 func _clear_stat_breakdown_tokens() -> void:
 	for label in _stat_breakdown_component_labels:
-		_set_breakdown_label(label, "", BREAKDOWN_BASE_COLOR, "", false)
+		_set_breakdown_label(label, "", breakdown_base_color, "", false)
 	for label in _stat_breakdown_operator_labels:
 		_set_breakdown_label(label, "", Color(1, 1, 1, 0.52), "", false)
 
@@ -277,10 +277,10 @@ func _build_hp_breakdown(player: CharacterBody2D, base_stat_resource: PlayerStat
 	return {
 		"title": "HP",
 		"components": [
-			_make_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base HP"),
-			_make_breakdown_component(level_bonus, BREAKDOWN_LEVEL_COLOR, "Level HP Bonus"),
-			_make_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class HP Bonus"),
-			_make_breakdown_component(skill_tree_bonus, BREAKDOWN_TREE_COLOR, "Skill Tree HP Bonus"),
+			_make_breakdown_component(base_value, breakdown_base_color, "Base HP"),
+			_make_breakdown_component(level_bonus, breakdown_level_color, "Level HP Bonus"),
+			_make_breakdown_component(class_bonus, breakdown_class_color, "Class HP Bonus"),
+			_make_breakdown_component(skill_tree_bonus, breakdown_tree_color, "Skill Tree HP Bonus"),
 		]
 	}
 
@@ -296,10 +296,10 @@ func _build_attack_breakdown(player: CharacterBody2D, base_stat_resource: Player
 	return {
 		"title": "Attack",
 		"components": [
-			_make_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base Attack"),
-			_make_breakdown_component(level_bonus, BREAKDOWN_LEVEL_COLOR, "Level Attack Bonus"),
-			_make_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class Attack Bonus"),
-			_make_breakdown_component(skill_tree_bonus, BREAKDOWN_TREE_COLOR, "Skill Tree Attack Bonus"),
+			_make_breakdown_component(base_value, breakdown_base_color, "Base Attack"),
+			_make_breakdown_component(level_bonus, breakdown_level_color, "Level Attack Bonus"),
+			_make_breakdown_component(class_bonus, breakdown_class_color, "Class Attack Bonus"),
+			_make_breakdown_component(skill_tree_bonus, breakdown_tree_color, "Skill Tree Attack Bonus"),
 		]
 	}
 
@@ -310,8 +310,8 @@ func _build_defense_breakdown(player: CharacterBody2D) -> Dictionary:
 	return {
 		"title": "Defense",
 		"components": [
-			_make_percent_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base Defense"),
-			_make_percent_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class Defense Bonus"),
+			_make_percent_breakdown_component(base_value, breakdown_base_color, "Base Defense"),
+			_make_percent_breakdown_component(class_bonus, breakdown_class_color, "Class Defense Bonus"),
 		]
 	}
 
@@ -327,10 +327,10 @@ func _build_speed_breakdown(player: CharacterBody2D, base_stat_resource: PlayerS
 	return {
 		"title": "Speed",
 		"components": [
-			_make_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base Speed"),
-			_make_breakdown_component(level_bonus, BREAKDOWN_LEVEL_COLOR, "Level Speed Bonus"),
-			_make_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class Speed Bonus"),
-			_make_breakdown_component(skill_tree_bonus, BREAKDOWN_TREE_COLOR, "Skill Tree Speed Bonus"),
+			_make_breakdown_component(base_value, breakdown_base_color, "Base Speed"),
+			_make_breakdown_component(level_bonus, breakdown_level_color, "Level Speed Bonus"),
+			_make_breakdown_component(class_bonus, breakdown_class_color, "Class Speed Bonus"),
+			_make_breakdown_component(skill_tree_bonus, breakdown_tree_color, "Skill Tree Speed Bonus"),
 		]
 	}
 
@@ -346,10 +346,10 @@ func _build_crit_rate_breakdown(player: CharacterBody2D, base_stat_resource: Pla
 	return {
 		"title": "Crit Rate",
 		"components": [
-			_make_percent_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base Crit Rate"),
-			_make_percent_breakdown_component(level_bonus, BREAKDOWN_LEVEL_COLOR, "Level Crit Rate Bonus"),
-			_make_percent_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class Crit Rate Bonus"),
-			_make_percent_breakdown_component(skill_tree_bonus, BREAKDOWN_TREE_COLOR, "Skill Tree Crit Rate Bonus"),
+			_make_percent_breakdown_component(base_value, breakdown_base_color, "Base Crit Rate"),
+			_make_percent_breakdown_component(level_bonus, breakdown_level_color, "Level Crit Rate Bonus"),
+			_make_percent_breakdown_component(class_bonus, breakdown_class_color, "Class Crit Rate Bonus"),
+			_make_percent_breakdown_component(skill_tree_bonus, breakdown_tree_color, "Skill Tree Crit Rate Bonus"),
 		]
 	}
 
@@ -365,10 +365,10 @@ func _build_crit_damage_breakdown(player: CharacterBody2D, base_stat_resource: P
 	return {
 		"title": "Crit Damage",
 		"components": [
-			_make_percent_breakdown_component(base_value, BREAKDOWN_BASE_COLOR, "Base Crit Damage Bonus"),
-			_make_percent_breakdown_component(level_bonus, BREAKDOWN_LEVEL_COLOR, "Level Crit Damage Bonus"),
-			_make_percent_breakdown_component(class_bonus, BREAKDOWN_CLASS_COLOR, "Class Crit Damage Bonus"),
-			_make_percent_breakdown_component(skill_tree_bonus, BREAKDOWN_TREE_COLOR, "Skill Tree Crit Damage Bonus"),
+			_make_percent_breakdown_component(base_value, breakdown_base_color, "Base Crit Damage Bonus"),
+			_make_percent_breakdown_component(level_bonus, breakdown_level_color, "Level Crit Damage Bonus"),
+			_make_percent_breakdown_component(class_bonus, breakdown_class_color, "Class Crit Damage Bonus"),
+			_make_percent_breakdown_component(skill_tree_bonus, breakdown_tree_color, "Skill Tree Crit Damage Bonus"),
 		]
 	}
 

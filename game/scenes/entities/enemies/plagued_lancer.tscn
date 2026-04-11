@@ -235,6 +235,9 @@ script = ExtResource("24_ae6dh")
 
 [node name="DamageTimer" type="Timer" parent="." unique_id=1736281962]
 
+[node name="AttackAnimationTimer" type="Timer" parent="."]
+one_shot = true
+
 [node name="HealthBarHideTimer" type="Timer" parent="." unique_id=324418883]
 wait_time = 5.0
 

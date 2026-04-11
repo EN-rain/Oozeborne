@@ -14,7 +14,7 @@ extends Control
 @onready var register_button: Button = %RegisterButton
 @onready var status_label: Label = %StatusLabel
 
-@export_file("*.tscn") var main_menu_scene_path: String
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 @export var login_tab_title: String = "Login"
 @export var register_tab_title: String = "Register"
 @export var default_status_color: Color = Color(0.62, 0.66, 0.8, 0.85)
@@ -214,7 +214,8 @@ func _go_to_main_menu_with_transition() -> void:
 func _deferred_go_to_main_menu() -> void:
 	if not is_inside_tree():
 		return
-	get_tree().change_scene_to_file(main_menu_scene_path)
+	if not main_menu_scene_path.is_empty():
+		get_tree().change_scene_to_file(main_menu_scene_path)
 
 
 func _on_animation_finished(animation_name: StringName) -> void:

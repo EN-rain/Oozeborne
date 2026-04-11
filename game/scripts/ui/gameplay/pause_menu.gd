@@ -7,14 +7,8 @@ extends CanvasLayer
 @onready var save_round_button: Button = %SaveRoundButton
 @onready var menu_button: Button = %MenuButton
 
-@export_file("*.tscn") var main_menu_scene_path: String
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 
-
-func _get_solo_run_save_manager() -> Node:
-	var tree := get_tree()
-	if tree == null or tree.root == null:
-		return null
-	return tree.root.get_node_or_null("/root/SoloRunSaveManager")
 
 func _ready():
 	show()
@@ -54,7 +48,8 @@ func _on_restart_pressed():
 func _on_menu_pressed():
 	get_tree().paused = false
 	await MultiplayerManager.disconnect_server()
-	get_tree().change_scene_to_file(main_menu_scene_path)
+	if not main_menu_scene_path.is_empty():
+		get_tree().change_scene_to_file(main_menu_scene_path)
 
 
 func _on_save_round_pressed():
@@ -64,8 +59,7 @@ func _on_save_round_pressed():
 	var current_scene := tree.current_scene
 	if current_scene == null:
 		return
-	var save_manager := _get_solo_run_save_manager()
-	var saved: bool = save_manager != null and bool(save_manager.call("save_current_run_from_scene", current_scene))
+	var saved: bool = SoloRunSaveManager.save_current_run_from_scene(current_scene)
 	if save_round_button != null:
 		save_round_button.text = "Saved" if saved else "Save Failed"
 

@@ -292,7 +292,9 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         input_seq = existing.input_seq or 0,
         is_attacking = existing.is_attacking or false,
         is_dashing = existing.is_dashing or false,
-        attack_rotation = existing.attack_rotation or 0.0
+        attack_rotation = existing.attack_rotation or 0.0,
+        attack_seq = existing.attack_seq or 0,
+        slime_variant = existing.slime_variant or "blue"
     }
     nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
     return state, true
@@ -359,6 +361,9 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 player.is_attacking = input.is_attacking or false
                 player.is_dashing = input.is_dashing or false
                 player.attack_rotation = input.attack_rotation or 0.0
+                if input.attack_seq and input.attack_seq > (player.attack_seq or 0) then
+                    player.attack_seq = input.attack_seq
+                end
             end
         elseif message.op_code == OP_START_GAME then
             local sender_player = state.players[message.sender.user_id]
@@ -394,13 +399,20 @@ function M.match_loop(context, dispatcher, tick, state, messages)
             local info = nk.json_decode(message.data)
             nk.logger_info("Received op_code=0 message type=" .. (info and info.type or "nil") .. " from=" .. message.sender.user_id)
             if info and state.players[message.sender.user_id] then
-                local player = state.players[message.sender.user_id]
                 if info.type == "player_info" then
-                    if info.ign and info.ign ~= "" then player.ign = info.ign end
-                    if info.is_host == true then
-                        state.host_user_id = message.sender.user_id
+                    -- Update the TARGET player (from data.user_id), not the sender
+                    local target_id = info.user_id or message.sender.user_id
+                    if state.players[target_id] then
+                        local target_player = state.players[target_id]
+                        if info.ign and info.ign ~= "" then target_player.ign = info.ign end
+                        if info.slime_variant and info.slime_variant ~= "" then target_player.slime_variant = info.slime_variant end
+                        if info.is_host == true then
+                            state.host_user_id = target_id
+                        end
+                        target_player.is_host = target_id == state.host_user_id
                     end
-                    player.is_host = message.sender.user_id == state.host_user_id
+                    -- Relay player_info to all other clients so they see correct names
+                    dispatcher.broadcast_message(0, message.data)
                 elseif info.type == "chat_message" then
                     -- Relay chat messages to all players
                     nk.logger_info("Relaying chat_message: sender=" .. tostring(info.sender) .. " message=" .. tostring(info.message))
@@ -409,7 +421,13 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                         sender = info.sender,
                         message = info.message
                     }))
-                elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" then
+                elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" or info.type == "player_attack" or info.type == "player_loaded" then
+                    -- Update slime_variant from class_selected
+                    if info.type == "class_selected" and info.user_id and state.players[info.user_id] then
+                        if info.slime_variant and info.slime_variant ~= "" then
+                            state.players[info.user_id].slime_variant = info.slime_variant
+                        end
+                    end
                     -- Relay these message types to all players
                     dispatcher.broadcast_message(0, message.data)
                 elseif info.type == "admin_action" then
@@ -540,7 +558,9 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 input_seq = p.input_seq or 0,
                 is_attacking = p.is_attacking or false,
                 is_dashing = p.is_dashing or false,
-                attack_rotation = p.attack_rotation or 0.0
+                attack_rotation = p.attack_rotation or 0.0,
+                attack_seq = p.attack_seq or 0,
+                slime_variant = p.slime_variant or "blue"
             })
         end
         dispatcher.broadcast_message(OP_STATE, nk.json_encode(snapshot))

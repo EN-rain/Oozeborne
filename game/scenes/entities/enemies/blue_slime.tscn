@@ -318,6 +318,9 @@ wait_time = 5.0
 [node name="DamageTimer" type="Timer" parent="." unique_id=1857134794]
 one_shot = true
 
+[node name="AttackAnimationTimer" type="Timer" parent="."]
+one_shot = true
+
 [node name="Health" type="Node2D" parent="." unique_id=1628441053]
 script = ExtResource("5_7qf5q")
 max_health = 30

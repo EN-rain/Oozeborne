@@ -2,12 +2,13 @@ extends Node
 signal active_class_changed(active_class)
 
 const CAROUSEL_SLOT_RELS := [-2, -1, 0, 1, 2]
-const DRAG_SNAP_DISTANCE := 140.0
-const DRAG_TRIGGER_DISTANCE := 55.0
-const CLASS_NAME_IDLE_PULSE_SPEED := 3.2
-const CLASS_NAME_IDLE_LIFT := 5.0
-const CLASS_NAME_CENTER_SCALE := 1.16
-const CLASS_NAME_SIDE_ALPHA := 0.72
+
+@export var drag_snap_distance: float = 140.0
+@export var drag_trigger_distance: float = 55.0
+@export var class_name_idle_pulse_speed: float = 3.2
+@export var class_name_idle_lift: float = 5.0
+@export var class_name_center_scale: float = 1.16
+@export var class_name_side_alpha: float = 0.72
 
 @export var slime_preview_shader: Shader
 
@@ -114,7 +115,7 @@ func _input(event: InputEvent) -> void:
 
 		if not event.pressed and _is_dragging_carousel:
 			_is_dragging_carousel = false
-			if abs(_drag_delta_x) >= DRAG_TRIGGER_DISTANCE:
+			if abs(_drag_delta_x) >= drag_trigger_distance:
 				_animate_carousel_shift(1 if _drag_delta_x < 0.0 else -1)
 			else:
 				var clicked_slot_idx: int = _get_clicked_carousel_slot_index(event.position)
@@ -131,7 +132,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion and _is_dragging_carousel:
 		_drag_delta_x = event.position.x - _drag_start_pos.x
-		_render_carousel(clamp(_drag_delta_x / DRAG_SNAP_DISTANCE, -1.0, 1.0))
+		_render_carousel(clamp(_drag_delta_x / drag_snap_distance, -1.0, 1.0))
 		get_viewport().set_input_as_handled()
 
 
@@ -245,11 +246,11 @@ func _render_carousel(progress: float = 0.0) -> void:
 			var focus: float = float(clamp(1.0 - blended_center_weight * 0.52, 0.0, 1.0))
 			var pulse: float = 0.0
 			if direction == 0:
-				pulse = float(max(sin(_carousel_idle_time * CLASS_NAME_IDLE_PULSE_SPEED), 0.0) * focus)
+				pulse = float(max(sin(_carousel_idle_time * class_name_idle_pulse_speed), 0.0) * focus)
 			var font_size: float = float(lerp(float(from_layout["font_size"]), float(to_layout["font_size"]), t) + focus * 3.0 + pulse * 2.0)
 			name_label.add_theme_font_size_override("font_size", roundi(font_size))
 			name_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-			name_label.scale = Vector2.ONE.lerp(Vector2.ONE * CLASS_NAME_CENTER_SCALE, focus)
+			name_label.scale = Vector2.ONE.lerp(Vector2.ONE * class_name_center_scale, focus)
 			name_label.scale += Vector2.ONE * pulse * 0.03
 			var label_top: float = float(from_layout["label_top"])
 			var label_bottom: float = float(from_layout["label_bottom"])
@@ -257,10 +258,10 @@ func _render_carousel(progress: float = 0.0) -> void:
 			if direction == 0:
 				label_top = float(to_layout["label_top"])
 				label_bottom = float(to_layout["label_bottom"])
-				lift = float(focus * 8.0 + pulse * CLASS_NAME_IDLE_LIFT)
+				lift = float(focus * 8.0 + pulse * class_name_idle_lift)
 			name_label.offset_top = label_top - lift
 			name_label.offset_bottom = label_bottom - lift
-			name_label.modulate = Color(1, 1, 1, clamp(CLASS_NAME_SIDE_ALPHA + focus * 0.48 + pulse * 0.08, 0.0, 1.0))
+			name_label.modulate = Color(1, 1, 1, clamp(class_name_side_alpha + focus * 0.48 + pulse * 0.08, 0.0, 1.0))
 
 		var center_weight = abs((slot_idx - 2) + _carousel_progress)
 		var alpha = clamp(1.0 - center_weight * 0.22, 0.3, 1.0)
@@ -388,14 +389,29 @@ func _on_right_pressed() -> void:
 
 
 func _assign_random_preview_variants() -> void:
+	# Use deterministic seed based on match_id so all clients get the same shuffle
+	var seed_string: String = MultiplayerManager.match_id
+	if seed_string.is_empty():
+		seed_string = str(Time.get_unix_time_from_system())
+	_slime_rng.seed = hash(seed_string)
+	
 	var available_variants: Array = SlimePaletteRegistry.get_variant_order()
-	available_variants.shuffle()
+	_seeded_shuffle(available_variants, _slime_rng)
 	_preview_slime_variants.clear()
 	for selected_name in _view.get_class_order():
 		if available_variants.is_empty():
 			available_variants = SlimePaletteRegistry.get_variant_order()
-			available_variants.shuffle()
+			_seeded_shuffle(available_variants, _slime_rng)
 		_preview_slime_variants[selected_name] = String(available_variants.pop_front())
+
+
+func _seeded_shuffle(arr: Array, rng: RandomNumberGenerator) -> void:
+	# Fisher-Yates shuffle with custom RNG
+	for i in range(arr.size() - 1, 0, -1):
+		var j = rng.randi_range(0, i)
+		var tmp = arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
 
 
 func _get_preview_variant_for_class(selected_name: String) -> String:

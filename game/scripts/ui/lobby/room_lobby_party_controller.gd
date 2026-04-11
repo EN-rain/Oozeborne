@@ -63,6 +63,18 @@ func bootstrap_party_entries() -> void:
 		refresh_party_cards()
 		return
 
+	# Ensure local player is in MultiplayerManager.players with current slime_variant
+	var local_id = MultiplayerManager.session.user_id
+	if not MultiplayerManager.players.has(local_id):
+		MultiplayerManager.players[local_id] = {
+			"ign": MultiplayerManager.player_ign,
+			"is_host": MultiplayerManager.is_host,
+			"presence": null,
+			"slime_variant": MultiplayerManager.player_slime_variant
+		}
+	else:
+		MultiplayerManager.players[local_id]["slime_variant"] = MultiplayerManager.player_slime_variant
+
 	add_player_entry(
 		MultiplayerManager.session.user_id,
 		MultiplayerManager.player_ign + " (You)",
@@ -203,6 +215,12 @@ func on_select_class_pressed() -> void:
 		MultiplayerManager.player_class = _selected_class
 		if MultiplayerManager.session != null:
 			MultiplayerManager.set_player_class(MultiplayerManager.session.user_id, _selected_class)
+		# Set slime variant based on carousel preview for this class
+		if _carousel_controller != null and _carousel_controller.has_method("_get_preview_variant_for_class"):
+			MultiplayerManager.player_slime_variant = _carousel_controller._get_preview_variant_for_class(active_class)
+			# Also update in players dictionary for party card display
+			if MultiplayerManager.session != null and MultiplayerManager.players.has(MultiplayerManager.session.user_id):
+				MultiplayerManager.players[MultiplayerManager.session.user_id]["slime_variant"] = MultiplayerManager.player_slime_variant
 		# Update local player entry with selected class
 		if MultiplayerManager.session != null and _player_entries.has(MultiplayerManager.session.user_id):
 			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = active_class
@@ -212,7 +230,8 @@ func on_select_class_pressed() -> void:
 			MultiplayerManager.send_match_state({
 				"type": "class_selected",
 				"user_id": MultiplayerManager.session.user_id,
-				"class_name": active_class
+				"class_name": active_class,
+				"slime_variant": MultiplayerManager.player_slime_variant
 			})
 
 
@@ -315,12 +334,15 @@ func handle_player_info_state(data: Dictionary) -> void:
 	_refresh_select_class_button_state()
 
 
-func handle_remote_class_selected(sender_id: String, selected_name: String) -> void:
+func handle_remote_class_selected(sender_id: String, selected_name: String, slime_variant: String = "") -> void:
 	if sender_id.is_empty() or sender_id == MultiplayerManager.session.user_id:
 		return
 	var player_class := get_player_class_for_name(selected_name)
 	if player_class != null:
 		MultiplayerManager.set_player_class(sender_id, player_class)
+	# Update slime variant if provided
+	if not slime_variant.is_empty() and MultiplayerManager.players.has(sender_id):
+		MultiplayerManager.players[sender_id]["slime_variant"] = slime_variant
 	# Update player entry with selected class
 	if _player_entries.has(sender_id):
 		_player_entries[sender_id]["selected_class"] = selected_name

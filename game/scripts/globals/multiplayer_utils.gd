@@ -62,6 +62,7 @@ func register_remote_player(user_id: String, player_node: Node, initial_pos: Vec
 		"server_velocity": Vector2.ZERO,  # Track server velocity for animation
 		"is_attacking": false,  # Track attack state
 		"is_dashing": false,  # Track dash state
+		"attack_seq": 0,  # Track attack sequence for reliable detection
 		"pending_attack": null  # Pending attack info for slash spawning
 	}
 
@@ -73,7 +74,7 @@ func unregister_remote_player(user_id: String) -> void:
 
 
 ## Update target position for a remote player with velocity
-func update_remote_player_target(user_id: String, target_pos: Vector2, velocity: Vector2, facing: int, is_attacking: bool = false, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
+func update_remote_player_target(user_id: String, target_pos: Vector2, velocity: Vector2, facing: int, is_attacking: bool = false, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0) -> void:
 	if not _remote_players.has(user_id):
 		_debug_log("WARNING: No remote player found for user_id: %s" % user_id)
 		return
@@ -107,38 +108,55 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	player_data.server_facing = facing  # Store server-facing direction
 	player_data.server_velocity = velocity  # Store server velocity for animation
 	
-	# Track attack state change (edge detection)
-	var was_attacking = player_data.is_attacking
+	# Track attack state
 	player_data.is_attacking = is_attacking
 	
 	# Track dash state
 	player_data.is_dashing = is_dashing
 	
-	# Only trigger attack animation on rising edge (was false, now true)
-	if is_attacking and not was_attacking:
-		_debug_log("Attack detected for remote player at %s" % str(player_data.node.global_position))
+	# Detect new attack via attack_seq change (more reliable than is_attacking rising edge)
+	# attack_seq increments on each attack, so a change means a new attack occurred
+	if attack_seq > 0 and attack_seq != player_data.attack_seq:
+		_debug_log("Attack seq changed for remote player: %d -> %d at %s" % [player_data.attack_seq, attack_seq, str(player_data.node.global_position)])
+		player_data.attack_seq = attack_seq
 		# Store attack info using player's VISUAL position and attack rotation
 		player_data.pending_attack = {"pos": player_data.node.global_position, "rotation": attack_rotation}
+	elif attack_seq > 0:
+		player_data.attack_seq = attack_seq
 	
 	# Handle dash visual effect
 	var dash_particles = player_data.node.get_node_or_null("DashParticles")
 	var dash_trail = player_data.node.get_node_or_null("DashTrail")
+	var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 	if is_dashing:
-		if dash_particles and not dash_particles.emitting:
-			dash_particles.emitting = true
-		if dash_trail and not dash_trail.emitting:
-			dash_trail.emitting = true
-		var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
+		# Set particle direction based on velocity (like solo play)
+		var dash_vel = velocity if velocity.length() > 1.0 else Vector2(facing, 0)
+		var angle = dash_vel.angle()
+		if dash_particles:
+			dash_particles.direction = Vector2(cos(angle), sin(angle))
+			if not dash_particles.emitting:
+				dash_particles.emitting = true
+		if dash_trail:
+			dash_trail.direction = Vector2(cos(angle), sin(angle))
+			if not dash_trail.emitting:
+				dash_trail.emitting = true
 		if sprite:
 			sprite.modulate = Color(1.2, 1.2, 1.5)
+			if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
+				if sprite.animation != "dash":
+					sprite.play("dash")
 	else:
 		if dash_particles:
 			dash_particles.emitting = false
 		if dash_trail:
 			dash_trail.emitting = false
-		var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
 		if sprite:
 			sprite.modulate = Color.WHITE
+			# Reset animation from dash back to idle/walk
+			if sprite.animation == "dash":
+				var target_anim := "walk" if velocity.length() > 5.0 else "idle"
+				if sprite.sprite_frames and sprite.sprite_frames.has_animation(target_anim):
+					sprite.play(target_anim)
 
 
 ## Interpolate all remote players using buffered timeline interpolation
@@ -189,9 +207,19 @@ func interpolate_remote_players(delta: float, _lerp_speed: float = 8.0) -> void:
 		var sprite = node.get_node_or_null("AnimatedSprite2D")
 		if sprite:
 			# Use server-facing direction for sprite flip
-			sprite.flip_h = player_data.server_facing < 0
+			# facing=1 means right (flip_h=true), facing=-1 means left (flip_h=false)
+			sprite.flip_h = player_data.server_facing > 0
 			
 			_update_remote_player_animation(sprite, player_data.server_velocity, player_data.is_attacking, player_data.is_dashing)
+		
+		# Process pending attack (spawn slash effect)
+		if player_data.pending_attack != null:
+			var atk = player_data.pending_attack
+			player_data.pending_attack = null
+			if node.has_method("emit_attack_particles_at"):
+				var atk_pos: Vector2 = atk.get("pos", node.global_position)
+				var atk_rot: float = atk.get("rotation", 0.0)
+				node.emit_attack_particles_at(atk_pos, atk_rot)
 
 
 ## Extract sender_id from match state, handling broadcast echoes
@@ -244,7 +272,7 @@ func set_local_player(player_node: Node) -> void:
 	_local_player_node = weakref(player_node)
 
 ## Send input to authoritative server (replaces send_position)
-func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
+func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0) -> void:
 	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
@@ -257,6 +285,7 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing
 		"facing": facing,
 		"is_dashing": is_dashing,
 		"attack_rotation": attack_rotation,
+		"attack_seq": attack_seq,
 		"seq": _input_sequence
 	}
 	
@@ -309,17 +338,25 @@ func _send_input_updates(player_node: Node) -> void:
 		if player_node.get("facing") != null:
 			facing = player_node.facing
 		
-		# Attack slash sync is event-based now, so the input stream only needs dash state.
+		# Attack slash sync uses both event-based messages AND input stream state.
 		var is_attacking := false
 		var is_dashing := false
+		var attack_rotation := 0.0
+		var attack_seq := 0
 		if player_node.get("is_dashing") != null:
 			is_dashing = player_node.is_dashing
+		if player_node.get("is_attacking") != null:
+			is_attacking = player_node.is_attacking
+		if player_node.get("attack_rotation") != null:
+			attack_rotation = player_node.attack_rotation
+		if player_node.get("attack_seq") != null:
+			attack_seq = player_node.attack_seq
 		
-		# Send input to server with facing and dash state.
+		# Send input to server with facing, dash, and attack state.
 		if not MultiplayerManager.is_socket_open():
 			_debug_log("Stopping input updates - socket closed before send")
 			break
-		send_input(move_x, move_y, is_attacking, facing, is_dashing)
+		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation, attack_seq)
 		
 		# Wait for next input tick
 		await Engine.get_main_loop().create_timer(INPUT_RATE).timeout
@@ -558,12 +595,11 @@ func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: 
 		if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
 			if sprite.animation != "dash":
 				sprite.play("dash")
-			return
+		return
+	# Attack visual is the slash effect, not a sprite animation
+	# Keep current animation during attack (idle or walk) 
 	if is_attacking:
-		if sprite.sprite_frames and sprite.sprite_frames.has_animation("attack"):
-			if sprite.animation != "attack":
-				sprite.play("attack")
-			return
+		return
 	var target_animation := "walk" if server_velocity.length() > 5.0 else "idle"
 	if sprite.animation != target_animation:
 		sprite.play(target_animation)

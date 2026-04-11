@@ -10,18 +10,15 @@ signal died()
 
 var current_health: int
 var health_bar: ProgressBar
-var hide_timer: Timer
+@onready var hide_timer: Timer = $HideTimer
 var is_dead := false
 
 func initialize(healthbar: ProgressBar):
 	current_health = max_health
 	
 	# Setup hide timer
-	hide_timer = Timer.new()
 	hide_timer.wait_time = health_bar_hide_time
-	hide_timer.one_shot = true
 	hide_timer.timeout.connect(_on_hide_timer_timeout)
-	add_child(hide_timer)
 	
 	# Setup health bar
 	health_bar = healthbar

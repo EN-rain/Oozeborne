@@ -638,6 +638,9 @@ script = ExtResource("12_hudskills")
 active_skill_slot_scene = ExtResource("14_activeslot")
 passive_skill_icon_scene = ExtResource("15_passiveicon")
 
+[node name="CooldownRefreshTimer" type="Timer" parent="Skills"]
+autostart = true
+
 [node name="SkillSlots" type="HBoxContainer" parent="Skills" unique_id=1994296828]
 unique_name_in_owner = true
 layout_mode = 1

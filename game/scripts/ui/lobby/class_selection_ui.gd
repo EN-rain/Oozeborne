@@ -12,7 +12,7 @@ signal class_selected(p_class, sub_class)
 
 @export var auto_start_solo_game: bool = false
 @export_range(1, 11) var max_main_class_options: int = 5
-@export_file("*.tscn") var solo_game_scene_path: String
+@export_file("*.tscn") var solo_game_scene_path: String = "res://scenes/levels/main.tscn"
 @export var main_class_slot_paths: Array[NodePath] = []
 
 @onready var class_name_label: Label = %ClassNameLabel
@@ -190,6 +190,8 @@ func _on_select_pressed() -> void:
 	if selected_class == null:
 		return
 	await _on_select_pressed_for_class(selected_class)
+	if not is_inside_tree():
+		return
 	var tree := get_tree()
 	if tree == null:
 		return
@@ -235,7 +237,8 @@ func _on_select_pressed_for_class(player_class: PlayerClass) -> void:
 		select_button.text = starting_text
 		select_button.disabled = true
 		await get_tree().process_frame
-		get_tree().change_scene_to_file(solo_game_scene_path)
+		if not solo_game_scene_path.is_empty():
+			get_tree().change_scene_to_file(solo_game_scene_path)
 		return
 
 	select_button.text = selected_button_format % selected_class.display_name
