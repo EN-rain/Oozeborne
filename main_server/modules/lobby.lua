@@ -12,6 +12,7 @@ local OP_START_GAME = 5
 -- Constants
 local TICKRATE = 20
 local PLAYER_SPEED = 100.0
+local DASH_SPEED = 400.0
 local SNAP_THRESHOLD = 50.0
 local MIN_PLAYERS_TO_START = 1
 local PLAYER_RADIUS = 6.0
@@ -86,57 +87,13 @@ local function would_cross_player(start_x, start_y, end_x, end_y, other_player)
 end
 
 local function is_blocked_by_any_player(state, moving_user_id, start_x, start_y, end_x, end_y)
-    local probe = { pos_x = end_x, pos_y = end_y }
-    for other_id, other in pairs(state.players) do
-        if other_id ~= moving_user_id and other then
-            if is_overlapping(probe, other) or would_cross_player(start_x, start_y, end_x, end_y, other) then
-                return true
-            end
-        end
-    end
+    -- Players do not collide with each other
     return false
 end
 
 local function resolve_remaining_overlaps(state)
-    local player_ids = {}
-    for user_id, _ in pairs(state.players) do
-        table.insert(player_ids, user_id)
-    end
-
-    table.sort(player_ids)
-
-    for i = 1, #player_ids do
-        local player_a = state.players[player_ids[i]]
-        if player_a then
-            for j = i + 1, #player_ids do
-                local player_b = state.players[player_ids[j]]
-                if player_b and is_overlapping(player_a, player_b) then
-                    local dx = player_a.pos_x - player_b.pos_x
-                    local dy = player_a.pos_y - player_b.pos_y
-                    local distance = math.sqrt(dx * dx + dy * dy)
-                    local min_distance = PLAYER_RADIUS * 2.0
-
-                    local nx = 1.0
-                    local ny = 0.0
-                    if distance > PLAYER_SEPARATION_EPSILON then
-                        nx = dx / distance
-                        ny = dy / distance
-                    end
-
-                    local overlap = min_distance - distance + PLAYER_SEPARATION_EPSILON
-                    local correction = overlap * 0.5
-
-                    player_a.pos_x = player_a.pos_x + nx * correction
-                    player_a.pos_y = player_a.pos_y + ny * correction
-                    player_b.pos_x = player_b.pos_x - nx * correction
-                    player_b.pos_y = player_b.pos_y - ny * correction
-
-                    clamp_player_to_world(player_a)
-                    clamp_player_to_world(player_b)
-                end
-            end
-        end
-    end
+    -- Players do not collide with each other, skip overlap resolution
+    return
 end
 
 -- Admin role constants
@@ -253,6 +210,7 @@ function M.match_init(context, setupstate)
             is_dashing = false,
             attack_rotation = 0.0,
             attack_seq = 0,
+            dash_seq = 0,
             slime_variant = "blue"
         }
         nk.logger_info("match_init host=" .. gamestate.host_user_id .. " spawn=" .. spawn_x .. "," .. spawn_y .. " admin_role=" .. tostring(admin_role))
@@ -296,6 +254,7 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         is_dashing = existing.is_dashing or false,
         attack_rotation = existing.attack_rotation or 0.0,
         attack_seq = existing.attack_seq or 0,
+        dash_seq = existing.dash_seq or 0,
         slime_variant = existing.slime_variant or "blue"
     }
     nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
@@ -316,6 +275,7 @@ function M.match_join(context, dispatcher, tick, state, presences)
                 is_attacking = false, is_dashing = false,
                 attack_rotation = 0.0,
                 attack_seq = 0,
+                dash_seq = 0,
                 slime_variant = "blue"
             }
             state.players[p.user_id] = player
@@ -353,7 +313,11 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 local move_x, move_y = input.move_x or 0, input.move_y or 0
                 local len = math.sqrt(move_x * move_x + move_y * move_y)
                 if len > 1.0 then move_x, move_y = move_x / len, move_y / len end
-                player.vel_x, player.vel_y = move_x * PLAYER_SPEED, move_y * PLAYER_SPEED
+                local speed = PLAYER_SPEED
+                if input.is_dashing then
+                    speed = DASH_SPEED
+                end
+                player.vel_x, player.vel_y = move_x * speed, move_y * speed
                 if input.facing ~= nil then
                     player.facing = input.facing
                 elseif move_x > 0 then
@@ -367,6 +331,9 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 player.attack_rotation = input.attack_rotation or 0.0
                 if input.attack_seq and input.attack_seq > (player.attack_seq or 0) then
                     player.attack_seq = input.attack_seq
+                end
+                if input.dash_seq and input.dash_seq > (player.dash_seq or 0) then
+                    player.dash_seq = input.dash_seq
                 end
             end
         elseif message.op_code == OP_START_GAME then
@@ -564,6 +531,7 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 is_dashing = p.is_dashing or false,
                 attack_rotation = p.attack_rotation or 0.0,
                 attack_seq = p.attack_seq or 0,
+                dash_seq = p.dash_seq or 0,
                 slime_variant = p.slime_variant or "blue"
             })
         end

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://byney87c1siuq" path="res://scenes/ui/class_selection.tscn" id="3_classselect"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop.tscn" id="4_shop"]
 [ext_resource type="PackedScene" uid="uid://cwpucu5aaht6t" path="res://scenes/ui/skill_tree_ui.tscn" id="6_skilltree"]
-[ext_resource type="PackedScene" uid="uid://ct1ttubvyuome" path="res://scenes/ui/dev_tools_panel.tscn" id="7_devtools"]
+[ext_resource type="PackedScene" uid="uid://chat_box_unique_id" path="res://scenes/ui/chat_box.tscn" id="8_chatbox"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_active_skill_slot.tscn" id="14_activeslot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_passive_skill_icon.tscn" id="15_passiveicon"]
 [ext_resource type="Script" uid="uid://cqoajxogtf8m8" path="res://scripts/ui/gameplay/hud_player_panel.gd" id="8_hudplayer"]
@@ -477,18 +477,6 @@ offset_bottom = 115.0
 grow_vertical = 2
 text = "Skill Tree"
 
-[node name="DevTools" type="Button" parent="Control" unique_id=40049839]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_top = 125.0
-offset_right = 104.0
-offset_bottom = 155.0
-grow_vertical = 2
-text = "Dev Tools"
-
 [node name="DebugStatsLabel" type="Label" parent="Control" unique_id=1902204007]
 visible = false
 layout_mode = 0
@@ -510,10 +498,6 @@ mouse_filter = 2
 unique_name_in_owner = true
 visible = false
 
-[node name="DevToolsPanel" parent="." unique_id=595034582 instance=ExtResource("7_devtools")]
-unique_name_in_owner = true
-visible = false
-
 [node name="Death" type="Control" parent="." unique_id=1587043198]
 unique_name_in_owner = true
 visible = false
@@ -524,6 +508,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="ChatBox" parent="." unique_id=2008397099 instance=ExtResource("8_chatbox")]
+unique_name_in_owner = true
+visible = false
 metadata/_edit_use_anchors_ = true
 
 [node name="ColorRect" type="ColorRect" parent="Death" unique_id=1468384267]
@@ -622,17 +610,14 @@ text = "← Retreat to Menu"
 
 [node name="Skills" type="Control" parent="." unique_id=742230347]
 unique_name_in_owner = true
-layout_mode = 3
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -258.0
-offset_top = -115.0
-offset_right = 258.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.15
+anchor_top = 0.87
+anchor_right = 0.85
+anchor_bottom = 0.98
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("12_hudskills")
 active_skill_slot_scene = ExtResource("14_activeslot")
@@ -644,17 +629,12 @@ autostart = true
 [node name="SkillSlots" type="HBoxContainer" parent="Skills" unique_id=1994296828]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -258.0
-offset_top = -57.5
-offset_right = 258.0
-offset_bottom = 57.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+alignment = 1
 theme_override_constants/separation = 12
 
 [node name="ActiveSkillStrip" type="HBoxContainer" parent="Skills/SkillSlots" unique_id=1161022364]
@@ -668,26 +648,13 @@ custom_minimum_size = Vector2(6, 72)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Passive" type="VBoxContainer" parent="Skills" unique_id=1041386290]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -516.0
-offset_top = -57.5
-offset_bottom = 57.5
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="PassiveScroll" type="ScrollContainer" parent="Skills/Passive" unique_id=1538908751]
+[node name="PassiveScroll" type="ScrollContainer" parent="Skills/SkillSlots" unique_id=1538908751]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 vertical_scroll_mode = 2
 
-[node name="PassiveStrip" type="HBoxContainer" parent="Skills/Passive/PassiveScroll" unique_id=1567960377]
+[node name="PassiveStrip" type="HBoxContainer" parent="Skills/SkillSlots/PassiveScroll" unique_id=1567960377]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -980,6 +947,5 @@ theme_override_font_sizes/font_size = 18
 
 [connection signal="pressed" from="Control/Store" to="Control" method="_on_store_pressed"]
 [connection signal="pressed" from="Control/SkillTree" to="Control" method="_on_skill_tree_pressed"]
-[connection signal="pressed" from="Control/DevTools" to="Control" method="_on_dev_tools_pressed"]
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/Restart" to="Death" method="_on_restart_pressed"]
 [connection signal="pressed" from="Death/DeathCard/VBoxContainer/MenuButton" to="Death" method="_on_menu_pressed"]

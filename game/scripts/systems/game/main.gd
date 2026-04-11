@@ -25,8 +25,6 @@ const DEBUG_MAIN_LOGS := false
 var _solo_class_selection_ui: ClassSelectionUI = null
 var _solo_class_locked: bool = false
 var _starting_round_transition: bool = false
-var _dev_tools_panel: Node = null
-
 # FPS/Ping display
 var _fps_label: Label
 @onready var _ping_timer: Timer = %PingTimer
@@ -219,14 +217,8 @@ func _sync_hud_bindings() -> void:
 	if ui == null or player == null:
 		return
 	ui.set_player(player)
-	if _dev_tools_panel == null or not is_instance_valid(_dev_tools_panel):
-		_dev_tools_panel = ui.get_node_or_null("DevToolsPanel")
-	if _dev_tools_panel != null and _dev_tools_panel.has_method("set_player"):
-		_dev_tools_panel.call("set_player", player)
 	if mob_spawner != null:
 		ui.set_mob_spawner(mob_spawner)
-		if _dev_tools_panel != null and _dev_tools_panel.has_method("set_mob_spawner"):
-			_dev_tools_panel.call("set_mob_spawner", mob_spawner)
 
 
 func _setup_player_camera() -> void:
@@ -480,15 +472,19 @@ func _on_match_state(match_state):
 			var msg_user_id = MultiplayerUtils.extract_user_id_from_data(data)
 			if sender_id.is_empty() and not msg_user_id.is_empty():
 				sender_id = msg_user_id
-			
-			# Handle remote player attack
-			if MultiplayerUtils.is_local_player(sender_id):
+		
+		"chat_message":
+			var sender_name = data.get("sender", "Unknown")
+			var message = data.get("message", "")
+			# Skip own messages - chat_box already shows them locally on send
+			if sender_name.strip_edges() == MultiplayerManager.player_ign.strip_edges():
 				return
+			var sender_info = MultiplayerManager.players.get(sender_id, {})
+			var is_admin = sender_info.get("is_admin", false)
+			var is_party_leader = sender_info.get("is_host", false)
 			
-			var attack_pos = data.get("pos", {})
-			var attack_rot = data.get("rot", 0.0)
-			_debug_log("Received attack data rot=%s" % attack_rot)
-			_spawn_remote_attack(sender_id, Vector2(attack_pos.get("x", 0), attack_pos.get("y", 0)), attack_rot)
+			if ui != null and ui.has_method("add_chat_message"):
+				ui.add_chat_message(sender_name, message, is_admin, is_party_leader)
 		
 		
 		"ping":
@@ -582,6 +578,9 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		# Apply variant visuals (sprite frames + shader material) for correct color
 		_apply_remote_variant_visuals(remote_player, remote_variant, remote_player_class)
 		add_child(remote_player)
+		# Ensure remote player cannot collide with anyone (passthrough)
+		remote_player.collision_layer = 0
+		remote_player.collision_mask = 0
 		# Register with MultiplayerUtils for interpolation
 		MultiplayerUtils.register_remote_player(user_id, remote_player, spawn_pos, has_initial_pos)
 		# Add green dot indicator for this player on the minimap
@@ -595,8 +594,6 @@ func _spawn_remote_attack(user_id: String, _pos: Vector2, rotation_angle: float)
 		return
 	
 	var player_data = MultiplayerUtils.get_remote_players()[user_id]
-	# Clear pending_attack to prevent double-spawn from snapshot path
-	player_data.pending_attack = null
 	var remote_player = player_data.node
 	
 	# Use the remote player's current visual position for the slash
@@ -622,12 +619,6 @@ func _find_remote_player_near_position(pos: Vector2, max_distance: float = 64.0)
 			best_node = node
 	return best_node
 
-
-func _spawn_remote_slash(pos: Vector2, rotation_angle: float):
-	# Legacy name retained for compatibility with pending-attack flow.
-	var remote_node := _find_remote_player_near_position(pos)
-	if remote_node != null and remote_node.has_method("emit_attack_particles_at"):
-		remote_node.emit_attack_particles_at(pos, rotation_angle)
 
 func send_attack(pos: Vector2, rotation_angle: float):
 	# Send attack to other players
@@ -837,6 +828,7 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		var is_dashing = player_data.get("is_dashing", false)
 		var attack_rotation = player_data.get("attack_rotation", 0.0)
 		var attack_seq = int(player_data.get("attack_seq", 0))
+		var dash_seq = int(player_data.get("dash_seq", 0))
 		var ign = player_data.get("ign", "Unknown")
 		var is_host_flag = player_data.get("is_host", false)
 		var snapshot_variant = str(player_data.get("slime_variant", ""))
@@ -869,14 +861,8 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 			_spawn_player_for_user(user_id, new_pos)
 		
 		if MultiplayerUtils.has_remote_player(user_id):
-			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation, attack_seq)
+			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation, attack_seq, dash_seq)
 			_update_player_minimap_indicator(user_id, new_pos)
-			
-			# Check for pending attack (slash effect)
-			var pending_attack = MultiplayerUtils.get_pending_attack(user_id)
-			if not pending_attack.is_empty():
-				_debug_log("Spawning remote slash rotation %s" % pending_attack.rotation)
-				_spawn_remote_slash(pending_attack.pos, pending_attack.rotation)
 			
 			# Show player if not visible
 			var node = MultiplayerUtils.get_remote_player_node(user_id)

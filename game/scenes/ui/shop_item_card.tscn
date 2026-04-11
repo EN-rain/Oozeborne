@@ -51,7 +51,9 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [node name="ShopItemCard" type="PanelContainer"]
-custom_minimum_size = Vector2(140, 100)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(120, 100)
 theme_override_styles/panel = SubResource("1_card_panel")
 script = ExtResource("1_shopitemcard")
 affordable_button_style = SubResource("2_buy_normal")

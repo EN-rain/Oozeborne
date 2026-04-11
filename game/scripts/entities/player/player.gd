@@ -8,7 +8,7 @@ signal death_sequence_finished(killer_name: String)
 @export var knockback_decay := 800.0  
 @export var hit_stun_time := 0.2        
 @export var dash_speed := 400.0
-@export var dash_duration := 0.2
+@export var dash_duration := 0.35
 @export var dash_cooldown := 3.0
 @export var basic_attack_cooldown := 0.4
 @export var camera_zoom_step := 0.25
@@ -45,6 +45,7 @@ var is_dashing := false
 var is_attacking := false
 var attack_rotation := 0.0
 var attack_seq := 0  # Incremented on each attack for reliable remote sync
+var dash_seq := 0    # Incremented on each dash for reliable remote sync
 var can_dash := true
 var can_basic_attack := true
 var dash_direction := Vector2.ZERO
@@ -56,6 +57,16 @@ func _get_player_skill_manager() -> Node:
 	return PlayerSkillManager
 
 func _ready():
+	if is_local_player:
+		# Local player on layer 2 (player body), mask layer 1 (world) + 8 (enemies)
+		# This prevents player-player collision while keeping world/enemy collision
+		collision_layer = 2
+		collision_mask = 9  # 1 (world) + 8 (enemies)
+	else:
+		# Remote players: no collision layer/mask so they pass through everyone
+		collision_layer = 0
+		collision_mask = 0
+	
 	_apply_slime_size_tuning()
 	_configure_dash_particles()
 	_capture_original_slime_shader_colors()
@@ -258,6 +269,7 @@ func perform_dash(dir):
 		dir = Vector2(facing, 0)
 	
 	is_dashing = true
+	dash_seq += 1
 	dash_direction = dir.normalized()
 	_update_sprite_facing(dash_direction)
 	if player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation("dash"):

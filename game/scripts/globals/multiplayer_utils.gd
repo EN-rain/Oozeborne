@@ -26,7 +26,7 @@ const DEBUG_MULTIPLAYER_UTILS_LOGS := false
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
 
-var _reconciliation_threshold: float = 15.0  # Snap if desync > 15 pixels
+var _reconciliation_threshold: float = 30.0  # Snap if desync > 30 pixels
 
 ## Prediction enabled flag
 var _prediction_enabled: bool = true
@@ -39,17 +39,25 @@ func _now_sec() -> float:
 var _last_ping_time: float = 0.0
 
 var _jitter_samples: Array = []  # Store recent update intervals
-var _adaptive_interpolation_delay: float = 0.07  # 70ms for smooth interpolation
-const MIN_INTERPOLATION_DELAY: float = 0.05  # 50ms minimum
-const MAX_INTERPOLATION_DELAY: float = 0.12   # 120ms maximum
+var _adaptive_interpolation_delay: float = 0.04  # 40ms for low-latency interpolation
+const MIN_INTERPOLATION_DELAY: float = 0.02  # 20ms minimum
+const MAX_INTERPOLATION_DELAY: float = 0.08   # 80ms maximum
 const POSITION_BUFFER_SIZE: int = 20  # Store last 20 positions for better buffering
 const SMOOTH_DAMP_MAX_SPEED: float = 800.0  # Max interpolation speed
-const EXTRAPOLATION_MAX_TIME: float = 0.15  # Don't extrapolate more than 150ms
+const EXTRAPOLATION_MAX_TIME: float = 0.08  # Don't extrapolate more than 80ms
 
 
 ## Initialize a remote player entry for interpolation
 func register_remote_player(user_id: String, player_node: Node, initial_pos: Vector2, start_visible: bool = false) -> void:
 	var timestamp = _now_sec()
+	
+	# Add collision exception between local and remote player to prevent any physics interaction
+	var local_node = _local_player_node.get_ref()
+	if is_instance_valid(local_node) and is_instance_valid(player_node):
+		if local_node is CharacterBody2D and player_node is CharacterBody2D:
+			local_node.add_collision_exception_with(player_node)
+			player_node.add_collision_exception_with(local_node)
+	
 	_remote_players[user_id] = {
 		"node": player_node,
 		"positions": [{"pos": initial_pos, "timestamp": timestamp, "velocity": Vector2.ZERO}],
@@ -63,6 +71,7 @@ func register_remote_player(user_id: String, player_node: Node, initial_pos: Vec
 		"is_attacking": false,  # Track attack state
 		"is_dashing": false,  # Track dash state
 		"attack_seq": 0,  # Track attack sequence for reliable detection
+		"dash_seq": 0,    # Track dash sequence for reliable detection
 		"pending_attack": null  # Pending attack info for slash spawning
 	}
 
@@ -74,7 +83,7 @@ func unregister_remote_player(user_id: String) -> void:
 
 
 ## Update target position for a remote player with velocity
-func update_remote_player_target(user_id: String, target_pos: Vector2, velocity: Vector2, facing: int, is_attacking: bool = false, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0) -> void:
+func update_remote_player_target(user_id: String, target_pos: Vector2, velocity: Vector2, facing: int, is_attacking: bool = false, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0, dash_seq: int = 0) -> void:
 	if not _remote_players.has(user_id):
 		_debug_log("WARNING: No remote player found for user_id: %s" % user_id)
 		return
@@ -124,39 +133,20 @@ func update_remote_player_target(user_id: String, target_pos: Vector2, velocity:
 	elif attack_seq > 0:
 		player_data.attack_seq = attack_seq
 	
-	# Handle dash visual effect
-	var dash_particles = player_data.node.get_node_or_null("DashParticles")
-	var dash_trail = player_data.node.get_node_or_null("DashTrail")
-	var sprite = player_data.node.get_node_or_null("AnimatedSprite2D")
-	if is_dashing:
-		# Set particle direction based on velocity (like solo play)
-		var dash_vel = velocity if velocity.length() > 1.0 else Vector2(facing, 0)
-		var angle = dash_vel.angle()
-		if dash_particles:
-			dash_particles.direction = Vector2(cos(angle), sin(angle))
-			if not dash_particles.emitting:
-				dash_particles.emitting = true
-		if dash_trail:
-			dash_trail.direction = Vector2(cos(angle), sin(angle))
-			if not dash_trail.emitting:
-				dash_trail.emitting = true
-		if sprite:
-			sprite.modulate = Color(1.2, 1.2, 1.5)
-			if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
-				if sprite.animation != "dash":
-					sprite.play("dash")
-	else:
-		if dash_particles:
-			dash_particles.emitting = false
-		if dash_trail:
-			dash_trail.emitting = false
-		if sprite:
-			sprite.modulate = Color.WHITE
-			# Reset animation from dash back to idle/walk
-			if sprite.animation == "dash":
-				var target_anim := "walk" if velocity.length() > 5.0 else "idle"
-				if sprite.sprite_frames and sprite.sprite_frames.has_animation(target_anim):
-					sprite.play(target_anim)
+	# Detect dash start via dash_seq change and call perform_dash on remote player
+	# This makes remote dash work exactly like solo play
+	if dash_seq > 0 and dash_seq != player_data.get("dash_seq", 0):
+		player_data["dash_seq"] = dash_seq
+		# Normalize velocity to get direction (server velocity is speed-scaled, not a unit vector)
+		var dash_dir = velocity.normalized() if velocity.length() > 1.0 else Vector2(facing, 0)
+		if is_instance_valid(player_data.node) and player_data.node.has_method("perform_dash"):
+			player_data.node.perform_dash(dash_dir)
+	elif dash_seq > 0:
+		player_data["dash_seq"] = dash_seq
+	
+	# Note: Don't end dash based on is_dashing from snapshot.
+	# The remote player's own dash_timer controls when the dash ends,
+	# matching solo play behavior where dash_duration is respected.
 
 
 ## Interpolate all remote players using buffered timeline interpolation
@@ -196,7 +186,7 @@ func interpolate_remote_players(delta: float, _lerp_speed: float = 8.0) -> void:
 				node.global_position,
 				target_pos,
 				player_data.smooth_velocity,
-				0.06,  # Faster response for less drift
+				0.03,  # Tighter response for less delay
 				delta
 			)
 			
@@ -210,7 +200,8 @@ func interpolate_remote_players(delta: float, _lerp_speed: float = 8.0) -> void:
 			# facing=1 means right (flip_h=true), facing=-1 means left (flip_h=false)
 			sprite.flip_h = player_data.server_facing > 0
 			
-			_update_remote_player_animation(sprite, player_data.server_velocity, player_data.is_attacking, player_data.is_dashing)
+			var remote_is_dashing = is_instance_valid(node) and node.get("is_dashing") == true
+			_update_remote_player_animation(sprite, player_data.server_velocity, player_data.is_attacking, remote_is_dashing)
 		
 		# Process pending attack (spawn slash effect)
 		if player_data.pending_attack != null:
@@ -272,7 +263,7 @@ func set_local_player(player_node: Node) -> void:
 	_local_player_node = weakref(player_node)
 
 ## Send input to authoritative server (replaces send_position)
-func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0) -> void:
+func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0, dash_seq: int = 0) -> void:
 	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
@@ -286,6 +277,7 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing
 		"is_dashing": is_dashing,
 		"attack_rotation": attack_rotation,
 		"attack_seq": attack_seq,
+		"dash_seq": dash_seq,
 		"seq": _input_sequence
 	}
 	
@@ -294,6 +286,7 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing
 		"seq": _input_sequence,
 		"move_x": move_x,
 		"move_y": move_y,
+		"is_dashing": is_dashing,
 		"timestamp": _now_sec()
 	})
 	
@@ -343,6 +336,7 @@ func _send_input_updates(player_node: Node) -> void:
 		var is_dashing := false
 		var attack_rotation := 0.0
 		var attack_seq := 0
+		var dash_seq := 0
 		if player_node.get("is_dashing") != null:
 			is_dashing = player_node.is_dashing
 		if player_node.get("is_attacking") != null:
@@ -351,12 +345,20 @@ func _send_input_updates(player_node: Node) -> void:
 			attack_rotation = player_node.attack_rotation
 		if player_node.get("attack_seq") != null:
 			attack_seq = player_node.attack_seq
+		if player_node.get("dash_seq") != null:
+			dash_seq = player_node.dash_seq
+		
+		# When dashing, use dash_direction instead of input direction
+		if is_dashing and player_node.get("dash_direction") != null:
+			var dash_dir = player_node.dash_direction
+			move_x = dash_dir.x
+			move_y = dash_dir.y
 		
 		# Send input to server with facing, dash, and attack state.
 		if not MultiplayerManager.is_socket_open():
 			_debug_log("Stopping input updates - socket closed before send")
 			break
-		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation, attack_seq)
+		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation, attack_seq, dash_seq)
 		
 		# Wait for next input tick
 		await Engine.get_main_loop().create_timer(INPUT_RATE).timeout
@@ -472,9 +474,14 @@ func _get_interpolated_position(positions: Array, render_time: float, _player_st
 	if older_idx < 0:
 		return positions[0].pos
 	
-	# If we're at the last position, use it directly (no extrapolation to prevent drift)
+	# If we're at the last position, extrapolate using velocity for short gaps
 	if older_idx >= positions.size() - 1:
-		return positions[-1].pos
+		var last = positions[-1]
+		var time_since_last = render_time - last.timestamp
+		if time_since_last > 0.0 and time_since_last < EXTRAPOLATION_MAX_TIME:
+			var vel: Vector2 = last.get("velocity", Vector2.ZERO)
+			return last.pos + vel * time_since_last
+		return last.pos
 	
 	# Interpolate between older and newer positions
 	var older = positions[older_idx]
@@ -545,6 +552,12 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	if player_node.get("is_death_sequence_active") and player_node.is_death_sequence_active:
 		return
 	
+	# Skip reconciliation while dashing - client is authoritative for dash movement
+	# At 400px/s, even small timing mismatches cause >15px errors that trigger
+	# constant snaps and make the dash stutter. Server re-syncs after dash ends.
+	if player_node.get("is_dashing") == true:
+		return
+	
 	# Remove acknowledged inputs from pending queue
 	while _pending_inputs.size() > 0 and _pending_inputs[0].seq <= server_seq:
 		_pending_inputs.pop_front()
@@ -557,17 +570,18 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	if _input_sequence % 100 == 0:
 		_debug_log("Prediction error: %s px | Pending: %s" % [snapped(error_dist, 0.1), _pending_inputs.size()])
 	
-	# Only reconcile if error exceeds threshold
+	# Smooth reconciliation: blend toward server position instead of hard snap
+	# Hard snaps cause visible stutter (dash snap-back, forward-back jitter near players)
 	if error_dist > _reconciliation_threshold:
-		# Snap to server position
-		player_node.global_position = server_pos
-		player_node.velocity = server_vel
-		
-		# Replay pending inputs to get back to predicted state
-		for input in _pending_inputs:
-			var dt = 1.0 / 20.0  # Server tickrate
-			player_node.global_position.x += input.move_x * 100.0 * dt
-			player_node.global_position.y += input.move_y * 100.0 * dt
+		if error_dist > 100.0:
+			# Very large desync: hard snap (player is way off)
+			player_node.global_position = server_pos
+			player_node.velocity = server_vel
+		else:
+			# Moderate error: smooth blend toward server position (40% per correction)
+			var blend = 0.4
+			player_node.global_position = player_node.global_position.lerp(server_pos, blend)
+			player_node.velocity = server_vel
 	
 ## Enable/disable prediction (for debugging)
 func set_prediction_enabled(enabled: bool) -> void:
@@ -591,10 +605,9 @@ func get_pending_attack(user_id: String) -> Dictionary:
 
 
 func _update_remote_player_animation(sprite: AnimatedSprite2D, server_velocity: Vector2, is_attacking: bool, is_dashing: bool = false) -> void:
+	# Dash animation is handled by perform_dash() called via dash_seq detection
+	# Don't override dash visuals while the remote player's own dash_timer is running
 	if is_dashing:
-		if sprite.sprite_frames and sprite.sprite_frames.has_animation("dash"):
-			if sprite.animation != "dash":
-				sprite.play("dash")
 		return
 	# Attack visual is the slash effect, not a sprite animation
 	# Keep current animation during attack (idle or walk) 

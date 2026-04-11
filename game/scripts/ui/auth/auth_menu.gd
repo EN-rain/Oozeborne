@@ -126,7 +126,7 @@ func _add_main_menu_animation(library: AnimationLibrary, animation_name: StringN
 
 
 func _animation_property_path(target: Node, property: String) -> NodePath:
-	return NodePath("%s:%s" % [animation_player.get_path_to(target), property])
+	return NodePath("%s:%s" % [animation_player.get_parent().get_path_to(target), property])
 
 
 func _set_busy(busy: bool) -> void:

@@ -130,7 +130,16 @@ func refresh_start_button_state() -> void:
 	if not is_instance_valid(_start_button):
 		return
 	_start_button.visible = MultiplayerManager.is_host
-	_start_button.disabled = not MultiplayerManager.is_host or get_player_count() < 1
+	_start_button.disabled = not MultiplayerManager.is_host or get_player_count() < 1 or not all_players_have_class()
+
+
+func all_players_have_class() -> bool:
+	for user_id in _player_entries:
+		var entry = _player_entries[user_id]
+		var selected_class = str(entry.get("selected_class", ""))
+		if selected_class.is_empty():
+			return false
+	return true
 
 
 func add_player_entry(user_id: String, ign: String, _prefix: String, is_host_flag: bool) -> void:
@@ -207,6 +216,7 @@ func on_select_class_pressed() -> void:
 			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = ""
 		refresh_party_cards()
 		_set_class_selection_locked(false)
+		refresh_start_button_state()
 		return
 	var active_class := get_active_class_name()
 	if _is_class_taken_by_other_player(active_class):
@@ -231,6 +241,7 @@ func on_select_class_pressed() -> void:
 			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = active_class
 			refresh_party_cards()
 		_set_class_selection_locked(true)
+		refresh_start_button_state()
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 			MultiplayerManager.send_match_state({
 				"type": "class_selected",
@@ -354,6 +365,7 @@ func handle_remote_class_selected(sender_id: String, selected_name: String, slim
 		refresh_party_cards()
 	add_chat_message(system_sender_name, selected_class_format % [_get_player_chat_name(sender_id), selected_name], selected_class_color)
 	_refresh_select_class_button_state()
+	refresh_start_button_state()
 
 
 func add_chat_message(sender: String, message: String, color: Color) -> void:

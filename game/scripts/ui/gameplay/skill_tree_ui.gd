@@ -26,6 +26,7 @@ const TYPE_COLORS := {
 @onready var action_slot_3: Button = %ActionSlot3
 @onready var action_slot_4: Button = %ActionSlot4
 @onready var tooltip_panel: PanelContainer = %TooltipPanel
+@onready var panel: Control = %Panel
 @onready var tooltip_title: Label = %TooltipTitle
 @onready var tooltip_body: Label = %TooltipBody
 @onready var close_button: Button = %CloseButton
@@ -353,7 +354,6 @@ func _position_tooltip_for_skill(skill_id: String) -> void:
 	if card == null or not is_instance_valid(card):
 		return
 	var card_rect := card.get_global_rect()
-	var panel := get_node_or_null("Panel") as Control
 	var clamp_rect := panel.get_global_rect() if panel != null else Rect2(Vector2.ZERO, get_viewport_rect().size)
 	var popup_size := tooltip_panel.get_combined_minimum_size()
 	var right_space := clamp_rect.end.x - card_rect.end.x

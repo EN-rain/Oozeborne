@@ -19,13 +19,13 @@ size_flags_vertical = 3
 [node name="VBox" type="VBoxContainer" parent="Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 10
-custom_minimum_size = Vector2(920, 0)
 
 [node name="HeaderLabel" type="Label" parent="Scroll/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(920, 0)
+size_flags_horizontal = 3
 autowrap_mode = 3
 text = ""
 
@@ -33,7 +33,7 @@ text = ""
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(920, 0)
+size_flags_vertical = 3
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
 columns = 2

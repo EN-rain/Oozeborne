@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://b6k3g7w7alyaf" path="res://scenes/ui/hud_ui.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
 [ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
-[ext_resource type="Script" path="res://scripts/systems/game/main.gd" id="6_mainscript"]
+[ext_resource type="Script" uid="uid://jx31lxl2ga28" path="res://scripts/systems/game/main.gd" id="6_mainscript"]
 
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true

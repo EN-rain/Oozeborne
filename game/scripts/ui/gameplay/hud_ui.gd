@@ -4,9 +4,9 @@ extends CanvasLayer
 @onready var player_panel: HudPlayerPanel = $Control/PlayerStats
 @onready var minimap: HudMinimap = %Map
 @onready var death_screen: Control = %Death
-@onready var dev_tools_panel: Control = %DevToolsPanel
 @onready var skills_root: HudSkillBar = %Skills
 @onready var stats_panel: HudStatsPanel = $Stats
+@onready var chat_box: Control = %ChatBox
 
 var player_ref: CharacterBody2D
 
@@ -18,6 +18,10 @@ func _ready() -> void:
 		control_panel.set_block_input_when_overlay_open(block_input_when_overlay_open)
 	if player_panel != null and not player_panel.player_died.is_connected(_on_player_died):
 		player_panel.player_died.connect(_on_player_died)
+	if chat_box != null and chat_box.has_signal("chat_message_sent"):
+		if chat_box.chat_message_sent.is_connected(_on_chat_message_sent):
+			chat_box.chat_message_sent.disconnect(_on_chat_message_sent)
+		chat_box.chat_message_sent.connect(_on_chat_message_sent)
 
 
 func set_player(player: CharacterBody2D) -> void:
@@ -35,8 +39,6 @@ func set_player(player: CharacterBody2D) -> void:
 		stats_panel.set_player(player)
 	if minimap != null:
 		minimap.set_player(player)
-	if dev_tools_panel != null and dev_tools_panel.has_method("set_player"):
-		dev_tools_panel.set_player(player)
 	if skills_root != null:
 		skills_root.refresh_skill_hud()
 
@@ -50,9 +52,8 @@ func set_player(player: CharacterBody2D) -> void:
 	refresh_player_level_display()
 
 
-func set_mob_spawner(spawner: MobSpawner) -> void:
-	if dev_tools_panel != null and dev_tools_panel.has_method("set_mob_spawner"):
-		dev_tools_panel.set_mob_spawner(spawner)
+func set_mob_spawner(_spawner: MobSpawner) -> void:
+	pass
 
 
 func _on_player_died(killer_name: String = "") -> void:
@@ -175,14 +176,41 @@ func toggle_skill_tree() -> void:
 		control_panel.toggle_skill_tree()
 
 
-func toggle_dev_tools() -> void:
-	if control_panel != null:
-		control_panel.toggle_dev_tools()
-
-
 func has_blocking_overlay_open() -> bool:
 	return control_panel.has_blocking_overlay_open() if control_panel != null else false
 
 
 func is_pointer_over_ui(pointer_position: Vector2) -> bool:
 	return control_panel.is_pointer_over_ui(pointer_position) if control_panel != null else false
+
+
+func _on_chat_message_sent(message: String) -> void:
+	MultiplayerManager.send_match_state({
+		"type": "chat_message",
+		"sender": MultiplayerManager.player_ign,
+		"message": message
+	})
+
+
+func add_chat_message(sender_name: String, message: String, is_admin: bool = false, is_party_leader: bool = false) -> void:
+	if chat_box != null and chat_box.has_method("add_remote_message"):
+		chat_box.add_remote_message(sender_name, message, is_admin, is_party_leader)
+
+
+func toggle_chat() -> void:
+	if chat_box == null:
+		return
+	chat_box.visible = not chat_box.visible
+	if chat_box.visible:
+		var input_field: LineEdit = chat_box.get("input_field") as LineEdit
+		if input_field != null:
+			input_field.grab_focus.call_deferred()
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ENTER and not has_blocking_overlay_open():
+			if chat_box != null and chat_box.visible:
+				return  # Let chat box handle Enter
+			toggle_chat()
+			get_viewport().set_input_as_handled()

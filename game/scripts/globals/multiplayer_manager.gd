@@ -9,6 +9,7 @@ var account_email: String = ""
 var room_code: String = ""  # 9-char alphanumeric display code
 var lobby_name: String = ""
 var is_host: bool = false
+var is_admin: bool = false
 var match_phase: String = "lobby"
 var player_slime_variant: String = "blue"
 var players: Dictionary = {}  # user_id -> {ign, is_host}

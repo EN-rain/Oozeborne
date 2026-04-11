@@ -96,6 +96,9 @@ func on_start_pressed() -> void:
 		push_warning("[Lobby] Start pressed but not enough players: %d" % _party_controller.get_player_count())
 		_party_controller.refresh_start_button_state()
 		return
+	if not _party_controller.all_players_have_class():
+		push_warning("[Lobby] Start pressed but not all players have selected a class")
+		return
 	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 		print("[Lobby] Sending OP_START_GAME to server...")
 		await MultiplayerManager.socket.send_match_state_async(

@@ -17,7 +17,7 @@ func set_slash_color(color: Color) -> void:
 
 func _ready() -> void:
 	print("[Slash] _ready called, global_position: ", global_position, " damage: ", weapon_damage)
-	var anim_player = $SlashEffect/SlashAnim
+	var anim_player = $SlashAnim
 	if anim_player:
 		print("[Slash] Playing slash_anim")
 		anim_player.play("slash_anim")

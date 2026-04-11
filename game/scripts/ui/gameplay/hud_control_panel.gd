@@ -10,12 +10,10 @@ const SCORE_FORMAT := "Score: %d"
 @onready var round_level_label: Label = %RoundLevelPopup
 @onready var store_button: Button = %Store
 @onready var skill_tree_button: Button = %SkillTree
-@onready var dev_tools_button: Button = %DevTools
 @onready var minimap: HudMinimap = %Map
 @onready var class_selection_ui: Control = $"../SoloClassSelection"
 @onready var shop_ui: ShopUI = $"../ShopUI"
 @onready var skill_tree_ui: SkillTreeUI = $"../SkillTreeUI"
-@onready var dev_tools_panel: Control = $"../DevToolsPanel"
 @onready var death_screen: Control = $"../Death"
 @onready var skills_root: HudSkillBar = $"../Skills" as HudSkillBar
 @onready var stats_root: Control = $"../Stats"
@@ -35,10 +33,6 @@ func _ready() -> void:
 		skill_tree_ui.hide()
 		if skill_tree_ui.has_signal("closed") and not skill_tree_ui.closed.is_connected(_on_overlay_closed):
 			skill_tree_ui.closed.connect(_on_overlay_closed)
-	if dev_tools_panel != null:
-		dev_tools_panel.hide()
-		if dev_tools_panel.has_signal("closed") and not dev_tools_panel.is_connected("closed", Callable(self, "_on_overlay_closed")):
-			dev_tools_panel.connect("closed", Callable(self, "_on_overlay_closed"))
 	if mob_count_label != null:
 		mob_count_label.text = "Mobs: 0"
 	if round_level_label != null:
@@ -125,8 +119,6 @@ func toggle_shop() -> void:
 	else:
 		if skill_tree_ui != null and skill_tree_ui.visible:
 			skill_tree_ui.close()
-		if dev_tools_panel != null and dev_tools_panel.visible:
-			_close_dev_tools()
 		shop_ui.open()
 	_update_overlay_pause()
 
@@ -143,38 +135,8 @@ func toggle_skill_tree() -> void:
 	else:
 		if shop_ui != null and shop_ui.visible:
 			shop_ui.close()
-		if dev_tools_panel != null and dev_tools_panel.visible:
-			_close_dev_tools()
 		skill_tree_ui.open()
 	_update_overlay_pause()
-
-
-func _on_dev_tools_pressed() -> void:
-	toggle_dev_tools()
-
-
-func toggle_dev_tools() -> void:
-	if dev_tools_panel == null:
-		return
-	if dev_tools_panel.visible:
-		_close_dev_tools()
-	else:
-		if shop_ui != null and shop_ui.visible:
-			shop_ui.close()
-		if skill_tree_ui != null and skill_tree_ui.visible:
-			skill_tree_ui.close()
-		if dev_tools_panel.has_method("open"):
-			dev_tools_panel.open()
-		else:
-			dev_tools_panel.show()
-	_update_overlay_pause()
-
-
-func _close_dev_tools() -> void:
-	if dev_tools_panel.has_method("close"):
-		dev_tools_panel.close()
-	else:
-		dev_tools_panel.hide()
 
 
 func _on_overlay_closed() -> void:
@@ -198,12 +160,10 @@ func is_pointer_over_ui(pointer_position: Vector2) -> bool:
 		players_root,
 		store_button,
 		skill_tree_button,
-		dev_tools_button,
 		minimap,
 		class_selection_ui,
 		shop_ui,
 		skill_tree_ui,
-		dev_tools_panel,
 		death_screen,
 		skills_root,
 		stats_root
@@ -215,7 +175,7 @@ func is_pointer_over_ui(pointer_position: Vector2) -> bool:
 
 
 func _is_overlay_open() -> bool:
-	return (shop_ui != null and shop_ui.visible) or (skill_tree_ui != null and skill_tree_ui.visible) or (dev_tools_panel != null and dev_tools_panel.visible)
+	return (shop_ui != null and shop_ui.visible) or (skill_tree_ui != null and skill_tree_ui.visible)
 
 
 func _control_tree_contains_point(root: Control, pointer_position: Vector2) -> bool:
