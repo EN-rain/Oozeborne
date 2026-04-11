@@ -16,6 +16,7 @@ const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 var mob_spawner: MobSpawner
 var round_manager: RoundManager
+var kill_count: int = 0
 
 const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
 const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
@@ -43,6 +44,7 @@ func _physics_process(delta):
 	MultiplayerUtils.interpolate_remote_players(delta)
 
 func _ready():
+	add_to_group("game_main")
 	# Use room_code as seed for consistent random spawns across all clients
 	if not MultiplayerManager.room_code.is_empty():
 		seed(MultiplayerManager.room_code.hash())
@@ -378,6 +380,7 @@ func _finish_solo_class_selection() -> void:
 func _start_initial_mob_spawns() -> void:
 	if mob_spawner == null or not is_instance_valid(player):
 		return
+	kill_count = 0
 	_setup_player_camera()
 	mob_spawner.initialize(self, player)
 	call_deferred("_start_round", round_manager.current_round, false)
@@ -502,6 +505,16 @@ func _on_match_state(match_state):
 		"request_players":
 			# Someone requested player info, send ours
 			MultiplayerUtils.send_player_info(MultiplayerManager.player_ign, MultiplayerManager.is_host)
+		
+		"enemy_hit":
+			# Remote player hit an enemy — apply damage to matching local enemy
+			var hit_sender_id := str(data.get("user_id", ""))
+			if hit_sender_id.is_empty() or MultiplayerUtils.is_local_player(hit_sender_id):
+				return  # Skip own hits (already applied locally)
+			var hit_x: float = data.get("enemy_x", 0.0)
+			var hit_y: float = data.get("enemy_y", 0.0)
+			var hit_dmg: int = data.get("damage", 1)
+			_apply_remote_enemy_hit(Vector2(hit_x, hit_y), hit_dmg)
 
 		"skill_stat_update":
 			var stat_sender_id := str(data.get("user_id", ""))
@@ -671,9 +684,36 @@ func _on_mob_spawned(mob):
 	if round_manager != null:
 		round_manager.register_mob(mob)
 	ui.register_slime(mob)
+	# Track boss in HUD if this is a BTBoss
+	if mob is BTBoss:
+		ui.track_boss(mob)
+
+
+func _apply_remote_enemy_hit(hit_pos: Vector2, damage: int) -> void:
+	# Find the closest enemy to the reported hit position
+	var enemies := get_tree().get_nodes_in_group("enemy")
+	if enemies.is_empty():
+		return
+	var best_enemy: Node2D = null
+	var best_dist_sq: float = 2500.0  # 50px tolerance squared
+	for enemy in enemies:
+		if not is_instance_valid(enemy) or not enemy is Node2D:
+			continue
+		if not enemy.has_method("take_damage"):
+			continue
+		# Skip dead/dying enemies
+		if enemy.get("is_dying") == true:
+			continue
+		var dist_sq := (enemy.global_position - hit_pos).length_squared()
+		if dist_sq < best_dist_sq:
+			best_dist_sq = dist_sq
+			best_enemy = enemy
+	if best_enemy != null:
+		best_enemy.take_damage(damage)
 
 func _on_mob_died(_mob, score_value: int, xp_value: int):
 	ui.add_score(score_value)
+	kill_count += 1
 	# Award XP to local player via singleton
 	if player:
 		LevelSystem.add_xp(player, xp_value)

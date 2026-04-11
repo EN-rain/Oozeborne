@@ -249,12 +249,23 @@ func send_attack(pos: Vector2, rotation_angle: float) -> void:
 func send_player_info(ign: String, is_host: bool) -> void:
 	if MultiplayerManager.session == null:
 		return  # Not in multiplayer
+	# Include speed stats so server uses per-player values instead of hardcoded constants
+	var player_speed := 100.0
+	var player_dash_speed := 400.0
+	var local_node = _local_player_node.get_ref()
+	if is_instance_valid(local_node):
+		if local_node.get("speed") != null:
+			player_speed = float(local_node.speed)
+		if local_node.get("dash_speed") != null:
+			player_dash_speed = float(local_node.dash_speed)
 	MultiplayerManager.send_match_state({
 		"type": "player_info",
 		"user_id": MultiplayerManager.session.user_id,
 		"ign": ign,
 		"is_host": is_host,
-		"slime_variant": MultiplayerManager.player_slime_variant
+		"slime_variant": MultiplayerManager.player_slime_variant,
+		"speed": player_speed,
+		"dash_speed": player_dash_speed
 	})
 
 
@@ -572,16 +583,13 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	
 	# Smooth reconciliation: blend toward server position instead of hard snap
 	# Hard snaps cause visible stutter (dash snap-back, forward-back jitter near players)
+	# and wall collision issues since server doesn't simulate move_and_slide
 	if error_dist > _reconciliation_threshold:
-		if error_dist > 100.0:
-			# Very large desync: hard snap (player is way off)
-			player_node.global_position = server_pos
-			player_node.velocity = server_vel
-		else:
-			# Moderate error: smooth blend toward server position (40% per correction)
-			var blend = 0.4
-			player_node.global_position = player_node.global_position.lerp(server_pos, blend)
-			player_node.velocity = server_vel
+		# Progressive blend: larger errors get faster correction, but never instant snap
+		# This avoids wall-clipping from hard snaps while still converging quickly
+		var blend = clamp(error_dist / 200.0, 0.3, 0.8)
+		player_node.global_position = player_node.global_position.lerp(server_pos, blend)
+		player_node.velocity = server_vel
 	
 ## Enable/disable prediction (for debugging)
 func set_prediction_enabled(enabled: bool) -> void:

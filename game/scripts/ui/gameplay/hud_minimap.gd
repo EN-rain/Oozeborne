@@ -34,6 +34,7 @@ const DEFAULT_MINIMAP_OUTLINE_COLOR := Color(0.82, 0.95, 1.0, 0.55)
 var _redraw_accumulator: float = 0.0
 var _minimap_dirty: bool = true
 var _cached_map_bounds: ReferenceRect = null
+var _ping_label: Label = null
 
 
 func _ready() -> void:
@@ -45,6 +46,16 @@ func _ready() -> void:
 	visible = true
 	if not draw.is_connected(_draw_minimap):
 		draw.connect(_draw_minimap)
+	# Create ping indicator label
+	_ping_label = Label.new()
+	_ping_label.name = "PingLabel"
+	_ping_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_ping_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_ping_label.add_theme_font_size_override("font_size", 10)
+	_ping_label.position = Vector2(0, 0)
+	_ping_label.size = Vector2(minimap_size.x, 14)
+	_ping_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_ping_label)
 	if Engine.is_editor_hint():
 		queue_minimap_redraw()
 
@@ -57,6 +68,7 @@ func _process(_delta: float) -> void:
 		return
 	_redraw_accumulator = 0.0
 	_refresh_minimap_size()
+	_update_ping_label()
 	queue_minimap_redraw()
 
 
@@ -238,7 +250,23 @@ func _refresh_minimap_size() -> void:
 func _on_resized() -> void:
 	_refresh_minimap_size()
 	_minimap_dirty = true
+	if _ping_label:
+		_ping_label.size = Vector2(minimap_size.x, 14)
 	queue_minimap_redraw()
+
+func _update_ping_label() -> void:
+	if _ping_label == null:
+		return
+	var ping_ms := int(MultiplayerUtils.get_ping() * 1000)
+	var color: Color
+	if ping_ms < 50:
+		color = Color(0.4, 1.0, 0.4, 0.8)  # Green
+	elif ping_ms < 100:
+		color = Color(1.0, 0.9, 0.3, 0.8)  # Yellow
+	else:
+		color = Color(1.0, 0.35, 0.35, 0.8)  # Red
+	_ping_label.add_theme_color_override("font_color", color)
+	_ping_label.text = "%d ms" % ping_ms
 
 
 func _safe_color(value: Variant, fallback: Color) -> Color:

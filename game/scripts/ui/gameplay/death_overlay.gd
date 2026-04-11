@@ -9,11 +9,20 @@ extends Control
 @onready var final_score_label: Label = %FinalScore
 @onready var restart_button: Button = %Restart
 @onready var menu_button: Button = %MenuButton
+@onready var spectate_button: Button = %Spectate
+var _revive_button: Button = null
+
+var _spectating: bool = false
+var _spectate_index: int = 0
+var _spectate_targets: Array = []  # Array of remote player nodes
+var _camera: Camera2D = null
+var _original_camera_parent: Node = null
 
 @export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
 @export_file("*.json") var death_messages_json_path: String = "res://resources/data/death_messages.json"
 @export var death_title_text: String = "Run Over"
 @export var final_score_format: String = "Final Score: %d"
+@export var match_results_format: String = "Rounds: %d | Kills: %d"
 @export var fallback_killer_name: String = "something rude"
 @export var death_message_format: String = "You were killed by %s. %s"
 @export var overlay_hidden_color: Color = Color(0, 0, 0, 0)
@@ -35,15 +44,41 @@ var _funny_suffixes: Array[String] = [
 func _ready() -> void:
 	visible = false
 	_load_death_messages()
+	if spectate_button:
+		spectate_button.pressed.connect(_on_spectate_pressed)
+		spectate_button.visible = false
 
 
-func show_death_screen(final_score: int, killer_name: String) -> void:
+func show_death_screen(final_score: int, killer_name: String, rounds_survived: int = 1, kills: int = 0) -> void:
 	if death_title_label:
 		death_title_label.text = death_title_text
 	if death_message_label:
 		death_message_label.text = _build_death_message(killer_name)
 	if final_score_label:
 		final_score_label.text = final_score_format % final_score
+	
+	# Show match results
+	var results_label: Label = get_node_or_null("DeathCard/VBoxContainer/MatchResults")
+	if results_label == null:
+		results_label = Label.new()
+		results_label.name = "MatchResults"
+		results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		results_label.add_theme_color_override("font_color", Color(0.65, 0.7, 0.85, 0.85))
+		results_label.add_theme_font_size_override("font_size", 14)
+		var vbox = get_node_or_null("DeathCard/VBoxContainer")
+		if vbox:
+			var spacer_idx = vbox.get_child_count() - 2  # Before Restart button
+			vbox.add_child(results_label)
+			vbox.move_child(results_label, spacer_idx)
+	results_label.text = match_results_format % [rounds_survived, kills]
+
+	# Show spectate button only if there are remote players to watch
+	_refresh_spectate_targets()
+	if spectate_button:
+		spectate_button.visible = _spectate_targets.size() > 0
+
+	# Add revive button if player has revive stones
+	_add_revive_button()
 
 	visible = true
 	_play_slide_in_animation()
@@ -123,8 +158,156 @@ func _load_death_messages() -> void:
 	_funny_suffixes = loaded_suffixes
 
 
+func _add_revive_button() -> void:
+	# Remove existing revive button if any
+	if _revive_button != null and is_instance_valid(_revive_button):
+		_revive_button.queue_free()
+		_revive_button = null
+
+	if not ShopManager.has_revive_stone():
+		return
+
+	var vbox = get_node_or_null("DeathCard/VBoxContainer")
+	if vbox == null:
+		return
+
+	_revive_button = Button.new()
+	_revive_button.name = "ReviveButton"
+	_revive_button.text = "Revive (Stone: %d)" % ShopManager.get_item_count("revive_stone")
+	_revive_button.add_theme_font_size_override("font_size", 16)
+	_revive_button.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
+	_revive_button.custom_minimum_size = Vector2(200, 40)
+	_revive_button.pressed.connect(_on_revive_pressed)
+	# Insert before restart button
+	var restart_idx := -1
+	for i in range(vbox.get_child_count()):
+		var child := vbox.get_child(i)
+		if child is Button and child.name == "Restart":
+			restart_idx = i
+			break
+	if restart_idx >= 0:
+		vbox.add_child(_revive_button)
+		vbox.move_child(_revive_button, restart_idx)
+	else:
+		vbox.add_child(_revive_button)
+
+
+func _on_revive_pressed() -> void:
+	if not ShopManager.has_revive_stone():
+		return
+	ShopManager.use_revive_stone()
+	# Find the local player and revive them
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("revive_player"):
+		player.revive_player()
+	_hide_death_screen()
+
+
+func _hide_death_screen() -> void:
+	_stop_spectating()
+	visible = false
+	if color_rect:
+		color_rect.color = overlay_hidden_color
+	if death_card:
+		death_card.modulate = card_hidden_modulate
+		death_card.anchor_top = 1.2
+		death_card.anchor_bottom = 1.2
+	get_tree().paused = false
+
+
 func _on_restart_pressed() -> void:
+	_stop_spectating()
 	await _restart_current_run()
+
+
+func _on_spectate_pressed() -> void:
+	if _spectate_targets.is_empty():
+		return
+	_start_spectating()
+
+
+func _start_spectating() -> void:
+	_spectating = true
+	_spectate_index = 0
+	# Find and reparent camera to first remote player
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		_camera = player.get_node_or_null("Camera2D")
+	if _camera:
+		_original_camera_parent = _camera.get_parent()
+		_attach_camera_to_target(_spectate_targets[0])
+	# Hide death card, show spectate UI
+	if death_card:
+		death_card.visible = false
+	if color_rect:
+		color_rect.color = Color(0, 0, 0, 0.2)
+
+
+func _stop_spectating() -> void:
+	if not _spectating:
+		return
+	_spectating = false
+	# Reparent camera back to original parent
+	if _camera and is_instance_valid(_camera) and _original_camera_parent and is_instance_valid(_original_camera_parent):
+		_camera.get_parent().remove_child(_camera)
+		_original_camera_parent.add_child(_camera)
+		_camera.position = Vector2.ZERO
+		_camera.make_current()
+	_camera = null
+	_original_camera_parent = null
+
+
+func _attach_camera_to_target(target: Node2D) -> void:
+	if not _camera or not is_instance_valid(_camera) or not is_instance_valid(target):
+		return
+	_camera.get_parent().remove_child(_camera)
+	target.add_child(_camera)
+	_camera.position = Vector2.ZERO
+	_camera.make_current()
+
+
+func _refresh_spectate_targets() -> void:
+	_spectate_targets.clear()
+	var remote_players = MultiplayerUtils.get_remote_players()
+	for user_id in remote_players:
+		var data = remote_players[user_id]
+		var node = data.get("node")
+		if is_instance_valid(node) and node is Node2D:
+			_spectate_targets.append(node)
+
+
+func _input(event: InputEvent) -> void:
+	if not _spectating:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_TAB or event.keycode == KEY_RIGHT:
+			_cycle_spectate_target(1)
+		elif event.keycode == KEY_LEFT:
+			_cycle_spectate_target(-1)
+		elif event.keycode == KEY_ESCAPE:
+			_stop_spectating()
+			visible = true
+			if death_card:
+				death_card.visible = true
+			if color_rect:
+				color_rect.color = overlay_visible_color
+			get_viewport().set_input_as_handled()
+
+
+func _cycle_spectate_target(direction: int) -> void:
+	_refresh_spectate_targets()
+	if _spectate_targets.is_empty():
+		_stop_spectating()
+		return
+	_spectate_index = (_spectate_index + direction) % _spectate_targets.size()
+	if _spectate_index < 0:
+		_spectate_index = _spectate_targets.size() - 1
+	_attach_camera_to_target(_spectate_targets[_spectate_index])
+	# Show brief name of spectated player
+	var target = _spectate_targets[_spectate_index]
+	if target and target.has_method("get_ign"):
+		# Brief overlay showing who we're watching
+		pass
 
 
 func _on_menu_pressed() -> void:

@@ -11,11 +11,13 @@ local OP_START_GAME = 5
 
 -- Constants
 local TICKRATE = 20
-local PLAYER_SPEED = 100.0
-local DASH_SPEED = 400.0
+local DEFAULT_PLAYER_SPEED = 100.0
+local DEFAULT_DASH_SPEED = 400.0
 local SNAP_THRESHOLD = 50.0
 local MIN_PLAYERS_TO_START = 1
 local PLAYER_RADIUS = 6.0
+local ATTACK_COOLDOWN_MS = 500  -- Minimum ms between attacks
+local ATTACK_RANGE = 60.0     -- Max distance from player to attack origin
 local PLAYER_SEPARATION_EPSILON = 0.01
 local WORLD_MIN_X = 0.0
 local WORLD_MAX_X = 800.0
@@ -211,7 +213,11 @@ function M.match_init(context, setupstate)
             attack_rotation = 0.0,
             attack_seq = 0,
             dash_seq = 0,
-            slime_variant = "blue"
+            slime_variant = "blue",
+            speed = DEFAULT_PLAYER_SPEED,
+            dash_speed = DEFAULT_DASH_SPEED,
+            last_attack_time = 0,
+            attack_damage = 10
         }
         nk.logger_info("match_init host=" .. gamestate.host_user_id .. " spawn=" .. spawn_x .. "," .. spawn_y .. " admin_role=" .. tostring(admin_role))
     end
@@ -255,7 +261,9 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         attack_rotation = existing.attack_rotation or 0.0,
         attack_seq = existing.attack_seq or 0,
         dash_seq = existing.dash_seq or 0,
-        slime_variant = existing.slime_variant or "blue"
+        slime_variant = existing.slime_variant or "blue",
+        speed = existing.speed or DEFAULT_PLAYER_SPEED,
+        dash_speed = existing.dash_speed or DEFAULT_DASH_SPEED
     }
     nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
     return state, true
@@ -276,7 +284,11 @@ function M.match_join(context, dispatcher, tick, state, presences)
                 attack_rotation = 0.0,
                 attack_seq = 0,
                 dash_seq = 0,
-                slime_variant = "blue"
+                slime_variant = "blue",
+                speed = DEFAULT_PLAYER_SPEED,
+                dash_speed = DEFAULT_DASH_SPEED,
+                last_attack_time = 0,
+                attack_damage = 10
             }
             state.players[p.user_id] = player
         end
@@ -313,9 +325,9 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 local move_x, move_y = input.move_x or 0, input.move_y or 0
                 local len = math.sqrt(move_x * move_x + move_y * move_y)
                 if len > 1.0 then move_x, move_y = move_x / len, move_y / len end
-                local speed = PLAYER_SPEED
+                local speed = player.speed or DEFAULT_PLAYER_SPEED
                 if input.is_dashing then
-                    speed = DASH_SPEED
+                    speed = player.dash_speed or DEFAULT_DASH_SPEED
                 end
                 player.vel_x, player.vel_y = move_x * speed, move_y * speed
                 if input.facing ~= nil then
@@ -377,6 +389,8 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                         local target_player = state.players[target_id]
                         if info.ign and info.ign ~= "" then target_player.ign = info.ign end
                         if info.slime_variant and info.slime_variant ~= "" then target_player.slime_variant = info.slime_variant end
+                        if info.speed and info.speed > 0 then target_player.speed = info.speed end
+                        if info.dash_speed and info.dash_speed > 0 then target_player.dash_speed = info.dash_speed end
                         if info.is_host == true then
                             state.host_user_id = target_id
                         end
@@ -392,7 +406,52 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                         sender = info.sender,
                         message = info.message
                     }))
-                elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" or info.type == "player_attack" or info.type == "player_loaded" then
+                elseif info.type == "player_attack" then
+                    -- Validate attack: cooldown + range check
+                    local sender_player = state.players[message.sender.user_id]
+                    if sender_player then
+                        local now = nk.time() * 1000  -- ms
+                        local time_since_last = now - (sender_player.last_attack_time or 0)
+                        if time_since_last >= ATTACK_COOLDOWN_MS then
+                            -- Validate attack position is within range of player
+                            local ax = tonumber(info.attack_x) or sender_player.pos_x
+                            local ay = tonumber(info.attack_y) or sender_player.pos_y
+                            local dx = ax - sender_player.pos_x
+                            local dy = ay - sender_player.pos_y
+                            local dist = math.sqrt(dx*dx + dy*dy)
+                            if dist <= ATTACK_RANGE then
+                                sender_player.last_attack_time = now
+                                -- Broadcast validated attack with damage
+                                dispatcher.broadcast_message(0, nk.json_encode({
+                                    type = "player_attack",
+                                    user_id = message.sender.user_id,
+                                    attack_x = ax,
+                                    attack_y = ay,
+                                    attack_rotation = info.attack_rotation or 0.0,
+                                    attack_seq = info.attack_seq or 0,
+                                    damage = sender_player.attack_damage or 10
+                                }))
+                            else
+                                nk.logger_info("Attack rejected: out of range dist=" .. tostring(dist))
+                            end
+                        else
+                            nk.logger_info("Attack rejected: cooldown remaining=" .. tostring(ATTACK_COOLDOWN_MS - time_since_last))
+                        end
+                    end
+                elseif info.type == "enemy_hit" then
+                    -- Relay enemy damage events to all other clients for sync
+                    local sender_player = state.players[message.sender.user_id]
+                    if sender_player then
+                        dispatcher.broadcast_message(0, nk.json_encode({
+                            type = "enemy_hit",
+                            user_id = message.sender.user_id,
+                            enemy_x = tonumber(info.enemy_x) or 0,
+                            enemy_y = tonumber(info.enemy_y) or 0,
+                            damage = tonumber(info.damage) or 1,
+                            hit_seq = tonumber(info.hit_seq) or 0
+                        }))
+                    end
+                elseif info.type == "lobby_name" or info.type == "request_players" or info.type == "class_selected" or info.type == "player_loaded" then
                     -- Update slime_variant from class_selected
                     if info.type == "class_selected" and info.user_id and state.players[info.user_id] then
                         if info.slime_variant and info.slime_variant ~= "" then
@@ -532,7 +591,9 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                 attack_rotation = p.attack_rotation or 0.0,
                 attack_seq = p.attack_seq or 0,
                 dash_seq = p.dash_seq or 0,
-                slime_variant = p.slime_variant or "blue"
+                slime_variant = p.slime_variant or "blue",
+                speed = p.speed or DEFAULT_PLAYER_SPEED,
+                dash_speed = p.dash_speed or DEFAULT_DASH_SPEED
             })
         end
         dispatcher.broadcast_message(OP_STATE, nk.json_encode(snapshot))

@@ -22,6 +22,11 @@ func _ready():
 	_load_coins()
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
+		save_coins()
+
+
 func add_coins(amount: int, user_id: String = "") -> void:
 	var target_user_id := _resolve_coin_user_id(user_id)
 	var previous_local_total := get_coins()
@@ -29,6 +34,7 @@ func add_coins(amount: int, user_id: String = "") -> void:
 	_sync_legacy_total()
 	if get_coins() != previous_local_total:
 		coins_changed.emit(get_coins())
+		save_coins()
 
 
 func spend_coins(amount: int, user_id: String = "") -> bool:
@@ -39,6 +45,7 @@ func spend_coins(amount: int, user_id: String = "") -> bool:
 		_sync_legacy_total()
 		if get_coins() != previous_local_total:
 			coins_changed.emit(get_coins())
+			save_coins()
 		return true
 	return false
 
@@ -55,6 +62,7 @@ func set_coins(amount: int, user_id: String = "") -> void:
 	_sync_legacy_total()
 	if get_coins() != previous_local_total:
 		coins_changed.emit(get_coins())
+		save_coins()
 
 
 func reset_coins(user_id: String = "") -> void:
@@ -109,17 +117,46 @@ func spawn_coin_burst(at_position: Vector2, count: int = 3, value_per_coin: int 
 		host.call_deferred("add_child", coin)
 
 
+const SAVE_PATH := "user://coins.sav"
+
+
 func _load_coins():
-	# TODO: Implement save/load with file
-	# For now, start at 0
+	if not FileAccess.file_exists(SAVE_PATH):
+		_coin_totals_by_user.clear()
+		_coin_totals_by_user[_resolve_coin_user_id()] = 0
+		_sync_legacy_total()
+		return
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		push_warning("[CoinManager] Failed to open coin save file for reading")
+		_coin_totals_by_user.clear()
+		_coin_totals_by_user[_resolve_coin_user_id()] = 0
+		_sync_legacy_total()
+		return
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Dictionary):
+		push_warning("[CoinManager] Invalid coin save format, resetting")
+		_coin_totals_by_user.clear()
+		_coin_totals_by_user[_resolve_coin_user_id()] = 0
+		_sync_legacy_total()
+		return
 	_coin_totals_by_user.clear()
-	_coin_totals_by_user[_resolve_coin_user_id()] = 0
+	for key in parsed:
+		_coin_totals_by_user[str(key)] = int(parsed[key])
 	_sync_legacy_total()
 
 
 func save_coins():
-	# TODO: Implement save to file
-	pass
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		push_warning("[CoinManager] Failed to open coin save file for writing")
+		return
+	var data := {}
+	for key in _coin_totals_by_user:
+		data[str(key)] = int(_coin_totals_by_user[key])
+	file.store_string(JSON.stringify(data))
+	file.close()
 
 
 func _ensure_coin_scene_loaded() -> bool:

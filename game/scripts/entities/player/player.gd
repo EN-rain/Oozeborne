@@ -49,6 +49,7 @@ var dash_seq := 0    # Incremented on each dash for reliable remote sync
 var can_dash := true
 var can_basic_attack := true
 var dash_direction := Vector2.ZERO
+var _remote_dash_cooldown_timer: Timer = null  # Used for remote player dash cooldown tracking
 var _damage_flash_active := false
 var _original_slime_shader_colors: Dictionary = {}
 
@@ -85,6 +86,13 @@ func _ready():
 	# Setup dash timers
 	dash_timer.wait_time = dash_duration
 	dash_timer.timeout.connect(_on_dash_finished)
+	if not is_local_player:
+		# Remote players need their own dash cooldown timer since PlayerSkillManager only handles local
+		_remote_dash_cooldown_timer = Timer.new()
+		_remote_dash_cooldown_timer.one_shot = true
+		_remote_dash_cooldown_timer.wait_time = dash_cooldown
+		_remote_dash_cooldown_timer.timeout.connect(_on_remote_dash_cooldown_finished)
+		add_child(_remote_dash_cooldown_timer)
 	if is_local_player:
 		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
@@ -268,6 +276,13 @@ func perform_dash(dir):
 		# Dash in facing direction if no input
 		dir = Vector2(facing, 0)
 	
+	# Remote player cooldown check
+	if not is_local_player and not can_dash:
+		return
+	if not is_local_player and _remote_dash_cooldown_timer:
+		can_dash = false
+		_remote_dash_cooldown_timer.start()
+	
 	is_dashing = true
 	dash_seq += 1
 	dash_direction = dir.normalized()
@@ -300,6 +315,9 @@ func _on_dash_finished():
 		dash_particles.emitting = false
 	if dash_trail:
 		dash_trail.emitting = false
+
+func _on_remote_dash_cooldown_finished():
+	can_dash = true
 
 func set_ign(_ign: String):
 	# IGN is now displayed in the main UI, not on the player
@@ -378,6 +396,11 @@ func _on_player_died():
 	if is_death_sequence_active:
 		return
 	if is_local_player:
+		# Check for auto-revive via revive stone
+		if ShopManager.has_revive_stone():
+			ShopManager.use_revive_stone()
+			revive_player()
+			return
 		var skill_manager := _get_player_skill_manager()
 		if death_sequence != null:
 			death_sequence.start(self, last_attacker_name, skill_manager)
@@ -386,6 +409,25 @@ func _on_player_died():
 			queue_free()
 		return
 	queue_free()
+
+
+func revive_player(health_percent: float = 0.5) -> void:
+	if health != null:
+		health.revive(health_percent)
+	is_death_sequence_active = false
+	is_taking_damage = false
+	can_move = true
+	knockback_velocity = Vector2.ZERO
+	# Brief invincibility flash
+	if player_sprite != null:
+		player_sprite.modulate = Color(1.0, 1.0, 1.0, 0.5)
+		var tween := create_tween()
+		tween.tween_property(player_sprite, "modulate", Color.WHITE, 1.5)
+	DamageNumbers.spawn_damage(global_position + Vector2(0, -30), 0, false, false, Color(0.2, 1.0, 0.4))
+	# Notify HUD that player revived
+	var hud := get_tree().root.get_node_or_null("Game/HUD")
+	if hud != null and hud.has_method("on_player_revived"):
+		hud.on_player_revived()
 
 
 func is_targetable() -> bool:

@@ -608,6 +608,16 @@ theme_override_styles/pressed = SubResource("btn_menu_pressed")
 theme_override_styles/hover = SubResource("btn_menu_hover")
 text = "← Retreat to Menu"
 
+[node name="Spectate" type="Button" parent="Death/DeathCard/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 1.0, 0.9)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("btn_menu_normal")
+theme_override_styles/pressed = SubResource("btn_menu_pressed")
+theme_override_styles/hover = SubResource("btn_menu_hover")
+text = "👁 Spectate"
+
 [node name="Skills" type="Control" parent="." unique_id=742230347]
 unique_name_in_owner = true
 layout_mode = 1

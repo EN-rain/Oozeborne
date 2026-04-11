@@ -54,6 +54,16 @@ func _process_command(message: String) -> void:
 	var command := parts[0].to_lower()
 	var args := parts[1] if parts.size() > 1 else ""
 	
+	# Commands available to everyone
+	match command:
+		"/help":
+			_show_help()
+			return
+		"/ping":
+			var ping_ms := int(MultiplayerUtils.get_ping() * 1000)
+			_add_system_message("Ping: %d ms" % ping_ms)
+			return
+	
 	# Admin commands
 	if MultiplayerManager.is_admin:
 		_process_admin_command(command, args)
@@ -64,10 +74,12 @@ func _process_command(message: String) -> void:
 		_process_party_leader_command(command, args)
 		return
 	
-	_add_system_message("You don't have permission for this command")
+	_add_system_message("Unknown command. Type /help for available commands")
 
 func _process_admin_command(command: String, args: String) -> void:
 	match command:
+		"/help":
+			_add_system_message("Admin commands: /setlevel <1-100>, /addcoins <amount>, /spawn [count], /killall, /pause, /resume, /help, /ping")
 		"/setlevel":
 			var level := args.to_int()
 			if level > 0 and level <= 100:
@@ -109,16 +121,23 @@ func _process_admin_command(command: String, args: String) -> void:
 			_add_system_message("Unknown admin command: %s" % command)
 
 
-func _process_party_leader_command(command: String, _args: String) -> void:
+func _process_party_leader_command(command: String, args: String) -> void:
 	match command:
+		"/help":
+			_add_system_message("Leader commands: /pause, /resume, /kick <player>, /help, /ping")
 		"/pause":
 			get_tree().paused = true
 			_add_party_leader_message("Game paused by party leader")
 		"/resume":
 			get_tree().paused = false
 			_add_party_leader_message("Game resumed by party leader")
+		"/kick":
+			if args.is_empty():
+				_add_system_message("Usage: /kick <player_name>")
+			else:
+				_kick_player(args)
 		_:
-			_add_system_message("Unknown command: %s" % command)
+			_add_system_message("Unknown command. Type /help for available commands")
 
 
 func add_remote_message(sender_name: String, message: String, is_admin: bool = false, is_party_leader: bool = false) -> void:
@@ -128,6 +147,38 @@ func add_remote_message(sender_name: String, message: String, is_admin: bool = f
 		_add_party_leader_message("%s: %s" % [sender_name, message])
 	else:
 		_add_message(sender_name, message, false)
+
+
+func _show_help() -> void:
+	var commands := "Available commands: /help, /ping"
+	if MultiplayerManager.is_admin:
+		commands += "\nAdmin: /setlevel <1-100>, /addcoins <amount>, /spawn [count], /killall, /pause, /resume"
+	elif MultiplayerManager.is_host:
+		commands += "\nLeader: /pause, /resume, /kick <player>"
+	_add_system_message(commands)
+
+
+func _kick_player(player_name: String) -> void:
+	# Find the user_id for the given player name
+	var target_id := ""
+	for user_id in MultiplayerManager.players:
+		var info = MultiplayerManager.players[user_id]
+		if info.get("ign", "").strip_edges() == player_name.strip_edges():
+			target_id = user_id
+			break
+	if target_id.is_empty():
+		_add_system_message("Player '%s' not found" % player_name)
+		return
+	if target_id == MultiplayerManager.session.user_id:
+		_add_system_message("You can't kick yourself")
+		return
+	# Send kick request via match state
+	MultiplayerManager.send_match_state({
+		"type": "kick_player",
+		"target_user_id": target_id,
+		"target_ign": player_name
+	})
+	_add_party_leader_message("Kicked %s" % player_name)
 
 
 func _add_message(sender_name: String, message: String, is_system: bool = false) -> void:

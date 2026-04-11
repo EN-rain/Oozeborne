@@ -2,6 +2,7 @@ extends Node2D
 
 var weapon_damage = 10
 var hit_enemies = []  # Track enemies already hit this swing
+var _hit_seq: int = 0  # Sequence counter for network sync
 
 @export var enemy_group_name: StringName = &"enemy"
 @export var projectile_group_name: StringName = &"projectile"
@@ -36,6 +37,7 @@ func _on_hitbox_body_entered(body):
 	if body.is_in_group(enemy_group_name) and body.has_method("take_damage"):
 		body.take_damage(weapon_damage)
 		hit_enemies.append(body)
+		_send_enemy_hit(body, weapon_damage)
 	
 	# Check if it's a projectile (arrow) that can be destroyed
 	if body.is_in_group(projectile_group_name) and body.has_method("take_damage"):
@@ -51,6 +53,20 @@ func _on_hitbox_area_entered(area):
 	if area.is_in_group(projectile_group_name) and area.has_method("take_damage"):
 		area.take_damage(weapon_damage)
 		hit_enemies.append(area)
+
+func _send_enemy_hit(enemy: Node2D, damage: int) -> void:
+	if not MultiplayerManager.is_socket_open():
+		return
+	_hit_seq += 1
+	MultiplayerManager.send_match_state({
+		"type": "enemy_hit",
+		"user_id": MultiplayerManager.session.user_id if MultiplayerManager.session else "",
+		"enemy_x": enemy.global_position.x,
+		"enemy_y": enemy.global_position.y,
+		"damage": damage,
+		"hit_seq": _hit_seq
+	})
+
 
 func _on_slash_anim_animation_finished(anim_name: StringName) -> void:
 	if anim_name == "slash_anim":

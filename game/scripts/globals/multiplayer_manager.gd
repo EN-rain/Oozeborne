@@ -44,10 +44,26 @@ signal player_left(user_id: String)
 signal match_joined()
 signal match_phase_changed(new_phase: String)
 signal auth_state_changed(is_authenticated: bool, username: String, email: String)
+signal connection_lost()
+
+var _connection_lost_emitted: bool = false
+var _connection_check_timer: float = 0.0
+const CONNECTION_CHECK_INTERVAL := 2.0  # seconds between polling checks
 
 func _ready():
 	_server_config = _resolve_server_config()
-	_debug_log("MultiplayerManager ready")
+
+
+func _process(delta: float) -> void:
+	# Polling fallback: check socket connectivity periodically
+	if socket == null or match_id.is_empty():
+		return
+	_connection_check_timer += delta
+	if _connection_check_timer < CONNECTION_CHECK_INTERVAL:
+		return
+	_connection_check_timer = 0.0
+	if not socket.is_connected_to_host() and not _connection_lost_emitted:
+		_on_socket_closed()
 
 func _reset_match_state() -> void:
 	match_id = ""
@@ -363,6 +379,13 @@ func connect_to_server(device_id: String = "") -> bool:
 	# Connect match signals here so we never miss events between scene transitions
 	socket.received_match_presence.connect(_on_match_presence)
 	socket.received_match_state.connect(_on_match_state)
+	# Connect socket adapter signals for connection loss detection
+	var adapter = get_node_or_null("NakamaSocketAdapter")
+	if adapter:
+		adapter.closed.connect(_on_socket_closed)
+		adapter.received_error.connect(_on_socket_error)
+	_connection_lost_emitted = false
+	_connection_check_timer = 0.0
 	_debug_log("Socket signals connected, waiting for match state...")
 
 	return true
@@ -508,6 +531,21 @@ func _on_match_presence(p_presence):
 		if player_subclasses.has(leave.user_id):
 			player_subclasses.erase(leave.user_id)
 		player_left.emit(leave.user_id)
+
+func _on_socket_closed() -> void:
+	if _connection_lost_emitted:
+		return
+	_connection_lost_emitted = true
+	_debug_log("Socket connection lost!")
+	connection_lost.emit()
+
+
+func _on_socket_error(_error) -> void:
+	_debug_log("Socket error received")
+	# Error may precede a close, but handle it proactively
+	if not _connection_lost_emitted and socket != null and not socket.is_connected_to_host():
+		_on_socket_closed()
+
 
 func disconnect_server():
 	if client != null and session != null and is_host and not room_code.is_empty():

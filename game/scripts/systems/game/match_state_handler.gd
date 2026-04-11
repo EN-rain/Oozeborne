@@ -127,9 +127,14 @@ func _handle_player_attack(data: Dictionary, sender_id: String) -> void:
 	if NetworkMessaging.is_local_player(sender_id):
 		return
 	
-	var attack_pos = data.get("pos", {})
-	var attack_rot = data.get("rot", 0.0)
-	var pos = Vector2(attack_pos.get("x", 0), attack_pos.get("y", 0))
+	# Support both new server-validated format and legacy format
+	var pos: Vector2
+	if data.has("attack_x"):
+		pos = Vector2(data.get("attack_x", 0.0), data.get("attack_y", 0.0))
+	else:
+		var attack_pos = data.get("pos", {})
+		pos = Vector2(attack_pos.get("x", 0), attack_pos.get("y", 0))
+	var attack_rot = data.get("attack_rotation", data.get("rot", 0.0))
 	
 	player_attack_received.emit(sender_id, pos, attack_rot)
 

@@ -63,6 +63,20 @@ func heal(amount: int):
 	
 	health_changed.emit(current_health, max_health)
 
+
+func revive(health_percent: float = 0.5) -> void:
+	if not is_dead:
+		return
+	is_dead = false
+	current_health = max(1, int(float(max_health) * clampf(health_percent, 0.01, 1.0)))
+	if health_bar:
+		health_bar.value = current_health
+		health_bar.visible = true
+		health_bar.show()
+		if hide_timer:
+			hide_timer.start()
+	health_changed.emit(current_health, max_health)
+
 func _on_hide_timer_timeout():
 	if health_bar:
 		health_bar.visible = false

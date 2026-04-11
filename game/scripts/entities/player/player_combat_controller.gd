@@ -109,6 +109,11 @@ func on_player_died() -> void:
 	if _player.is_death_sequence_active:
 		return
 	if _player.is_local_player:
+		# Check for auto-revive via revive stone
+		if ShopManager.has_revive_stone():
+			ShopManager.use_revive_stone()
+			_player.revive_player()
+			return
 		var skill_manager: Node = _player._get_player_skill_manager()
 		if _death_sequence != null:
 			_death_sequence.start(_player, _player.last_attacker_name, skill_manager)

@@ -71,15 +71,17 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false,
 	)
 
 
-## Send attack event to all other players
-func send_attack(pos: Vector2, rotation_angle: float) -> void:
+## Send attack event to server for validation and broadcast
+func send_attack(pos: Vector2, rotation_angle: float, attack_seq: int = 0) -> void:
 	if MultiplayerManager.session == null:
 		return
 	MultiplayerManager.send_match_state({
 		"type": "player_attack",
 		"user_id": MultiplayerManager.session.user_id,
-		"pos": {"x": pos.x, "y": pos.y},
-		"rot": rotation_angle
+		"attack_x": pos.x,
+		"attack_y": pos.y,
+		"attack_rotation": rotation_angle,
+		"attack_seq": attack_seq
 	})
 
 

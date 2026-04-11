@@ -8,6 +8,18 @@ extends CanvasLayer
 @onready var stats_panel: HudStatsPanel = $Stats
 @onready var chat_box: Control = %ChatBox
 
+var _disconnect_overlay: PanelContainer = null
+var _disconnect_label: Label = null
+var _disconnect_timer: float = 0.0
+var _disconnect_reconnect_btn: Button = null
+
+# Boss health bar
+var _boss_bar_container: PanelContainer = null
+var _boss_name_label: Label = null
+var _boss_health_bar: ProgressBar = null
+var _boss_phase_label: Label = null
+var _tracked_boss: BTBoss = null
+
 var player_ref: CharacterBody2D
 
 @export var block_input_when_overlay_open: bool = false
@@ -22,6 +34,11 @@ func _ready() -> void:
 		if chat_box.chat_message_sent.is_connected(_on_chat_message_sent):
 			chat_box.chat_message_sent.disconnect(_on_chat_message_sent)
 		chat_box.chat_message_sent.connect(_on_chat_message_sent)
+	# Connect connection lost signal
+	if not MultiplayerManager.connection_lost.is_connected(_on_connection_lost):
+		MultiplayerManager.connection_lost.connect(_on_connection_lost)
+	_create_disconnect_overlay()
+	_create_boss_health_bar()
 
 
 func set_player(player: CharacterBody2D) -> void:
@@ -59,7 +76,15 @@ func set_mob_spawner(_spawner: MobSpawner) -> void:
 func _on_player_died(killer_name: String = "") -> void:
 	if death_screen != null and death_screen.has_method("show_death_screen"):
 		var score := control_panel.get_current_score() if control_panel != null else 0
-		death_screen.show_death_screen(score, killer_name)
+		var main_node := get_tree().get_first_node_in_group("game_main")
+		var rounds := 1
+		var kills := 0
+		if main_node and main_node.has_method("get"):
+			if main_node.get("round_manager") != null:
+				rounds = main_node.round_manager.current_round
+			if main_node.get("kill_count") != null:
+				kills = main_node.kill_count
+		death_screen.show_death_screen(score, killer_name, rounds, kills)
 
 
 func _on_xp_gained(entity_id: int, _amount: int, _total: int) -> void:
@@ -214,3 +239,197 @@ func _input(event: InputEvent) -> void:
 				return  # Let chat box handle Enter
 			toggle_chat()
 			get_viewport().set_input_as_handled()
+
+
+func _process(delta: float) -> void:
+	if _disconnect_overlay != null and _disconnect_overlay.visible:
+		_disconnect_timer += delta
+		if _disconnect_label != null:
+			var dots = ".".repeat(int(_disconnect_timer * 2) % 4)
+			_disconnect_label.text = "Connection Lost — Reconnecting%s" % dots
+	_update_boss_health_bar()
+
+
+func _create_disconnect_overlay() -> void:
+	_disconnect_overlay = PanelContainer.new()
+	_disconnect_overlay.name = "DisconnectOverlay"
+	_disconnect_overlay.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_disconnect_overlay.offset_top = 40
+	_disconnect_overlay.offset_left = -160
+	_disconnect_overlay.offset_right = 160
+	_disconnect_overlay.visible = false
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.05, 0.05, 0.92)
+	style.border_color = Color(0.9, 0.2, 0.2)
+	style.border_width_bottom = 2
+	style.border_width_top = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	_disconnect_overlay.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	_disconnect_label = Label.new()
+	_disconnect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_disconnect_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+	_disconnect_label.add_theme_font_size_override("font_size", 16)
+	_disconnect_label.text = "Connection Lost — Reconnecting..."
+	vbox.add_child(_disconnect_label)
+
+	_disconnect_reconnect_btn = Button.new()
+	_disconnect_reconnect_btn.text = "Return to Menu"
+	_disconnect_reconnect_btn.add_theme_color_override("font_color", Color(0.9, 0.7, 0.7))
+	_disconnect_reconnect_btn.add_theme_font_size_override("font_size", 14)
+	_disconnect_reconnect_btn.pressed.connect(_on_disconnect_return_menu)
+	vbox.add_child(_disconnect_reconnect_btn)
+
+	_disconnect_overlay.add_child(vbox)
+	add_child(_disconnect_overlay)
+
+
+func _on_connection_lost() -> void:
+	if _disconnect_overlay != null:
+		_disconnect_overlay.visible = true
+	_disconnect_timer = 0.0
+	get_tree().paused = true
+
+
+func _on_disconnect_return_menu() -> void:
+	get_tree().paused = false
+	if _disconnect_overlay != null:
+		_disconnect_overlay.visible = false
+	MultiplayerManager._cleanup_socket_connection()
+	MultiplayerManager._reset_match_state()
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _create_boss_health_bar() -> void:
+	_boss_bar_container = PanelContainer.new()
+	_boss_bar_container.name = "BossHealthBarContainer"
+	_boss_bar_container.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_bar_container.offset_top = 8
+	_boss_bar_container.offset_left = -180
+	_boss_bar_container.offset_right = 180
+	_boss_bar_container.visible = false
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.04, 0.12, 0.88)
+	style.border_color = Color(0.6, 0.2, 0.8)
+	style.border_width_bottom = 2
+	style.border_width_top = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	_boss_bar_container.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var title_row := HBoxContainer.new()
+	title_row.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	_boss_name_label = Label.new()
+	_boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_boss_name_label.add_theme_color_override("font_color", Color(0.85, 0.65, 1.0))
+	_boss_name_label.add_theme_font_size_override("font_size", 14)
+	_boss_name_label.text = "Boss"
+	_boss_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(_boss_name_label)
+
+	_boss_phase_label = Label.new()
+	_boss_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_boss_phase_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
+	_boss_phase_label.add_theme_font_size_override("font_size", 12)
+	_boss_phase_label.text = "Phase 1"
+	title_row.add_child(_boss_phase_label)
+
+	vbox.add_child(title_row)
+
+	_boss_health_bar = ProgressBar.new()
+	_boss_health_bar.min_value = 0.0
+	_boss_health_bar.max_value = 100.0
+	_boss_health_bar.value = 100.0
+	_boss_health_bar.show_percentage = false
+	_boss_health_bar.custom_minimum_size = Vector2(340, 16)
+
+	var bar_fg := StyleBoxFlat.new()
+	bar_fg.bg_color = Color(0.7, 0.15, 0.9)
+	bar_fg.corner_radius_bottom_left = 3
+	bar_fg.corner_radius_bottom_right = 3
+	bar_fg.corner_radius_top_left = 3
+	bar_fg.corner_radius_top_right = 3
+	_boss_health_bar.add_theme_stylebox_override("fill", bar_fg)
+
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.15, 0.08, 0.2, 0.8)
+	bar_bg.corner_radius_bottom_left = 3
+	bar_bg.corner_radius_bottom_right = 3
+	bar_bg.corner_radius_top_left = 3
+	bar_bg.corner_radius_top_right = 3
+	_boss_health_bar.add_theme_stylebox_override("background", bar_bg)
+
+	vbox.add_child(_boss_health_bar)
+
+	_boss_bar_container.add_child(vbox)
+	add_child(_boss_bar_container)
+
+
+func track_boss(boss: BTBoss) -> void:
+	if _tracked_boss != null and is_instance_valid(_tracked_boss):
+		if _tracked_boss.phase_changed.is_connected(_on_boss_phase_changed):
+			_tracked_boss.phase_changed.disconnect(_on_boss_phase_changed)
+		if _tracked_boss.boss_died.is_connected(_on_boss_died):
+			_tracked_boss.boss_died.disconnect(_on_boss_died)
+	_tracked_boss = boss
+	if boss == null:
+		if _boss_bar_container != null:
+			_boss_bar_container.visible = false
+		return
+	if boss.phase_changed.is_connected(_on_boss_phase_changed):
+		boss.phase_changed.disconnect(_on_boss_phase_changed)
+	boss.phase_changed.connect(_on_boss_phase_changed)
+	if boss.boss_died.is_connected(_on_boss_died):
+		boss.boss_died.disconnect(_on_boss_died)
+	boss.boss_died.connect(_on_boss_died)
+	if _boss_name_label != null:
+		_boss_name_label.text = boss.boss_display_name
+	if _boss_phase_label != null:
+		_boss_phase_label.text = "Phase %d" % boss.current_phase
+	if _boss_bar_container != null:
+		_boss_bar_container.visible = true
+
+
+func _update_boss_health_bar() -> void:
+	if _tracked_boss == null or not is_instance_valid(_tracked_boss):
+		if _boss_bar_container != null:
+			_boss_bar_container.visible = false
+		_tracked_boss = null
+		return
+	if _boss_health_bar != null:
+		_boss_health_bar.value = _tracked_boss.get_health_percent() * 100.0
+
+
+func _on_boss_phase_changed(phase: int) -> void:
+	if _boss_phase_label != null:
+		_boss_phase_label.text = "Phase %d" % phase
+
+
+func _on_boss_died() -> void:
+	if _boss_bar_container != null:
+		_boss_bar_container.visible = false
+	_tracked_boss = null
+
+
+func on_player_revived() -> void:
+	# Called when player auto-revives via revive stone — hide death overlay
+	if death_screen != null and death_screen.has_method("_hide_death_screen"):
+		death_screen._hide_death_screen()
