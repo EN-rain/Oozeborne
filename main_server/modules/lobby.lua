@@ -159,24 +159,35 @@ local function move_players_with_blocking(state, dt)
     for _, user_id in ipairs(player_ids) do
         local player = state.players[user_id]
         if player then
-            local previous_x = player.pos_x
-            local previous_y = player.pos_y
-
-            local proposed_x = previous_x + player.vel_x * dt
-            proposed_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
-            if not is_blocked_by_any_player(state, user_id, previous_x, previous_y, proposed_x, previous_y) then
-                player.pos_x = proposed_x
+            -- Skip server-side movement for dashing players.
+            -- The client is authoritative for dash movement (uses move_and_slide
+            -- with wall collisions). Server just relays the client position.
+            if player.is_dashing then
+                -- Use velocity direction to estimate position, but clamp to world
+                local proposed_x = player.pos_x + player.vel_x * dt
+                local proposed_y = player.pos_y + player.vel_y * dt
+                player.pos_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
+                player.pos_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
             else
-                player.vel_x = 0.0
-            end
+                local previous_x = player.pos_x
+                local previous_y = player.pos_y
 
-            local current_x = player.pos_x
-            local proposed_y = previous_y + player.vel_y * dt
-            proposed_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
-            if not is_blocked_by_any_player(state, user_id, current_x, previous_y, current_x, proposed_y) then
-                player.pos_y = proposed_y
-            else
-                player.vel_y = 0.0
+                local proposed_x = previous_x + player.vel_x * dt
+                proposed_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
+                if not is_blocked_by_any_player(state, user_id, previous_x, previous_y, proposed_x, previous_y) then
+                    player.pos_x = proposed_x
+                else
+                    player.vel_x = 0.0
+                end
+
+                local current_x = player.pos_x
+                local proposed_y = previous_y + player.vel_y * dt
+                proposed_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
+                if not is_blocked_by_any_player(state, user_id, current_x, previous_y, current_x, proposed_y) then
+                    player.pos_y = proposed_y
+                else
+                    player.vel_y = 0.0
+                end
             end
 
             clamp_player_to_world(player)

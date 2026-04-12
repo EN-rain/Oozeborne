@@ -320,7 +320,7 @@ func _update_keybind_labels() -> void:
 
 func _event_to_string(event: InputEvent) -> String:
 	if event is InputEventKey:
-		var key_str := event.as_text_physical_keycode()
+		var key_str: String = event.as_text_physical_keycode()
 		if key_str.is_empty():
 			key_str = event.as_text()
 		return key_str

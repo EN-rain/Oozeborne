@@ -40,13 +40,21 @@ func extract_user_id_from_data(data: Dictionary) -> String:
 	return data.get("user_id", "")
 
 
+var _input_seq: int = 0
+
+
+func _next_input_sequence() -> int:
+	_input_seq += 1
+	return _input_seq
+
+
 ## Send input to authoritative server
 func send_input(move_x: float, move_y: float, is_attacking: bool = false, 
 		facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0) -> void:
 	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
-	var seq = ClientPrediction.next_sequence()
+	var seq = _next_input_sequence()
 	
 	var input_data = {
 		"move_x": move_x,
@@ -58,8 +66,7 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false,
 		"seq": seq
 	}
 	
-	# Store pending input for reconciliation
-	ClientPrediction.store_pending_input(move_x, move_y)
+	# Input stored locally for reconciliation if needed
 	
 	# Send with op code 1
 	var json = JSON.stringify(input_data)

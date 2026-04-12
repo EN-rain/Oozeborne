@@ -26,7 +26,9 @@ const DEBUG_MULTIPLAYER_UTILS_LOGS := false
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
 
-var _reconciliation_threshold: float = 30.0  # Snap if desync > 30 pixels
+var _reconciliation_threshold: float = 15.0  # Only correct if desync > 15 pixels
+var _dash_end_time: float = -1.0  # Timestamp when last dash ended
+const DASH_GRACE_PERIOD: float = 0.3  # Seconds to skip reconciliation after dash ends
 
 ## Prediction enabled flag
 var _prediction_enabled: bool = true
@@ -551,7 +553,7 @@ func get_interpolation_delay() -> float:
 
 ## Reconcile local player with server state
 ## Call this when receiving server snapshot for local player
-func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq: int) -> void:
+func reconcile_local_player(server_pos: Vector2, _server_vel: Vector2, server_seq: int) -> void:
 	if not _prediction_enabled:
 		return
 	
@@ -569,6 +571,15 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	if player_node.get("is_dashing") == true:
 		return
 	
+	# Grace period after dash ends: server position is stale because it moved
+	# the player at dash_speed without wall collisions. Give the server time
+	# to catch up to the client's actual (wall-collision-correct) position.
+	if _dash_end_time > 0.0 and (_now_sec() - _dash_end_time) < DASH_GRACE_PERIOD:
+		# During grace period, force server to accept client position
+		# by not reconciling. The next server tick will use client's input.
+		return
+	_dash_end_time = -1.0  # Grace period over
+	
 	# Remove acknowledged inputs from pending queue
 	while _pending_inputs.size() > 0 and _pending_inputs[0].seq <= server_seq:
 		_pending_inputs.pop_front()
@@ -581,15 +592,16 @@ func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq
 	if _input_sequence % 100 == 0:
 		_debug_log("Prediction error: %s px | Pending: %s" % [snapped(error_dist, 0.1), _pending_inputs.size()])
 	
-	# Smooth reconciliation: blend toward server position instead of hard snap
+	# Smooth reconciliation: nudge toward server position instead of hard snap
 	# Hard snaps cause visible stutter (dash snap-back, forward-back jitter near players)
 	# and wall collision issues since server doesn't simulate move_and_slide
 	if error_dist > _reconciliation_threshold:
-		# Progressive blend: larger errors get faster correction, but never instant snap
-		# This avoids wall-clipping from hard snaps while still converging quickly
-		var blend = clamp(error_dist / 200.0, 0.3, 0.8)
-		player_node.global_position = player_node.global_position.lerp(server_pos, blend)
-		player_node.velocity = server_vel
+		# Gentle nudge: move a fixed small step toward server position each frame
+		# This converges without causing oscillation or wall-clipping
+		var max_correction = 4.0  # Max pixels corrected per frame
+		var correction_amount = minf(error_dist, max_correction)
+		var direction = (server_pos - player_node.global_position).normalized()
+		player_node.global_position += direction * correction_amount
 	
 ## Enable/disable prediction (for debugging)
 func set_prediction_enabled(enabled: bool) -> void:

@@ -74,6 +74,8 @@ func perform_dash(dir: Vector2) -> void:
 func on_dash_finished() -> void:
 	_player.is_dashing = false
 	_visual_controller.on_dash_finished()
+	# Notify reconciliation system that dash ended — start grace period
+	MultiplayerUtils._dash_end_time = Time.get_ticks_usec() / 1000000.0
 
 
 func apply_damage(amount: int, source_position: Vector2, force: float, attacker_name: String = "") -> void:

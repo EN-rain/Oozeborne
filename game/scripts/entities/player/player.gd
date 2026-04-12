@@ -423,7 +423,7 @@ func revive_player(health_percent: float = 0.5) -> void:
 		player_sprite.modulate = Color(1.0, 1.0, 1.0, 0.5)
 		var tween := create_tween()
 		tween.tween_property(player_sprite, "modulate", Color.WHITE, 1.5)
-	DamageNumbers.spawn_damage(global_position + Vector2(0, -30), 0, false, false, Color(0.2, 1.0, 0.4))
+	DamageNumbers.spawn_damage(global_position + Vector2(0, -30), 0, false, false)
 	# Notify HUD that player revived
 	var hud := get_tree().root.get_node_or_null("Game/HUD")
 	if hud != null and hud.has_method("on_player_revived"):

@@ -578,6 +578,9 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		remote_player.is_local_player = false  # Mark as remote player - this disables physics
 		remote_player.set_meta("network_user_id", user_id)
 		remote_player.velocity = Vector2.ZERO  # Reset velocity
+		# Set collision layers BEFORE adding to tree to prevent any frame-1 collision
+		remote_player.collision_layer = 0
+		remote_player.collision_mask = 0
 		var remote_collision = remote_player.get_node_or_null("CollisionShape2D")
 		if remote_collision:
 			remote_collision.set_deferred("disabled", true)
@@ -704,7 +707,7 @@ func _apply_remote_enemy_hit(hit_pos: Vector2, damage: int) -> void:
 		# Skip dead/dying enemies
 		if enemy.get("is_dying") == true:
 			continue
-		var dist_sq := (enemy.global_position - hit_pos).length_squared()
+		var dist_sq: float = (enemy.global_position - hit_pos).length_squared()
 		if dist_sq < best_dist_sq:
 			best_dist_sq = dist_sq
 			best_enemy = enemy
