@@ -18,3 +18,4 @@ exports/
 # IDE settings
 .vscode/
 .windsurf/skills/
+.kiro/
