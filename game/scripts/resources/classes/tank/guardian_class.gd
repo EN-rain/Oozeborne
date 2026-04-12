@@ -17,13 +17,12 @@ func _init():
 	modifiers_defense = 1.3   # +30% Defense
 	modifiers_attack_speed = 0.9   # -10% Attack Speed
 	
-	# Special ability
-	ability_name = "Shield Wall"
-	ability_description = "Raise your shield, reducing all incoming damage by 70% for 4 seconds and taunting nearby enemies."
-	ability_cooldown = 15.0
-	ability_duration = 4.0
-	
 	# Passive bonuses
 	passive_name = "Iron Will"
 	passive_description = "Gain 5% damage reduction for each nearby ally."
 	passive_thorns_damage = 5.0  # Reflects 5 damage when hit
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 1.5    # +1.5 HP/s out of combat

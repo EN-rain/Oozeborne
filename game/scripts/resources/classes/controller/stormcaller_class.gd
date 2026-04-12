@@ -21,12 +21,12 @@ func _init():
 	modifiers_defense = 0.92   # -8% Defense
 	modifiers_attack_speed = 1.1    # +10% Attack Speed
 
-	# Special ability
-	ability_name = "Tempest Pulse"
-	ability_description = "Release chained shockwaves that knock enemies back and apply a brief slow."
-	ability_cooldown = 12.0
-	ability_duration = 3.0
-
 	# Passive bonuses
 	passive_name = "Static Build"
+	passive_thorns_damage = 7.0
+	
+	# Mana & Regen
+	mana_bonus = 20         # +20 MP (lightning magic)
+	mana_regen_bonus = 0.5  # +0.5 MP/s
+	hp_regen_bonus = 0.0
 	passive_description = "Repeated hits on controlled targets increase your lightning damage."

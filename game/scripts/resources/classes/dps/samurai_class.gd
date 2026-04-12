@@ -19,13 +19,12 @@ func _init():
 	modifiers_crit_chance = 1.08    # +8% Crit Chance
 	modifiers_crit_damage = 1.4     # +40% Crit Damage
 	
-	# Special ability
-	ability_name = "Iaijutsu"
-	ability_description = "Sheathe your blade for up to 2 seconds. Release to unleash a devastating slash that deals 3x damage and pierces enemies."
-	ability_cooldown = 10.0
-	ability_duration = 2.0
-	
 	# Passive bonuses
 	passive_name = "Way of the Warrior"
 	passive_description = "Consecutive hits on the same enemy increase damage by 5% per hit, stacking up to 25%."
 	passive_dodge_chance = 5.0
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.0

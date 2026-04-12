@@ -181,7 +181,12 @@ func _update_class_info(target_class: PlayerClass) -> void:
 		stats_parts.append("CRIT DMG %+.0f%%" % [(target_class.modifiers_crit_damage - 1.0) * 100])
 
 	stats_label.text = stats_prefix + (" | ".join(stats_parts) if stats_parts.size() > 0 else base_values_text)
-	ability_label.text = ability_prefix + target_class.ability_name + "\n" + target_class.ability_description if target_class.ability_name else ""
+	var class_id := ClassManager.get_class_id(target_class)
+	var special_skill := SkillRegistry.get_special_skill_for_class(class_id)
+	if special_skill != null:
+		ability_label.text = ability_prefix + special_skill.display_name + "\n" + special_skill.description_template
+	else:
+		ability_label.text = ""
 	passive_label.text = passive_prefix + target_class.passive_name + "\n" + target_class.passive_description if target_class.passive_name else ""
 
 

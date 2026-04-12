@@ -19,13 +19,12 @@ func _init():
 	modifiers_crit_chance = 1.06    # +6% Crit Chance
 	modifiers_crit_damage = 1.20    # +20% Crit Damage
 	
-	# Special ability
-	ability_name = "Meteor Storm"
-	ability_description = "Call down a rain of meteors in a large area, dealing 200 total damage over 3 seconds."
-	ability_cooldown = 20.0
-	ability_duration = 3.0
-	
 	# Passive bonuses
 	passive_name = "Mana Shield"
 	passive_description = "Convert 10% of damage taken into a temporary mana shield that regenerates over time."
 	passive_thorns_damage = 10.0  # 10 magic damage to attackers
+	
+	# Mana & Regen
+	mana_bonus = 50         # +50 MP (pure caster, highest pool)
+	mana_regen_bonus = 1.0  # +1.0 MP/s
+	hp_regen_bonus = 0.0

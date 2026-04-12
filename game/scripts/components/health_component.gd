@@ -10,11 +10,16 @@ signal died()
 
 var current_health: int
 var health_bar: ProgressBar
+var hp_regen: float = 0.0 ## HP/s out of combat
+var hp_regen_bonus: float = 0.0 ## Additional HP/s from stats/skills
+var _combat_timer: float = 0.0
+var _is_in_combat: bool = false
 @onready var hide_timer: Timer = $HideTimer
 var is_dead := false
 
 func initialize(healthbar: ProgressBar):
 	current_health = max_health
+	set_process(true)
 	
 	# Setup hide timer
 	hide_timer.wait_time = health_bar_hide_time
@@ -33,6 +38,10 @@ func take_damage(amount: int) -> bool:
 	
 	current_health -= amount
 	current_health = max(0, current_health)
+	
+	# Enter combat state — pauses regen
+	_is_in_combat = true
+	_combat_timer = 2.0
 	
 	# Update health bar
 	if health_bar:
@@ -80,6 +89,29 @@ func revive(health_percent: float = 0.5) -> void:
 func _on_hide_timer_timeout():
 	if health_bar:
 		health_bar.visible = false
+
+func _process(delta: float) -> void:
+	if is_dead or max_health <= 0:
+		return
+	# Track combat state
+	if _is_in_combat:
+		_combat_timer -= delta
+		if _combat_timer <= 0.0:
+			_is_in_combat = false
+	# Regen HP out of combat
+	if not _is_in_combat:
+		var regen_rate := hp_regen + hp_regen_bonus
+		if regen_rate > 0.0:
+			var hp_before := current_health
+			current_health = mini(current_health + int(regen_rate * delta), max_health)
+			if current_health != hp_before:
+				health_changed.emit(current_health, max_health)
+
+
+func enter_combat() -> void:
+	_is_in_combat = true
+	_combat_timer = 2.0
+
 
 func get_health_percent() -> float:
 	return float(current_health) / float(max_health)

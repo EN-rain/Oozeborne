@@ -3,10 +3,10 @@
 [ext_resource type="Script" path="res://scripts/ui/gameplay/save_slots_ui.gd" id="1_script"]
 
 [sub_resource type="StyleBoxFlat" id="panel_bg"]
-content_margin_left = 20.0
-content_margin_top = 20.0
-content_margin_right = 20.0
-content_margin_bottom = 20.0
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
 bg_color = Color(0.05, 0.04, 0.08, 0.95)
 border_width_left = 2
 border_width_top = 2
@@ -47,13 +47,13 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(520, 480)
+custom_minimum_size = Vector2(560, 520)
 layout_mode = 2
 theme_override_styles/panel = SubResource("panel_bg")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="TitleBar" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
@@ -63,7 +63,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 0.95)
 theme_override_font_sizes/font_size = 20
-text = "Save Slots"
+text = "Save Slots (Cloud)"
 
 [node name="CloseButton" type="Button" parent="CenterContainer/Panel/VBox/TitleBar"]
 unique_name_in_owner = true
@@ -78,11 +78,15 @@ theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
 theme_override_font_sizes/font_size = 12
 text = "Loading..."
 
-[node name="SlotContainer" type="VBoxContainer" parent="CenterContainer/Panel/VBox"]
-unique_name_in_owner = true
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+
+[node name="SlotContainer" type="VBoxContainer" parent="CenterContainer/Panel/VBox/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
 [node name="AutoSaveButton" type="Button" parent="CenterContainer/Panel/VBox"]
 unique_name_in_owner = true

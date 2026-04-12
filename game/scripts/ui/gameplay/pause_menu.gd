@@ -60,6 +60,18 @@ func _on_save_round_pressed():
 	var tree := get_tree()
 	if tree == null:
 		return
+	# Try cloud save first if authenticated
+	if MultiplayerManager.is_authenticated():
+		var slot := CloudSaveManager.find_empty_slot()
+		if slot == 0:
+			if save_round_button != null:
+				save_round_button.text = "All Slots Full"
+			return
+		var result = await CloudSaveManager.save_to_slot(slot, "solo")
+		if save_round_button != null:
+			save_round_button.text = "Saved (Slot %d)" % slot if result.get("success", false) else "Save Failed"
+		return
+	# Fallback to local save
 	var current_scene := tree.current_scene
 	if current_scene == null:
 		return

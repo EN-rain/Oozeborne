@@ -57,6 +57,27 @@ func get_skills_for_tree(main_class: String, tree_key: String) -> Array:
 	return results
 
 
+func get_special_skill_for_class(class_id: String) -> SkillDefinition:
+	var main_class: String = ""
+	var tree_key: String = ""
+	if class_id in ClassManager.MAIN_CLASS_IDS:
+		main_class = class_id
+		tree_key = "main"
+	else:
+		for mc in ClassManager.MAIN_CLASS_IDS:
+			if class_id in ClassManager.MAIN_TO_SUBCLASS_IDS.get(mc, []):
+				main_class = mc
+				tree_key = class_id
+				break
+	if main_class.is_empty():
+		return null
+	var skills := get_skills_for_tree(main_class, tree_key)
+	for skill in skills:
+		if skill.skill_type == SkillDefinition.SkillType.SPECIAL:
+			return skill
+	return null
+
+
 func get_skill_path_info(skill_id: String) -> Dictionary:
 	return (_skill_path_info.get(skill_id, {}) as Dictionary).duplicate(true)
 

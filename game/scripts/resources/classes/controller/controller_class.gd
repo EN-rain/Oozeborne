@@ -23,12 +23,11 @@ func _init():
 	modifiers_crit_chance = 1.06   # +6% Crit Chance
 	modifiers_crit_damage = 1.10   # +10% Crit Damage
 
-	# Special ability
-	ability_name = "Control Field"
-	ability_description = "Deploy a control zone that slows enemies and weakens their outgoing damage."
-	ability_cooldown = 14.0
-	ability_duration = 6.0
-
 	# Passive bonuses
 	passive_name = "Tempo Lock"
 	passive_description = "Enemies affected by your control effects take bonus damage from your abilities."
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.0

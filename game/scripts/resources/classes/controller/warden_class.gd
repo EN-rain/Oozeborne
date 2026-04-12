@@ -17,15 +17,15 @@ func _init():
 	# Stat modifiers
 	modifiers_hp = 1.15        # +15% HP
 	modifiers_speed = 0.95     # -5% Speed
+	passive_thorns_damage = 8.0
 	modifiers_damage = 1.0     # Base Damage
 	modifiers_defense = 1.15   # +15% Defense
 	modifiers_attack_speed = 0.95   # -5% Attack Speed
-
-	# Special ability
-	ability_name = "Bastion Ring"
-	ability_description = "Raise a short-lived ring that slows crossing enemies and briefly roots the first target hit."
-	ability_cooldown = 18.0
-	ability_duration = 5.0
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.5    # +0.5 HP/s out of combat
 
 	# Passive bonuses
 	passive_name = "Line Holder"

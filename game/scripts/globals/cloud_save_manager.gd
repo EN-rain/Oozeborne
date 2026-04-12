@@ -1,7 +1,7 @@
 extends Node
 
-## CloudSaveManager - Saves game progress to Nakama storage with 5 slots per player
-## Add to AutoLoad as "CloudSaveManager"
+## CloudSaveManager - 5 cloud save slots per player (solo + multiplayer)
+## All saves stored on Nakama. Each slot has a "mode" field: "solo" or "multiplayer"
 
 signal save_completed(slot: int, success: bool)
 signal load_completed(slot: int, success: bool)
@@ -15,14 +15,13 @@ var _cached_slots: Array = []
 
 
 func _ready() -> void:
-	# Initialize with empty slots
 	_cached_slots.resize(MAX_SLOTS)
 	for i in range(MAX_SLOTS):
 		_cached_slots[i] = {}
 
 
 ## Build a save snapshot from the current game scene
-func build_save_snapshot() -> Dictionary:
+func build_save_snapshot(mode: String = "solo") -> Dictionary:
 	var tree := get_tree()
 	if tree == null:
 		return {}
@@ -34,17 +33,40 @@ func build_save_snapshot() -> Dictionary:
 		return {}
 	snapshot["version"] = SAVE_VERSION
 	snapshot["saved_at"] = Time.get_datetime_string_from_system()
+	snapshot["mode"] = mode
 	return snapshot
 
 
+## Rename a save slot (stored in the save data itself)
+func rename_slot(slot: int, new_name: String) -> Dictionary:
+	if slot < 1 or slot > MAX_SLOTS:
+		return {"success": false, "error": "Invalid slot"}
+	if not MultiplayerManager.is_authenticated():
+		return {"success": false, "error": "Not authenticated"}
+	var data: Dictionary = _cached_slots[slot - 1]
+	if data.is_empty():
+		return {"success": false, "error": "Slot is empty"}
+	data["slot_name"] = new_name
+	var key := "slot_%d" % slot
+	var json_data := JSON.stringify(data)
+	var write_obj := NakamaWriteStorageObject.new(COLLECTION, key, 1, 1, json_data, "")
+	var client := _get_client()
+	if client == null:
+		return {"success": false, "error": "No server connection"}
+	var result = await client.write_storage_objects_async(MultiplayerManager.session, [write_obj])
+	if result == null or result.is_exception():
+		return {"success": false, "error": "Failed to rename"}
+	return {"success": true, "error": ""}
+
+
 ## Save current game state to a specific slot (1-5)
-func save_to_slot(slot: int) -> Dictionary:
+func save_to_slot(slot: int, mode: String = "solo") -> Dictionary:
 	if slot < 1 or slot > MAX_SLOTS:
 		return {"success": false, "error": "Invalid slot (1-%d)" % MAX_SLOTS}
 	if not MultiplayerManager.is_authenticated():
 		return {"success": false, "error": "Not authenticated"}
 
-	var snapshot := build_save_snapshot()
+	var snapshot := build_save_snapshot(mode)
 	if snapshot.is_empty():
 		return {"success": false, "error": "No game data to save"}
 
@@ -187,13 +209,21 @@ func find_empty_slot() -> int:
 
 
 ## Auto-save to the first available slot
-func auto_save() -> Dictionary:
+func auto_save(mode: String = "solo") -> Dictionary:
 	var slot := find_empty_slot()
 	if slot == 0:
 		return {"success": false, "error": "All 5 save slots are full. Delete one first.", "slot": 0}
-	var result := await save_to_slot(slot)
+	var result := await save_to_slot(slot, mode)
 	result["slot"] = slot
 	return result
+
+
+## Check if any slot has a save
+func has_any_save() -> bool:
+	for i in range(MAX_SLOTS):
+		if not _cached_slots[i].is_empty():
+			return true
+	return false
 
 
 ## Get cached slot summary for UI display
@@ -205,6 +235,8 @@ func get_slot_summary(slot: int) -> Dictionary:
 		return {}
 	return {
 		"slot": slot,
+		"slot_name": str(data.get("slot_name", "Slot %d" % slot)),
+		"mode": str(data.get("mode", "solo")),
 		"class_name": str(data.get("player_class_name", "—")),
 		"level": int(data.get("player_level", 1)),
 		"round": int(data.get("round", 1)),

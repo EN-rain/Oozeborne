@@ -20,12 +20,6 @@ class_name PlayerClass extends Resource
 @export_range(0.5, 2.0) var modifiers_crit_chance: float = 1.0
 @export_range(0.5, 2.0) var modifiers_crit_damage: float = 1.0
 
-@export_group("Special Ability", "ability")
-@export var ability_name: String = ""
-@export_multiline var ability_description: String = ""
-@export var ability_cooldown: float = 10.0
-@export var ability_duration: float = 5.0
-
 @export_group("Passive Bonuses", "passive")
 @export var passive_name: String = ""
 @export_multiline var passive_description: String = ""
@@ -34,6 +28,13 @@ class_name PlayerClass extends Resource
 @export var passive_thorns_damage: float = 0.0
 @export var passive_xp_bonus: float = 0.0
 @export var passive_gold_bonus: float = 0.0
+
+@export_group("Mana", "mana")
+@export var mana_bonus: int = 0 ## Flat MP added to base (0 = non-mana class)
+@export var mana_regen_bonus: float = 0.0 ## Additional MP/s
+
+@export_group("Regen", "regen")
+@export var hp_regen_bonus: float = 0.0 ## Additional HP/s out of combat
 
 @export_group("Player Scene", "player")
 @export var player_scene: PackedScene  ## The player scene to instantiate for this class (slime variant)
@@ -79,5 +80,10 @@ func get_stats_summary() -> String:
 		summary += "  Crit Chance: %+.0f%s\n" % [(modifiers_crit_chance - 1.0) * 100, "%"]
 	if modifiers_crit_damage != 1.0:
 		summary += "  Crit Damage: %+.0f%s\n" % [(modifiers_crit_damage - 1.0) * 100, "%"]
+	if mana_bonus > 0:
+		summary += "  MP: +%d\n" % mana_bonus
+		summary += "  Mana Regen: +%.1f/s\n" % mana_regen_bonus
+	if hp_regen_bonus > 0.0:
+		summary += "  HP Regen: +%.1f/s\n" % hp_regen_bonus
 	
 	return summary

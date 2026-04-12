@@ -46,6 +46,32 @@ Balance target:
 - DPS: strong crit
 - Assassin / Samurai: highest burst crit payoff
 
+### Mana System
+
+Magic-oriented classes and subclasses use **Mana (MP)** as a resource for their abilities. Physical classes rely solely on cooldowns.
+
+- **Base mana pool:** 100 MP (mana-using classes only)
+- **Base mana regen:** 3 MP/s in combat, 6 MP/s out of combat (2s no-damage threshold)
+- **Non-mana classes:** 0 MP — abilities are cooldown-only
+- **Mana costs** are listed per ability; if no cost is listed, the ability is cooldown-only
+
+**Mana-Using Classes:**
+
+| Class/Subclass | Bonus MP | Total MP | Mana Regen | Theme |
+|---|---|---|---|---|
+| Mage | +50 | 150 | +1 MP/s | Pure caster, highest pool |
+| Cleric | +30 | 130 | +1 MP/s | Holy healer |
+| Chronomancer | +25 | 125 | +1 MP/s | Time magic |
+| Necromancer | +20 | 120 | +0.5 MP/s | Dark caster |
+| Stormcaller | +20 | 120 | +0.5 MP/s | Lightning magic |
+| Paladin | +15 | 115 | +0.5 MP/s | Holy tank |
+| Hexbinder | +15 | 115 | +0.5 MP/s | Curse magic |
+| Spellblade | +10 | 110 | +0.5 MP/s | Melee-magic hybrid |
+| Hybrid (main) | +10 | 110 | +0.5 MP/s | Versatile magic |
+| Monk | +5 | 105 | +1 MP/s | Chi/energy user |
+
+**Non-Mana Classes (0 MP):** Tank main, Guardian, Berserker, DPS main, Assassin, Ranger, Samurai, Support main, Bard, Alchemist, Shadow Knight, Controller main, Warden
+
 ### Progression Flow
 
 1. **Pick a main class** (Tank, DPS, Support, Hybrid, or Controller)
@@ -179,7 +205,7 @@ The Tank is one of five main classes. Players begin by investing Skill Points (S
 
 ### Subclass: Paladin (30 SP Cap)
 
-**Subclass Stats:** HP +22%, Speed -10%, Damage +5%, Defense +18%, Attack Speed -10%, 5% Lifesteal
+**Subclass Stats:** HP +22%, Speed -10%, Damage +5%, Defense +18%, Attack Speed -10%, 5% Lifesteal, +15 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -190,13 +216,15 @@ The Tank is one of five main classes. Players begin by investing Skill Points (S
 | Defense | +18% |
 | Attack Speed | -10% |
 | Lifesteal | 5% |
+| MP | +15 |
+| Mana Regen | +0.5 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Divine Shield** | **Special** | **Invulnerable 2s, heal 10% max HP. 25s CD** | **2s / 10% heal** | **+0.25s / +2.5%** | **3s / 20% heal** |
-| Divine Aegis | Ability | Become invulnerable for 1.5s, heal 10% max HP. Scales to 3s/20% | 1.5s / 10% | +0.4s / +2.5% | 3s / 20% |
-| Holy Strike | Ability | Smite enemy for 30-60 holy damage + 20% slow for 1-2s. Single target, 8m range | 30 dmg / 1s | +7.5 dmg / +0.25s | 60 dmg / 2s |
-| Consecrate | Ability | Sanctify 4m radius ground for 3-5s, dealing 20-40 holy damage/s to enemies | 20 dmg/s / 3s | +5 dmg/s / +0.5s | 40 dmg/s / 5s |
+| **Divine Shield** | **Special** | **Invulnerable 2s, heal 10% max HP. 25s CD, 40 MP** | **2s / 10% heal** | **+0.25s / +2.5%** | **3s / 20% heal** |
+| Divine Aegis | Ability | Become invulnerable for 1.5s, heal 10% max HP. Scales to 3s/20%. **35 MP** | 1.5s / 10% | +0.4s / +2.5% | 3s / 20% |
+| Holy Strike | Ability | Smite enemy for 30-60 holy damage + 20% slow for 1-2s. Single target, 8m range. **20 MP** | 30 dmg / 1s | +7.5 dmg / +0.25s | 60 dmg / 2s |
+| Consecrate | Ability | Sanctify 4m radius ground for 3-5s, dealing 20-40 holy damage/s to enemies. **30 MP** | 20 dmg/s / 3s | +5 dmg/s / +0.5s | 40 dmg/s / 5s |
 | Holy Might | Stat | Increase holy damage output percentage | +5% Holy | +5% Holy | +25% Holy |
 | Grace | Stat | Increase healing received percentage | +4% Healing | +4% Healing | +20% Healing |
 | Holy Light | Passive | Heal for 1-5% of damage dealt. Killing enemies grants +2-10 HP. 5% lifesteal. | 1% / +2 HP | +1% / +2 HP | 5% / +10 HP |
@@ -287,7 +315,7 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 
 ### Subclass: Mage (30 SP Cap)
 
-**Subclass Stats:** HP -22%, Speed +10%, Damage +35%, Defense -18%, Attack Speed -5%, Crit Chance +6%, Crit Damage +20%
+**Subclass Stats:** HP -22%, Speed +10%, Damage +35%, Defense -18%, Attack Speed -5%, Crit Chance +6%, Crit Damage +20%, +50 MP, +1 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -299,13 +327,15 @@ The DPS is one of five main classes. Players begin by investing Skill Points (SP
 | Attack Speed | -5% |
 | Crit Chance | +6% |
 | Crit Damage | +20% |
+| MP | +50 |
+| Mana Regen | +1 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Meteor Storm** | **Special** | **100 dmg over 2s in large area. 20s CD** | **100 dmg / 2s** | **+25 dmg / +0.25s** | **200 dmg / 3s** |
-| Meteor Shower | Ability | Rain meteors in 8m radius for 2-3s. Total 100-200 damage split among targets. 25s CD | 100 dmg / 2s | +25 dmg / +0.25s | 200 dmg / 3s |
-| Frost Nova | Ability | Explode freezing all enemies within 5m for 1-2s. Deal 40-80 ice damage | 40 dmg / 1s | +10 dmg / +0.25s | 80 dmg / 2s |
-| Chain Lightning | Ability | Lightning bolt chains to 2-4 nearby enemies within 8m, dealing 30-60 damage each | 2 targets / 30 dmg | +0.5 target / +7.5 dmg | 4 targets / 60 dmg |
+| **Meteor Storm** | **Special** | **100 dmg over 2s in large area. 20s CD, 50 MP** | **100 dmg / 2s** | **+25 dmg / +0.25s** | **200 dmg / 3s** |
+| Meteor Shower | Ability | Rain meteors in 8m radius for 2-3s. Total 100-200 damage split among targets. 25s CD. **60 MP** | 100 dmg / 2s | +25 dmg / +0.25s | 200 dmg / 3s |
+| Frost Nova | Ability | Explode freezing all enemies within 5m for 1-2s. Deal 40-80 ice damage. **35 MP** | 40 dmg / 1s | +10 dmg / +0.25s | 80 dmg / 2s |
+| Chain Lightning | Ability | Lightning bolt chains to 2-4 nearby enemies within 8m, dealing 30-60 damage each. **25 MP** | 2 targets / 30 dmg | +0.5 target / +7.5 dmg | 4 targets / 60 dmg |
 | Arcane Surge | Stat | Increase spell damage percentage | +5% Spell | +5% Spell | +25% Spell |
 | Focus | Stat | Increase mana pool by flat amount | +10 MP | +10 MP | +50 MP |
 | Mana Shield | Passive | Convert 2-10% of damage taken into mana shield that absorbs damage. 10 magic thorns. | 2% conversion | +2% conversion | 10% conversion |
@@ -368,7 +398,7 @@ The Support is one of five main classes. Players begin by investing Skill Points
 
 ### Subclass: Cleric (30 SP Cap)
 
-**Subclass Stats:** HP +10%, Speed -10%, Damage -20%, Defense +20%, Attack Speed -15%
+**Subclass Stats:** HP +10%, Speed -10%, Damage -20%, Defense +20%, Attack Speed -15%, +30 MP, +1 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -378,13 +408,15 @@ The Support is one of five main classes. Players begin by investing Skill Points
 | Damage | -20% |
 | Defense | +20% |
 | Attack Speed | -15% |
+| MP | +30 |
+| Mana Regen | +1 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Divine Blessing** | **Special** | **Holy zone: 25 HP/s, +10% defense, 3s. 18s CD** | **25 HP/s / 3s / +10%** | **+6.25 HP/s / +0.5s / +2.5%** | **50 HP/s / 5s / +20%** |
-| Holy Ground | Ability | Create 5m zone for 3-5s. Allies gain 30-50 HP/s + 10-20% defense. 25s CD | 30 HP/s / 10% / 3s | +5 HP/s / +2.5% / +0.5s | 50 HP/s / 20% / 5s |
-| Resurrection Pulse | Ability | Send wave restoring 10-30 HP instantly to all allies within 10m. 30s cooldown | 10 HP | +5 HP | 30 HP |
-| Shield of Faith | Ability | Wrap ally in barrier absorbing next 1-2 hits. Lasts 5-15s. 20s CD | 1 hit / 5s | +0.25 hit / +2.5s | 2 hits / 15s |
+| **Divine Blessing** | **Special** | **Holy zone: 25 HP/s, +10% defense, 3s. 18s CD, 45 MP** | **25 HP/s / 3s / +10%** | **+6.25 HP/s / +0.5s / +2.5%** | **50 HP/s / 5s / +20%** |
+| Holy Ground | Ability | Create 5m zone for 3-5s. Allies gain 30-50 HP/s + 10-20% defense. 25s CD. **45 MP** | 30 HP/s / 10% / 3s | +5 HP/s / +2.5% / +0.5s | 50 HP/s / 20% / 5s |
+| Resurrection Pulse | Ability | Send wave restoring 10-30 HP instantly to all allies within 10m. 30s cooldown. **50 MP** | 10 HP | +5 HP | 30 HP |
+| Shield of Faith | Ability | Wrap ally in barrier absorbing next 1-2 hits. Lasts 5-15s. 20s CD. **30 MP** | 1 hit / 5s | +0.25 hit / +2.5s | 2 hits / 15s |
 | Sanctify | Stat | Increase holy healing output percentage | +5% Holy | +5% Holy | +25% Holy |
 | Devotion | Stat | Increase buff duration by seconds for all buffs you apply | +1s Duration | +1s Duration | +5s Duration |
 | Healing Aura | Passive | Allies within 8m regen 0.4-2 HP/s. Self-healing 10-50% more effective. 10% lifesteal. | 0.4 HP/s / +10% | +0.4 HP/s / +10% | 2 HP/s / +50% |
@@ -437,7 +469,7 @@ The Support is one of five main classes. Players begin by investing Skill Points
 
 ### Subclass: Necromancer (30 SP Cap)
 
-**Subclass Stats:** HP -15%, Speed -5%, Damage +22%, Defense -20%, Crit Chance +10%, 14% Lifesteal
+**Subclass Stats:** HP -15%, Speed -5%, Damage +22%, Defense -20%, Crit Chance +10%, 14% Lifesteal, +20 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -449,13 +481,15 @@ The Support is one of five main classes. Players begin by investing Skill Points
 | Attack Speed | — |
 | Crit Chance | +10% |
 | Lifesteal | 14% |
+| MP | +20 |
+| Mana Regen | +0.5 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Grave Swarm** | **Special** | **Swarm deals 30 dmg/s, seeks enemies, 3s. 16s CD** | **30 dmg/s / 3s** | **+7.5 dmg/s / +0.75s** | **60 dmg/s / 6s** |
-| Summon Undead | Ability | Summon 1 skeleton warrior (20 HP, 6 damage/attack). Scales to 2 skeletons (40 HP, 10 dmg) | 1 skel / 20 HP / 6 dmg | +0.2 skel / +5 HP / +1 dmg | 2 skel / 40 HP / 10 dmg |
-| Bone Spike | Ability | Erupt spike beneath target within 10m dealing 30-70 damage. 8s cooldown | 30 damage | +10 damage | 70 damage |
-| Death Shroud | Ability | Cloak self for 4-8s. Enemies who hit you take 10-25 damage. 20s cooldown | 4s / 10 dmg return | +1s / +3.75 dmg | 8s / 25 dmg return |
+| **Grave Swarm** | **Special** | **Swarm deals 30 dmg/s, seeks enemies, 3s. 16s CD, 40 MP** | **30 dmg/s / 3s** | **+7.5 dmg/s / +0.75s** | **60 dmg/s / 6s** |
+| Summon Undead | Ability | Summon 1 skeleton warrior (20 HP, 6 damage/attack). Scales to 2 skeletons (40 HP, 10 dmg). **35 MP** | 1 skel / 20 HP / 6 dmg | +0.2 skel / +5 HP / +1 dmg | 2 skel / 40 HP / 10 dmg |
+| Bone Spike | Ability | Erupt spike beneath target within 10m dealing 30-70 damage. 8s cooldown. **20 MP** | 30 damage | +10 damage | 70 damage |
+| Death Shroud | Ability | Cloak self for 4-8s. Enemies who hit you take 10-25 damage. 20s cooldown. **25 MP** | 4s / 10 dmg return | +1s / +3.75 dmg | 8s / 25 dmg return |
 | Undead Mastery | Stat | Increase minion damage and HP by percentage | +10% Minion | +10% Minion | +50% Minion |
 | Soul Reaping | Stat | Increase max summon count by partial amount | +0.2 Summons | +0.2 Summons | +1 Summon |
 | Soul Harvest | Passive | Defeated enemies restore 2-10 HP and briefly amplify spell damage. 14% lifesteal. | +2 HP / amp | +2 HP / amp | +10 HP / amp |
@@ -468,7 +502,7 @@ The Support is one of five main classes. Players begin by investing Skill Points
 
 The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) into the main class tree. All 20 SP must be spent before subclass trees unlock.
 
-**Base Stats:** HP +5%, Speed +5%, Damage +5%, Defense —, Attack Speed +5%
+**Base Stats:** HP +5%, Speed +5%, Damage +5%, Defense —, Attack Speed +5%, +10 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -478,6 +512,8 @@ The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) 
 | Damage | +5% |
 | Defense | — |
 | Attack Speed | +5% |
+| MP | +10 |
+| Mana Regen | +0.5 MP/s |
 
 **Special Ability — Adaptive Stance (13s CD):** Shift stance to gain situational bonuses in combat.
 
@@ -485,15 +521,15 @@ The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) 
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Adaptive Stance** | **Special** | **+5% all stats for 3s. 13s CD** | **+5% / 3s** | **+2.5% / +0.5s** | **+15% / 5s** |
+| **Adaptive Stance** | **Special** | **+5% all stats for 3s. 13s CD, 20 MP** | **+5% / 3s** | **+2.5% / +0.5s** | **+15% / 5s** |
 | Arcane Blade | Stat | Increase magic-infused melee damage percentage | +4% Magic | +4% Magic | +20% Magic |
 | Mystic Armor | Stat | Increase defense by +3 and spell resistance by +3 per level | +3 Armor/Resist | +3 Armor/Resist | +15 Armor/Resist |
-| Elemental Strike | Ability | Melee attack adds 10-50 elemental damage based on weapon type. 12s cooldown | +10 elemental | +10 elemental | +50 elemental |
+| Elemental Strike | Ability | Melee attack adds 10-50 elemental damage based on weapon type. 12s cooldown. **15 MP** | +10 elemental | +10 elemental | +50 elemental |
 | Versatility | Passive | Spells cost 4-20% less mana, melee attacks restore 2-10 mana on hit | -4% cost / +2 mana | -4% cost / +2 mana | -20% cost / +10 mana |
 
 ### Subclass: Spellblade (30 SP Cap)
 
-**Subclass Stats:** HP +5%, Speed +8%, Damage +18%, Defense -6%, Attack Speed +8%, 3% Lifesteal
+**Subclass Stats:** HP +5%, Speed +8%, Damage +18%, Defense -6%, Attack Speed +8%, 3% Lifesteal, +10 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -504,13 +540,15 @@ The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) 
 | Defense | -6% |
 | Attack Speed | +8% |
 | Lifesteal | 3% |
+| MP | +10 |
+| Mana Regen | +0.5 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Elemental Infusion** | **Special** | **+10% elemental dmg, effect 5s. 12s CD** | **+10% / 5s** | **+5% / +1.25s** | **+30% / 10s** |
-| Blade Burst | Ability | Unleash magic in weapon for 4m radius explosion. Deal 20-100 damage. 15s CD | 20 damage | +20 damage | 100 damage |
-| Arcane Dash | Ability | Dash 6m forward leaving 3s magic trail. Enemies crossing take 10-50 damage/s | 10 dmg/s / 3s | +10 dmg/s / +0s | 50 dmg/s / 3s |
-| Spell Parry | Ability | Parry next attack within 2s, converting it to 20-80 magic damage burst. 10s CD | 20 damage / 2s | +15 damage / +0s | 80 damage / 2s |
+| **Elemental Infusion** | **Special** | **+10% elemental dmg, effect 5s. 12s CD, 25 MP** | **+10% / 5s** | **+5% / +1.25s** | **+30% / 10s** |
+| Blade Burst | Ability | Unleash magic in weapon for 4m radius explosion. Deal 20-100 damage. 15s CD. **30 MP** | 20 damage | +20 damage | 100 damage |
+| Arcane Dash | Ability | Dash 6m forward leaving 3s magic trail. Enemies crossing take 10-50 damage/s. **20 MP** | 10 dmg/s / 3s | +10 dmg/s / +0s | 50 dmg/s / 3s |
+| Spell Parry | Ability | Parry next attack within 2s, converting it to 20-80 magic damage burst. 10s CD. **15 MP** | 20 damage / 2s | +15 damage / +0s | 80 damage / 2s |
 | Mana Blade | Stat | Increase magic damage on melee attacks by percentage | +5% Magic | +5% Magic | +25% Magic |
 | Resonance | Stat | Reduce spell cooldown when landing melee attacks by percentage | -2% CD | -2% CD | -10% CD |
 | Arcane Strike | Passive | Every 4th attack deals 6-30% bonus magic damage. 3% lifesteal. | 6% | +6% | 30% |
@@ -541,7 +579,7 @@ The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) 
 
 ### Subclass: Monk (30 SP Cap)
 
-**Subclass Stats:** HP +5%, Speed +18%, Damage +14%, Defense —, Attack Speed +20%, Crit Chance +15%, 15% Dodge
+**Subclass Stats:** HP +5%, Speed +18%, Damage +14%, Defense —, Attack Speed +20%, Crit Chance +15%, 15% Dodge, +5 MP, +1 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -553,13 +591,15 @@ The Hybrid blends melee and magic. Players begin by investing Skill Points (SP) 
 | Attack Speed | +20% |
 | Crit Chance | +15% |
 | Dodge | 15% |
+| MP | +5 |
+| Mana Regen | +1 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Seven-Point Strike** | **Special** | **5 strikes, 15 dmg each, final crit + stun 0.5s. 15s CD** | **5x15 dmg / 0.5s** | **+0.5 hit / +1.25 dmg / +0.125s** | **7x20 dmg / 1s** |
-| Flurry | Ability | Rapid 3-5 hit combo over 1.5s, final hit stuns for 0.5-1s. 10s cooldown | 3 hits / 0.5s stun | +0.5 hit / +0.125s | 5 hits / 1s stun |
-| Pressure Point | Ability | Strike vital spot stunning target for 0.5-1.5s and dealing 30-70 damage. 12s CD | 0.5s stun / 30 dmg | +0.25s / +10 dmg | 1.5s stun / 70 dmg |
-| Wind Step | Ability | Dash through enemy within 6m dealing 20-60 damage and reset dodge cooldown. 8s CD | 20 damage | +10 damage | 60 damage |
+| **Seven-Point Strike** | **Special** | **5 strikes, 15 dmg each, final crit + stun 0.5s. 15s CD, 15 MP** | **5x15 dmg / 0.5s** | **+0.5 hit / +1.25 dmg / +0.125s** | **7x20 dmg / 1s** |
+| Flurry | Ability | Rapid 3-5 hit combo over 1.5s, final hit stuns for 0.5-1s. 10s cooldown. **10 MP** | 3 hits / 0.5s stun | +0.5 hit / +0.125s | 5 hits / 1s stun |
+| Pressure Point | Ability | Strike vital spot stunning target for 0.5-1.5s and dealing 30-70 damage. 12s CD. **15 MP** | 0.5s stun / 30 dmg | +0.25s / +10 dmg | 1.5s stun / 70 dmg |
+| Wind Step | Ability | Dash through enemy within 6m dealing 20-60 damage and reset dodge cooldown. 8s CD. **10 MP** | 20 damage | +10 damage | 60 damage |
 | Chi Flow | Stat | Increase energy/mana regeneration per second | +2 Regen | +2 Regen | +10 Regen |
 | Discipline | Stat | Increase combo damage multiplier percentage | +3% Combo | +3% Combo | +15% Combo |
 | Flow State | Passive | Dodge grants +4-20% attack speed for 3s. Consecutive hits add +0.4-2% dodge (max 4-20%). 15% base. | +4% / +0.4% | +4% / +0.4% | +20% / +2% |
@@ -597,7 +637,7 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 
 ### Subclass: Chronomancer (30 SP Cap)
 
-**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —
+**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —, +25 MP, +1 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -607,13 +647,15 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 | Damage | — |
 | Defense | — |
 | Attack Speed | — |
+| MP | +25 |
+| Mana Regen | +1 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Time Fracture** | **Special** | **20% slow enemies, +10% haste exit, 2.5s. 16s CD** | **20% / +10% / 2.5s** | **+5% / +5% / +0.5s** | **40% / +30% / 4.5s** |
-| Slow Field | Ability | Create 6m zone slowing enemies by 20-40% for 3-5s. 20s cooldown | 20% / 3s | +5% / +0.5s | 40% / 5s |
-| Time Freeze | Ability | Freeze single target completely for 0.5-2s. 25s cooldown | 0.5s freeze | +0.375s | 2s freeze |
-| Rewind | Ability | Rewind position to 1-3s ago, resetting damage taken in that window. 35s CD | 1s rewind | +0.5s | 3s rewind |
+| **Time Fracture** | **Special** | **20% slow enemies, +10% haste exit, 2.5s. 16s CD, 35 MP** | **20% / +10% / 2.5s** | **+5% / +5% / +0.5s** | **40% / +30% / 4.5s** |
+| Slow Field | Ability | Create 6m zone slowing enemies by 20-40% for 3-5s. 20s cooldown. **30 MP** | 20% / 3s | +5% / +0.5s | 40% / 5s |
+| Time Freeze | Ability | Freeze single target completely for 0.5-2s. 25s cooldown. **40 MP** | 0.5s freeze | +0.375s | 2s freeze |
+| Rewind | Ability | Rewind position to 1-3s ago, resetting damage taken in that window. 35s CD. **50 MP** | 1s rewind | +0.5s | 3s rewind |
 | Time Warp | Stat | Increase movement speed by percentage after using control abilities | +3% Speed | +3% Speed | +15% Speed |
 | Decay | Stat | Enemies in your slow fields take 5-25 damage over time per second | +5 DOT | +5 DOT | +25 DOT |
 | Borrowed Seconds | Passive | Control effects apply cooldown reduction burst 6-30%. | +6% CDR | +6% CDR | +30% CDR |
@@ -643,7 +685,7 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 
 ### Subclass: Hexbinder (30 SP Cap)
 
-**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —
+**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —, +15 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -653,20 +695,22 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 | Damage | — |
 | Defense | — |
 | Attack Speed | — |
+| MP | +15 |
+| Mana Regen | +0.5 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Severing Hex** | **Special** | **Cone: -5% enemy dmg, +3% ability dmg taken. 13s CD, 3s** | **-5% / +3% / 3s** | **-3.75% / +3% / +0.75s** | **-20% / +15% / 6s** |
-| Hex Cone | Ability | 45° cone curse: enemies deal 5-20% less damage, take 5-15% more ability damage | -5% dmg / +5% taken | -3.75% / +2.5% | -20% / +15% |
-| Cursed Ground | Ability | Corrupt 5m ground for 3-5s. Enemies have -10-30% stats while standing in it | 3s / -10% | +0.5s / -5% | 5s / -30% |
-| Hex Bolt | Ability | Fire projectile marking single target instantly. Mark lasts 2-6s. 12s CD | 2s mark | +1s | 6s mark |
+| **Severing Hex** | **Special** | **Cone: -5% enemy dmg, +3% ability dmg taken. 13s CD, 3s, 25 MP** | **-5% / +3% / 3s** | **-3.75% / +3% / +0.75s** | **-20% / +15% / 6s** |
+| Hex Cone | Ability | 45° cone curse: enemies deal 5-20% less damage, take 5-15% more ability damage. **20 MP** | -5% dmg / +5% taken | -3.75% / +2.5% | -20% / +15% |
+| Cursed Ground | Ability | Corrupt 5m ground for 3-5s. Enemies have -10-30% stats while standing in it. **30 MP** | 3s / -10% | +0.5s / -5% | 5s / -30% |
+| Hex Bolt | Ability | Fire projectile marking single target instantly. Mark lasts 2-6s. 12s CD. **15 MP** | 2s mark | +1s | 6s mark |
 | Dark Mark | Stat | Increase curse bonus damage by percentage | +4% Curse | +4% Curse | +20% Curse |
 | Affliction | Stat | Increase curse debuff strength by percentage | +3% Debuff | +3% Debuff | +15% Debuff |
 | Malice Chain | Passive | Defeated cursed enemies spread weaker curse within 4m (10-50% chance) | 10% spread | +10% spread | 50% spread |
 
 ### Subclass: Stormcaller (30 SP Cap)
 
-**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —
+**Subclass Stats:** HP —, Speed —, Damage —, Defense —, Attack Speed —, +20 MP, +0.5 MP/s
 
 **Stat Modifiers:**
 | Stat | Modifier |
@@ -676,13 +720,15 @@ The Controller manipulates the battlefield and enemy movement. Players begin by 
 | Damage | — |
 | Defense | — |
 | Attack Speed | — |
+| MP | +20 |
+| Mana Regen | +0.5 MP/s |
 
 | Skill Name | Type | Description | Initial | Per Level | Max |
 |------------|------|-------------|---------|-----------|-----|
-| **Tempest Pulse** | **Special** | **30 dmg, knockback 2m, 1s slow. 12s CD** | **30 dmg / 2m / 1s** | **+7.5 dmg / +0.5m / +0.5s** | **60 dmg / 4m / 3s** |
-| Shockwave | Ability | Chain of 2 shockwaves (8m range) dealing 20-60 damage + 10-30% slow for 1s. 16s CD | 20 dmg / 10% | +10 dmg / +5% | 60 dmg / 30% |
-| Thunder Clap | Ability | Slam ground sending shockwave in 6m radius, stunning for 0.3-1.5s. 18s cooldown | 0.3s stun | +0.3s | 1.5s stun |
-| Static Field | Ability | Charge self for 4-8s. Enemies within 4m take 5-20 damage when they hit you | 4s / 5 dmg return | +1s / +3.75 dmg | 8s / 20 dmg return |
+| **Tempest Pulse** | **Special** | **30 dmg, knockback 2m, 1s slow. 12s CD, 25 MP** | **30 dmg / 2m / 1s** | **+7.5 dmg / +0.5m / +0.5s** | **60 dmg / 4m / 3s** |
+| Shockwave | Ability | Chain of 2 shockwaves (8m range) dealing 20-60 damage + 10-30% slow for 1s. 16s CD. **25 MP** | 20 dmg / 10% | +10 dmg / +5% | 60 dmg / 30% |
+| Thunder Clap | Ability | Slam ground sending shockwave in 6m radius, stunning for 0.3-1.5s. 18s cooldown. **30 MP** | 0.3s stun | +0.3s | 1.5s stun |
+| Static Field | Ability | Charge self for 4-8s. Enemies within 4m take 5-20 damage when they hit you. **20 MP** | 4s / 5 dmg return | +1s / +3.75 dmg | 8s / 20 dmg return |
 | Voltage | Stat | Increase lightning damage dealt by percentage | +5% Lightning | +5% Lightning | +25% Lightning |
 | Surge | Stat | Increase knockback distance and stun duration by percentage | +10% Knockback | +10% Knockback | +50% Knockback |
 | Static Build | Passive | Each consecutive hit on controlled target adds +1-5% lightning damage, up to +5-25% | +1% per hit / +5% max | +1% per hit / +5% max | +5% per hit / +25% max |

@@ -17,14 +17,13 @@ func _init():
 	modifiers_defense = 1.05  # +5% Defense
 	modifiers_attack_speed = 1.0     # Normal Attack Speed
 	
-	# Special ability
-	ability_name = "Plague Flask"
-	ability_description = "Throw a flask that creates a poison cloud, dealing 80 damage over 6 seconds and applying Vulnerability to all enemies inside."
-	ability_cooldown = 15.0
-	ability_duration = 6.0
-	
 	# Passive bonuses
 	passive_name = "Transmutation"
 	passive_description = "Potions and consumables are 50% more effective. Gain 10% chance to apply Poison on hit."
 	passive_gold_bonus = 10.0
 	passive_xp_bonus = 10.0
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.5    # +0.5 HP/s out of combat

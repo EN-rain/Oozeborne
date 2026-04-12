@@ -21,12 +21,12 @@ func _init():
 	modifiers_defense = 0.9    # -10% Defense
 	modifiers_attack_speed = 1.06   # +6% Attack Speed
 
-	# Special ability
-	ability_name = "Severing Hex"
-	ability_description = "Mark enemies in a cone; marked targets deal less damage and take bonus ability damage."
-	ability_cooldown = 13.0
-	ability_duration = 6.0
-
 	# Passive bonuses
 	passive_name = "Malice Chain"
 	passive_description = "Defeated cursed enemies spread a weaker curse to nearby targets."
+	passive_thorns_damage = 6.0
+	
+	# Mana & Regen
+	mana_bonus = 15         # +15 MP (curse magic)
+	mana_regen_bonus = 0.5  # +0.5 MP/s
+	hp_regen_bonus = 0.0

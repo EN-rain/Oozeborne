@@ -23,12 +23,11 @@ func _init():
 	modifiers_crit_chance = 1.06    # +6% Crit Chance
 	modifiers_crit_damage = 1.08    # +8% Crit Damage
 	
-	# Special ability
-	ability_name = "Adaptive Stance"
-	ability_description = "Shift stance to gain situational bonuses in combat."
-	ability_cooldown = 13.0
-	ability_duration = 5.0
-	
 	# Passive bonuses
 	passive_name = "Versatility"
 	passive_description = "Gain small bonuses to multiple stats."
+	
+	# Mana & Regen
+	mana_bonus = 10         # +10 MP (versatile magic)
+	mana_regen_bonus = 0.5  # +0.5 MP/s
+	hp_regen_bonus = 0.0

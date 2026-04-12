@@ -246,6 +246,15 @@ func apply_remote_skill_stats(target_player: Node, stats: Dictionary) -> void:
 	if stats.has("meta"):
 		for key in (stats["meta"] as Dictionary).keys():
 			target_player.set_meta(str(key), stats["meta"][key])
+	var mana_node = target_player.get_node_or_null("Mana")
+	if mana_node != null:
+		if stats.has("max_mana"):
+			mana_node.set_max_mana(int(stats["max_mana"]))
+		if stats.has("current_mana"):
+			mana_node.current_mana = mini(int(stats["current_mana"]), mana_node.max_mana)
+			mana_node.mana_changed.emit(mana_node.current_mana, mana_node.max_mana)
+		if stats.has("mana_regen_bonus"):
+			mana_node.mana_regen_bonus = float(stats["mana_regen_bonus"])
 
 
 func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
@@ -274,8 +283,8 @@ func _apply_stat_skills(player: Node) -> void:
 	if player.has_method("reapply_class_modifiers_after_level_sync"):
 		player.reapply_class_modifiers_after_level_sync(base_stats)
 
-	var property_percent_bonuses = {"max_health": 0.0, "speed": 0.0, "attack_damage": 0.0}
-	var property_flat_bonuses = {"max_health": 0.0, "speed": 0.0, "attack_damage": 0.0}
+	var property_percent_bonuses = {"max_health": 0.0, "speed": 0.0, "attack_damage": 0.0, "max_mana": 0.0, "hp_regen": 0.0}
+	var property_flat_bonuses = {"max_health": 0.0, "speed": 0.0, "attack_damage": 0.0, "max_mana": 0.0, "hp_regen": 0.0}
 	var meta_totals: Dictionary = {}
 
 	for skill_id in (_state.invested as Dictionary).keys():
@@ -290,7 +299,8 @@ func _apply_stat_skills(player: Node) -> void:
 
 	_apply_property_bonus(player, "speed", property_percent_bonuses, property_flat_bonuses)
 	_apply_property_bonus(player, "attack_damage", property_percent_bonuses, property_flat_bonuses)
-	_apply_health_bonus(player, property_percent_bonuses, property_flat_bonuses)
+	_apply_health_bonus(player, property_percent_bonuses, property_flat_bonuses, meta_totals)
+	_apply_mana_bonus(player, property_percent_bonuses, property_flat_bonuses, meta_totals)
 	_apply_meta_totals(player, meta_totals)
 	_queue_stat_broadcast()
 
@@ -484,7 +494,7 @@ func _apply_property_bonus(player: Node, property_name: String, property_percent
 		player.set(property_name, next_value)
 
 
-func _apply_health_bonus(player: Node, property_percent_bonuses: Dictionary, property_flat_bonuses: Dictionary) -> void:
+func _apply_health_bonus(player: Node, property_percent_bonuses: Dictionary, property_flat_bonuses: Dictionary, meta_totals: Dictionary = {}) -> void:
 	if not player.has_node("Health"):
 		return
 	var health = player.get_node("Health")
@@ -493,8 +503,36 @@ func _apply_health_bonus(player: Node, property_percent_bonuses: Dictionary, pro
 	var next_max = int(round(base_max * (1.0 + float(property_percent_bonuses.get("max_health", 0.0))) + float(property_flat_bonuses.get("max_health", 0.0))))
 	health.max_health = max(next_max, 1)
 	health.current_health = int(round(health.max_health * clampf(ratio, 0.0, 1.0)))
+	# Apply hp_regen from flat bonuses
+	var hp_regen_flat = float(property_flat_bonuses.get("hp_regen", 0.0))
+	if hp_regen_flat > 0.0:
+		health.hp_regen_bonus += hp_regen_flat
+	# Apply hp_regen_bonus from meta_totals
+	var hp_regen_meta = float(meta_totals.get("hp_regen_bonus", 0.0))
+	if hp_regen_meta > 0.0:
+		health.hp_regen_bonus += hp_regen_meta
 	if health.has_signal("health_changed"):
 		health.health_changed.emit(health.current_health, health.max_health)
+
+
+func _apply_mana_bonus(player: Node, property_percent_bonuses: Dictionary, property_flat_bonuses: Dictionary, meta_totals: Dictionary) -> void:
+	var mana_node = player.get_node_or_null("Mana")
+	if mana_node == null:
+		return
+	# Apply percent/flat bonuses to max_mana
+	var base_max = float(mana_node.max_mana)
+	var percent_bonus = float(property_percent_bonuses.get("max_mana", 0.0))
+	var flat_bonus = float(property_flat_bonuses.get("max_mana", 0.0))
+	if percent_bonus != 0.0 or flat_bonus != 0.0:
+		var next_max = int(round(base_max * (1.0 + percent_bonus) + flat_bonus))
+		mana_node.set_max_mana(maxi(next_max, 0))
+	# Apply mana_bonus from meta_totals (e.g. mage focus skill)
+	var mana_flat = float(meta_totals.get("mana_bonus", 0.0))
+	if mana_flat > 0.0:
+		mana_node.set_max_mana(maxi(mana_node.max_mana + int(round(mana_flat)), 0))
+	# Apply mana_regen from meta_totals
+	var regen_bonus = float(meta_totals.get("mana_regen", 0.0))
+	mana_node.mana_regen_bonus += regen_bonus
 
 
 func _apply_meta_totals(player: Node, meta_totals: Dictionary) -> void:
@@ -544,6 +582,12 @@ func _build_derived_stat_payload(player: Node) -> Dictionary:
 		var health = player.get_node("Health")
 		payload["max_health"] = int(health.max_health)
 		payload["current_health"] = int(health.current_health)
+		payload["hp_regen"] = float(health.hp_regen + health.hp_regen_bonus)
+	var mana_node = player.get_node_or_null("Mana")
+	if mana_node != null:
+		payload["max_mana"] = int(mana_node.max_mana)
+		payload["current_mana"] = int(mana_node.current_mana)
+		payload["mana_regen_bonus"] = float(mana_node.mana_regen_bonus)
 	for rule in SkillTreeRuntimeData.STAT_RULES.values():
 		_append_meta_from_rule(payload["meta"], rule, player)
 	for rule in SkillTreeRuntimeData.PASSIVE_RULES.values():

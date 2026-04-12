@@ -19,13 +19,12 @@ func _init():
 	modifiers_crit_chance = 1.28    # +28% Crit Chance
 	modifiers_crit_damage = 1.55    # +55% Crit Damage
 	
-	# Special ability
-	ability_name = "Shadow Step"
-	ability_description = "Instantly teleport behind the nearest enemy and gain 100% crit chance for your next attack."
-	ability_cooldown = 8.0
-	ability_duration = 2.0
-	
 	# Passive bonuses
 	passive_name = "Backstab"
 	passive_description = "Attacks from behind deal 50% bonus damage and always crit."
 	passive_dodge_chance = 10.0  # 10% dodge chance
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.0

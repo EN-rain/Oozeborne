@@ -23,13 +23,12 @@ func _init():
 	modifiers_crit_chance = 1.08     # +8% Crit Chance
 	modifiers_crit_damage = 1.15     # +15% Crit Damage
 	
-	# Special ability
-	ability_name = "Elemental Infusion"
-	ability_description = "Enchant your weapon with fire, ice, or lightning for 10 seconds. Each element provides unique effects: Fire (burn), Ice (slow), Lightning (chain damage)."
-	ability_cooldown = 12.0
-	ability_duration = 10.0
-	
 	# Passive bonuses
 	passive_name = "Arcane Strike"
 	passive_description = "Every 4th attack deals bonus magic damage equal to 30% of your attack damage."
 	passive_lifesteal = 3.0
+	
+	# Mana & Regen
+	mana_bonus = 10         # +10 MP (melee-magic hybrid)
+	mana_regen_bonus = 0.5  # +0.5 MP/s
+	hp_regen_bonus = 0.0

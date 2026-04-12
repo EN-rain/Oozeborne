@@ -21,13 +21,12 @@ func _init():
 	modifiers_defense = 0.98  # -2% Defense
 	modifiers_attack_speed = 1.0     # Normal Attack Speed
 	
-	# Special ability
-	ability_name = "Dark Pact"
-	ability_description = "Sacrifice 15% of current HP to deal 150 damage to all nearby enemies and heal for 50% of damage dealt."
-	ability_cooldown = 10.0
-	ability_duration = 0.0    # Instant
-	
 	# Passive bonuses
 	passive_name = "Vampiric Embrace"
 	passive_description = "Lifesteal is 50% more effective. Healing from abilities is 25% stronger."
 	passive_lifesteal = 15.0  # 15% base lifesteal
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 1.0    # +1.0 HP/s out of combat

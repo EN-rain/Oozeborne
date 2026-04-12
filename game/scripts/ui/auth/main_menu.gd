@@ -3,7 +3,7 @@ extends Control
 @onready var account_label: Label = %AccountLabel
 @onready var logout_button: Button = %LogoutButton
 @onready var start_button: Button = %StartButton
-@onready var continue_button: Button = %ContinueButton
+@onready var load_button: Button = %LoadButton
 @onready var host_button: Button = %HostButton
 @onready var connect_button: Button = %ConnectButton
 @onready var code_input: LineEdit = %CodeInput
@@ -16,6 +16,7 @@ extends Control
 @export_file("*.tscn") var settings_scene_path: String = "res://scenes/ui/settings.tscn"
 @export_file("*.tscn") var main_game_scene_path: String = "res://scenes/levels/main.tscn"
 @export_file("*.tscn") var room_lobby_scene_path: String = "res://scenes/ui/room_lobby.tscn"
+@export_file("*.tscn") var save_slots_scene_path: String = "res://scenes/ui/save_slots_ui.tscn"
 @export var default_player_name_prefix: String = "Player"
 @export var offline_account_name: String = "Offline"
 @export var account_label_format: String = "Account: %s"
@@ -77,7 +78,7 @@ func _update_auth_ui() -> void:
 	account_label.text = account_label_format % account_name
 	logout_button.disabled = _menu_busy or not authenticated
 	start_button.disabled = _menu_busy
-	continue_button.disabled = _menu_busy or not SoloRunSaveManager.has_saved_run()
+	load_button.disabled = _menu_busy or not MultiplayerManager.is_authenticated()
 	host_button.disabled = _menu_busy or not authenticated
 	connect_button.disabled = _menu_busy or not authenticated
 
@@ -134,20 +135,42 @@ func _on_start_pressed() -> void:
 		get_tree().change_scene_to_file(main_game_scene_path)
 
 
-func _on_continue_pressed() -> void:
-	if not SoloRunSaveManager.has_saved_run():
-		_update_auth_ui()
+var _save_slots_ui: Control = null
+
+
+func _on_load_pressed() -> void:
+	if not MultiplayerManager.is_authenticated():
+		_set_status("Login required for cloud saves", error_status_color)
 		return
+	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
+		_save_slots_ui.show()
+		return
+	if save_slots_scene_path.is_empty():
+		return
+	var scene: PackedScene = load(save_slots_scene_path)
+	if scene == null:
+		return
+	_save_slots_ui = scene.instantiate()
+	add_child(_save_slots_ui)
+	_save_slots_ui.slot_loaded.connect(_on_slot_loaded)
+	_save_slots_ui.closed.connect(_on_save_slots_closed)
+
+
+func _on_slot_loaded(slot: int) -> void:
 	_set_menu_busy(true)
-	_set_status(continuing_solo_run_text, preparing_solo_run_color)
-	await MultiplayerManager.disconnect_server()
+	_set_status("Loading save from slot %d..." % slot, preparing_solo_run_color)
+	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
+		_save_slots_ui.queue_free()
+		_save_slots_ui = null
 	MultiplayerManager.player_ign = _get_ign()
-	if not SoloRunSaveManager.prepare_continue_run():
-		_set_menu_busy(false)
-		_update_auth_ui()
-		return
 	if not main_game_scene_path.is_empty():
 		get_tree().change_scene_to_file(main_game_scene_path)
+
+
+func _on_save_slots_closed() -> void:
+	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
+		_save_slots_ui.queue_free()
+		_save_slots_ui = null
 
 func _on_host_pressed() -> void:
 	_set_menu_busy(true)

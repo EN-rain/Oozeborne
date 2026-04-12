@@ -22,6 +22,7 @@ var attack_damage := 25
 @onready var player_camera: Camera2D = $Camera2D
 @onready var hit_stun_timer: Timer = $HitStunTimer
 @onready var health = $Health
+var mana: ManaComponent = null
 @onready var death_sequence = $DeathSequence
 @onready var dash_timer: Timer = $DashTimer
 @onready var dash_particles: CPUParticles2D = $DashParticles
@@ -82,6 +83,13 @@ func _ready():
 	
 	# Apply class modifiers if a class is selected
 	_apply_class_modifiers()
+	
+	# Add ManaComponent dynamically
+	mana = ManaComponent.new()
+	mana.name = "Mana"
+	add_child(mana)
+	mana.mana_changed.connect(_on_mana_changed)
+	_apply_mana_modifiers()
 	
 	# Setup dash timers
 	dash_timer.wait_time = dash_duration
@@ -357,6 +365,10 @@ func apply_damage(amount: int, source_position: Vector2, force: float, attacker_
 	var dir := (global_position - source_position).normalized()
 	knockback_velocity = dir * force
 	
+	# Enter combat state for mana regen
+	if mana:
+		mana.enter_combat()
+	
 	can_move = false
 	hit_stun_timer.start(hit_stun_time)
 
@@ -449,6 +461,46 @@ func _exit_tree() -> void:
 		var skill_manager := _get_player_skill_manager()
 		if skill_manager != null:
 			skill_manager.unbind_player(self)
+
+
+func _apply_mana_modifiers() -> void:
+	if mana == null:
+		return
+	var main_class: PlayerClass = MultiplayerManager.player_class
+	var player_subclass: PlayerClass = MultiplayerManager.player_subclass
+	
+	# Get level-scaled base mana from LevelSystem
+	var level_stats := LevelSystem.get_current_stats(self)
+	var base_mana: int = int(level_stats.get("max_mana", 0))
+	var base_regen: float = float(level_stats.get("mana_regen", 0.0))
+	
+	var total_mana_bonus: int = 0
+	var total_regen_bonus: float = 0.0
+	
+	if main_class != null:
+		total_mana_bonus += main_class.mana_bonus
+		total_regen_bonus += main_class.mana_regen_bonus
+	if player_subclass != null:
+		# Subclass mana at 50% (same as other passive bonuses)
+		total_mana_bonus += int(player_subclass.mana_bonus * 0.5)
+		total_regen_bonus += player_subclass.mana_regen_bonus * 0.5
+	
+	var new_max := base_mana + total_mana_bonus
+	if new_max > 0:
+		var ratio := float(mana.current_mana) / float(maxi(mana.max_mana, 1))
+		mana.set_max_mana(new_max)
+		mana.current_mana = int(new_max * clampf(ratio, 0.0, 1.0))
+		mana.base_mana_regen = base_regen
+		mana.mana_regen_bonus = total_regen_bonus
+		mana.mana_changed.emit(mana.current_mana, mana.max_mana)
+		mana.set_process(true)
+	else:
+		# Non-mana class: disable component
+		mana.set_process(false)
+
+
+func _on_mana_changed(_current_mana: int, _max_mana: int) -> void:
+	pass # HUD listens directly to the signal
 
 
 func _update_sprite_facing(motion_dir: Vector2 = Vector2.ZERO) -> void:
@@ -563,9 +615,21 @@ func reapply_class_modifiers_after_level_sync(base_stats: Dictionary) -> void:
 		var ratio: float = float(health.current_health) / float(max(health.max_health, 1))
 		health.max_health = int(raw_max_health * hp_mult)
 		health.current_health = int(health.max_health * clamp(ratio, 0.0, 1.0))
+		# Apply level-scaled HP regen + class bonus
+		var base_hp_regen: float = float(base_stats.get("hp_regen", 0.0))
+		var hp_regen_class_bonus: float = 0.0
+		if main_class != null:
+			hp_regen_class_bonus += main_class.hp_regen_bonus
+		if player_subclass != null:
+			hp_regen_class_bonus += player_subclass.hp_regen_bonus * 0.5
+		health.hp_regen = base_hp_regen
+		health.hp_regen_bonus = hp_regen_class_bonus
 
 	set_meta("lifesteal", lifesteal)
 	set_meta("dodge_chance", dodge)
 	set_meta("crit_chance", (crit_chance_mult - 1.0) * 0.5)
 	set_meta("crit_damage", crit_damage_mult)
 	set_meta("defense_modifier", defense_mult)
+	
+	# Apply mana modifiers
+	_apply_mana_modifiers()

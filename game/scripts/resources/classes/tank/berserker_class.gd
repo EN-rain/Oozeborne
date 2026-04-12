@@ -17,13 +17,12 @@ func _init():
 	modifiers_defense = 0.78  # -22% Defense
 	modifiers_attack_speed = 1.14  # +14% Attack Speed
 	
-	# Special ability
-	ability_name = "Blood Rage"
-	ability_description = "Enter a frenzy for 6 seconds. Gain +50% attack speed and +30% damage, but take 20% more damage."
-	ability_cooldown = 20.0
-	ability_duration = 6.0
-	
 	# Passive bonuses
 	passive_name = "Adrenaline"
 	passive_description = "Deal up to 50% more damage based on missing HP. At 1 HP, deal maximum bonus damage."
 	passive_lifesteal = 5.0   # 5% lifesteal
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 0.5    # +0.5 HP/s out of combat

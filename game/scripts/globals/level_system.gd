@@ -176,7 +176,19 @@ func _apply_current_stats(entity_id: int) -> void:
 		var previous_health_ratio: float = float(health_comp.current_health) / float(previous_max_health)
 		health_comp.max_health = stats.max_health
 		health_comp.current_health = int(stats.max_health * clampf(previous_health_ratio, 0.0, 1.0))
+		health_comp.hp_regen = float(stats.get("hp_regen", 0.0))
 		health_comp.health_changed.emit(health_comp.current_health, health_comp.max_health)
+	var mana_node = player.get_node_or_null("Mana")
+	if mana_node != null:
+		var level_mana: int = int(stats.get("max_mana", 0))
+		var level_regen: float = float(stats.get("mana_regen", 0.0))
+		if level_mana > 0:
+			var ratio := float(mana_node.current_mana) / float(maxi(mana_node.max_mana, 1))
+			mana_node.max_mana = level_mana
+			mana_node.current_mana = int(level_mana * clampf(ratio, 0.0, 1.0))
+			mana_node.mana_changed.emit(mana_node.current_mana, mana_node.max_mana)
+		mana_node.base_mana_regen = level_regen
+		# Class bonus is applied via _apply_mana_modifiers which is called by reapply_class_modifiers_after_level_sync
 	if "attack_damage" not in player:
 		player.set_meta("attack_damage", stats.attack_damage)
 	else:

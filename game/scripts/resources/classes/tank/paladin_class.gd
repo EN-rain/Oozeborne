@@ -17,13 +17,12 @@ func _init():
 	modifiers_defense = 1.18  # +18% Defense
 	modifiers_attack_speed = 0.9    # -10% Attack Speed
 	
-	# Special ability
-	ability_name = "Divine Shield"
-	ability_description = "Become invulnerable for 3 seconds and heal for 20% of max HP."
-	ability_cooldown = 25.0
-	ability_duration = 3.0
-	
 	# Passive bonuses
 	passive_name = "Holy Light"
 	passive_description = "Heal for 5% of damage dealt. Killing enemies grants an additional 10 HP heal."
 	passive_lifesteal = 5.0
+	
+	# Mana & Regen
+	mana_bonus = 15         # +15 MP (holy magic)
+	mana_regen_bonus = 0.5  # +0.5 MP/s
+	hp_regen_bonus = 1.0    # +1.0 HP/s out of combat

@@ -23,12 +23,11 @@ func _init():
 	modifiers_crit_chance = 1.02    # +2% Crit Chance
 	modifiers_crit_damage = 1.05    # +5% Crit Damage
 	
-	# Special ability
-	ability_name = "Fortify"
-	ability_description = "Gain damage reduction and taunt nearby enemies for a short duration."
-	ability_cooldown = 14.0
-	ability_duration = 4.0
-	
 	# Passive bonuses
 	passive_name = "Unbreakable"
 	passive_description = "Reduce incoming damage while above 50% HP."
+	
+	# Mana & Regen
+	mana_bonus = 0          # Non-mana class
+	mana_regen_bonus = 0.0
+	hp_regen_bonus = 1.0    # +1 HP/s out of combat

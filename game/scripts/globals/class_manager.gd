@@ -408,11 +408,25 @@ func get_class_info(class_id: String) -> Dictionary:
 		"role": get_class_role(class_id),
 		"is_main_class": is_main_class(class_id),
 		"is_subclass": is_subclass(class_id),
-		"ability_name": player_class.ability_name,
-		"ability_description": player_class.ability_description,
+		"ability_name": _get_special_ability_name(class_id),
+		"ability_description": _get_special_ability_description(class_id),
 		"passive_name": player_class.passive_name,
 		"passive_description": player_class.passive_description
 	}
+
+
+func _get_special_ability_name(class_id: String) -> String:
+	var skill := SkillRegistry.get_special_skill_for_class(class_id)
+	if skill != null:
+		return skill.display_name
+	return ""
+
+
+func _get_special_ability_description(class_id: String) -> String:
+	var skill := SkillRegistry.get_special_skill_for_class(class_id)
+	if skill != null:
+		return skill.description_template
+	return ""
 
 
 func get_main_classes_info() -> Array[Dictionary]:
