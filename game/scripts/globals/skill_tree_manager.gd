@@ -2,8 +2,6 @@ extends Node
 class_name SkillTreeManagerService
 
 const SkillTreePassiveEffectScript := preload("res://scripts/effects/buffs/skill_tree_passive_effect.gd")
-const SkillTreeData := preload("res://scripts/globals/skill_tree_runtime_data.gd")
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 const MAX_SP := 250
 const SUBCLASS_UNLOCK_SP := 20
@@ -287,7 +285,7 @@ func _apply_stat_skills(player: Node) -> void:
 		var skill = registry.get_skill(str(skill_id))
 		if skill == null or skill.skill_type != SkillDefinition.SkillType.STAT:
 			continue
-		var rule: Dictionary = SkillTreeData.STAT_RULES.get(skill_id, {})
+		var rule: Dictionary = SkillTreeRuntimeData.STAT_RULES.get(skill_id, {})
 		_accumulate_rule(rule, level, property_percent_bonuses, property_flat_bonuses, meta_totals)
 
 	_apply_property_bonus(player, "speed", property_percent_bonuses, property_flat_bonuses)
@@ -298,7 +296,7 @@ func _apply_stat_skills(player: Node) -> void:
 
 
 func _sync_passive_skill(skill_id: String, level: int, player: Node) -> void:
-	var rule: Dictionary = SkillTreeData.PASSIVE_RULES.get(skill_id, {})
+	var rule: Dictionary = SkillTreeRuntimeData.PASSIVE_RULES.get(skill_id, {})
 	if rule.is_empty():
 		return
 	var effect = _passive_effects.get(skill_id, null)
@@ -356,7 +354,7 @@ func _refresh_action_bar_registrations() -> void:
 		var skill_id = get_slotted_skill(index)
 		if skill_id.is_empty():
 			continue
-		PlayerSkillManager.register_ability_slot(index, skill_id, float(SkillTreeData.ABILITY_COOLDOWNS.get(skill_id, 0.0)))
+		PlayerSkillManager.register_ability_slot(index, skill_id, float(SkillTreeRuntimeData.ABILITY_COOLDOWNS.get(skill_id, 0.0)))
 
 
 func _can_slot_skill(skill_id: String) -> bool:
@@ -417,7 +415,7 @@ func _resolve_local_player() -> Node:
 
 
 func _get_current_main_class_key() -> String:
-	return ClassManagerScript.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
+	return ClassManager.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
 
 
 func _calculate_total_sp_for_level(level: int) -> int:
@@ -501,7 +499,7 @@ func _apply_health_bonus(player: Node, property_percent_bonuses: Dictionary, pro
 
 func _apply_meta_totals(player: Node, meta_totals: Dictionary) -> void:
 	var all_targets: Dictionary = {}
-	for rule in SkillTreeData.STAT_RULES.values():
+	for rule in SkillTreeRuntimeData.STAT_RULES.values():
 		_collect_rule_targets(rule, all_targets)
 	for target in all_targets.keys():
 		player.set_meta(str(target), float(meta_totals.get(target, 0.0)))
@@ -546,9 +544,9 @@ func _build_derived_stat_payload(player: Node) -> Dictionary:
 		var health = player.get_node("Health")
 		payload["max_health"] = int(health.max_health)
 		payload["current_health"] = int(health.current_health)
-	for rule in SkillTreeData.STAT_RULES.values():
+	for rule in SkillTreeRuntimeData.STAT_RULES.values():
 		_append_meta_from_rule(payload["meta"], rule, player)
-	for rule in SkillTreeData.PASSIVE_RULES.values():
+	for rule in SkillTreeRuntimeData.PASSIVE_RULES.values():
 		var target = str(rule.get("target", ""))
 		if not target.is_empty():
 			payload["meta"][target] = player.get_meta(target, 0.0)

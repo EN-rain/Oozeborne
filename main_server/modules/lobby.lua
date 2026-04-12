@@ -322,6 +322,13 @@ function M.match_leave(context, dispatcher, tick, state, presences)
         state.players[p.user_id] = nil
         dispatcher.broadcast_message(OP_PLAYER_LEAVE, nk.json_encode({user_id = p.user_id}))
     end
+
+    -- Auto-terminate match if no players remain
+    if not next(state.players) then
+        nk.logger_info("All players left, terminating match " .. context.match_id)
+        return nil
+    end
+
     return state
 end
 

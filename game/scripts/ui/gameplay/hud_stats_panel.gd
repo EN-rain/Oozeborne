@@ -1,7 +1,6 @@
 extends Control
 class_name HudStatsPanel
 
-const SkillTreeData := preload("res://scripts/globals/skill_tree_runtime_data.gd")
 @export var breakdown_base_color: Color = Color("8fd3ff")
 @export var breakdown_level_color: Color = Color("8ef0a7")
 @export var breakdown_class_color: Color = Color("ffd37a")
@@ -422,12 +421,12 @@ func _get_skill_tree_stat_data() -> Dictionary:
 	var meta_totals: Dictionary = {}
 	if SkillTreeManager == null or not SkillTreeManager.has_method("get_skill_level"):
 		return {"property_percent": property_percent_bonuses, "property_flat": property_flat_bonuses, "meta": meta_totals}
-	for skill_id_variant in SkillTreeData.STAT_RULES.keys():
+	for skill_id_variant in SkillTreeRuntimeData.STAT_RULES.keys():
 		var skill_id: String = str(skill_id_variant)
 		var skill_level: int = int(SkillTreeManager.get_skill_level(skill_id))
 		if skill_level <= 0:
 			continue
-		var rule: Dictionary = SkillTreeData.STAT_RULES.get(skill_id, {})
+		var rule: Dictionary = SkillTreeRuntimeData.STAT_RULES.get(skill_id, {})
 		_accumulate_breakdown_rule(rule, skill_level, property_percent_bonuses, property_flat_bonuses, meta_totals)
 	return {"property_percent": property_percent_bonuses, "property_flat": property_flat_bonuses, "meta": meta_totals}
 

@@ -1,7 +1,6 @@
 extends Control
 class_name SkillTreeUI
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 signal closed
 
@@ -208,10 +207,10 @@ func _refresh_tabs() -> void:
 		tab_container.set_tab_title(0, "Unavailable")
 		return
 
-	var main_class_id := ClassManagerScript.get_class_id(main_class)
+	var main_class_id := ClassManager.get_class_id(main_class)
 	_add_tree_tab("Main", main_class_id, "main")
-	for subclass_id in ClassManagerScript.get_subclass_ids_for_main_id(main_class_id):
-		_add_tree_tab(ClassManagerScript.class_id_to_display_name(subclass_id), main_class_id, subclass_id)
+	for subclass_id in ClassManager.get_subclass_ids_for_main_id(main_class_id):
+		_add_tree_tab(ClassManager.class_id_to_display_name(subclass_id), main_class_id, subclass_id)
 	if tab_container.get_tab_count() > 0:
 		tab_container.current_tab = clampi(previous_tab, 0, tab_container.get_tab_count() - 1)
 
@@ -250,8 +249,8 @@ func _build_tab_header_text(tree_key: String) -> String:
 		return "Spend 20 SP in the main tree to unlock subclass tabs. [%d / %d]" % [_get_effective_main_tree_sp_spent(), 20]
 	var spent := _get_effective_subclass_sp_spent(tree_key)
 	if _are_subclasses_effectively_unlocked():
-		return "%s tree unlocked. %d / 30 SP invested." % [ClassManagerScript.class_id_to_display_name(tree_key), spent]
-	return "%s tree locked until 20 SP are invested in the main tree." % ClassManagerScript.class_id_to_display_name(tree_key)
+		return "%s tree unlocked. %d / 30 SP invested." % [ClassManager.class_id_to_display_name(tree_key), spent]
+	return "%s tree locked until 20 SP are invested in the main tree." % ClassManager.class_id_to_display_name(tree_key)
 
 
 func _create_skill_card(skill, tree_key: String) -> Control:
@@ -479,7 +478,7 @@ func _on_subclasses_unlocked(_main_class: String) -> void:
 
 
 func _on_subclass_locked(subclass_key: String, reason: String) -> void:
-	var class_display_name := ClassManagerScript.class_id_to_display_name(subclass_key)
+	var class_display_name := ClassManager.class_id_to_display_name(subclass_key)
 	_show_status("%s reached its 30 SP cap." % class_display_name if reason == "subclass_cap_reached" else "%s is still locked." % class_display_name, Color(1, 0.55, 0.45, 1.0))
 
 

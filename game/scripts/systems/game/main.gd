@@ -1,6 +1,6 @@
 extends Node2D
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
+const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_button.tscn")
 
 @onready var player = $Player
 @onready var ui = $HUD
@@ -115,10 +115,10 @@ func _ready():
 func build_solo_run_snapshot() -> Dictionary:
 	if not is_instance_valid(player) or ui == null or round_manager == null:
 		return {}
-	var class_id := ClassManagerScript.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
+	var class_id := ClassManager.get_class_id(MultiplayerManager.player_class) if MultiplayerManager.player_class != null else ""
 	if class_id.is_empty():
 		return {}
-	var subclass_id := ClassManagerScript.get_class_id(MultiplayerManager.player_subclass) if MultiplayerManager.player_subclass != null else ""
+	var subclass_id := ClassManager.get_class_id(MultiplayerManager.player_subclass) if MultiplayerManager.player_subclass != null else ""
 	return {
 		"scene_path": scene_file_path,
 		"player_class_id": class_id,
@@ -140,9 +140,9 @@ func _restore_saved_solo_run_if_needed() -> void:
 		return
 	var class_id := str(snapshot.get("player_class_id", ""))
 	if not class_id.is_empty():
-		MultiplayerManager.player_class = ClassManagerScript.create_class_instance(class_id)
+		MultiplayerManager.player_class = ClassManager.create_class_instance(class_id)
 	var subclass_id := str(snapshot.get("player_subclass_id", ""))
-	MultiplayerManager.player_subclass = ClassManagerScript.create_class_instance(subclass_id) if not subclass_id.is_empty() else null
+	MultiplayerManager.player_subclass = ClassManager.create_class_instance(subclass_id) if not subclass_id.is_empty() else null
 	MultiplayerManager.subclass_choice_made = bool(snapshot.get("subclass_choice_made", false))
 	MultiplayerManager.player_level = int(snapshot.get("player_level", 1))
 	if is_instance_valid(player):
@@ -357,8 +357,8 @@ func _show_solo_class_selection_overlay() -> void:
 
 
 func _on_solo_class_selected(selected_class: PlayerClass, _selected_subclass: PlayerClass) -> void:
-	var class_id := ClassManagerScript.get_class_id(selected_class)
-	var resolved_class := ClassManagerScript.create_class_instance(class_id) if not class_id.is_empty() else selected_class
+	var class_id := ClassManager.get_class_id(selected_class)
+	var resolved_class := ClassManager.create_class_instance(class_id) if not class_id.is_empty() else selected_class
 	resolved_class.player_scene = MultiplayerManager.resolve_player_scene()
 	MultiplayerManager.player_class = resolved_class
 	MultiplayerManager.player_subclass = null
@@ -529,7 +529,7 @@ func _on_match_state(match_state):
 			if subclass_sender_id.is_empty() or MultiplayerUtils.is_local_player(subclass_sender_id):
 				return
 			var subclass_id := str(data.get("subclass_id", ""))
-			var subclass_res := ClassManagerScript.create_class_instance(subclass_id)
+			var subclass_res := ClassManager.create_class_instance(subclass_id)
 			if subclass_res != null:
 				MultiplayerManager.set_player_subclass(subclass_sender_id, subclass_res)
 				if MultiplayerUtils.has_remote_player(subclass_sender_id):
@@ -539,9 +539,10 @@ func _on_match_state(match_state):
 
 func spawn_players():
 	# Spawn all connected players, filtering out empty keys
+	var fallback_spawn := _get_local_spawn_position()
 	for user_id in MultiplayerManager.players:
 		if not user_id.is_empty():
-			_spawn_player_for_user(user_id)
+			_spawn_player_for_user(user_id, fallback_spawn)
 
 func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 	# Skip empty user_id (broadcast echo)
@@ -795,7 +796,7 @@ func _maybe_prompt_subclass_selection() -> void:
 	if _subclass_overlay_layer.visible and overlay_has_choices:
 		return
 
-	var choices: Array[PlayerClass] = ClassManagerScript.get_subclasses_for_main_class(MultiplayerManager.player_class)
+	var choices: Array[PlayerClass] = ClassManager.get_subclasses_for_main_class(MultiplayerManager.player_class)
 	if choices.is_empty():
 		_clear_subclass_selection_overlay()
 		return
@@ -807,10 +808,8 @@ func _show_subclass_selection_overlay(choices: Array[PlayerClass]) -> void:
 	_clear_subclass_choice_buttons()
 
 	for subclass in choices:
-		var button := Button.new()
+		var button := SubclassChoiceButtonScene.instantiate()
 		button.text = "%s - %s" % [subclass.display_name, subclass.description]
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.custom_minimum_size = Vector2(0, 54)
 		button.pressed.connect(_on_subclass_choice_selected.bind(subclass))
 		_subclass_overlay_choices.add_child(button)
 
@@ -830,7 +829,7 @@ func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
 		MultiplayerManager.send_match_state({
 			"type": "subclass_selected",
 			"user_id": MultiplayerManager.session.user_id,
-			"subclass_id": ClassManagerScript.get_class_id(subclass)
+			"subclass_id": ClassManager.get_class_id(subclass)
 		})
 	_clear_subclass_selection_overlay()
 	_debug_log("Subclass selected: %s" % subclass.display_name)

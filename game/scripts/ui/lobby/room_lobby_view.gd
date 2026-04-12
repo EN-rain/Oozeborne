@@ -1,7 +1,9 @@
 extends RefCounted
 class_name RoomLobbyView
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
+const PartyCardScene := preload("res://scenes/ui/party_card.tscn")
+const WaitingCardScene := preload("res://scenes/ui/waiting_card.tscn")
+const TalentCardScene := preload("res://scenes/ui/talent_card.tscn")
 
 const MAX_PARTY_SIZE := 4
 
@@ -113,7 +115,7 @@ func _init(refs: Dictionary) -> void:
 	_stat_cards = refs["stat_cards"]
 
 func get_class_order() -> Array:
-	return ClassManagerScript.get_main_class_display_order()
+	return ClassManager.get_main_class_display_order()
 
 func get_class_name_color(class_id: String) -> Color:
 	return CLASS_NAME_COLORS.get(class_id, PARTY_TEXT_PRIMARY)
@@ -188,13 +190,13 @@ func update_active_class_panels(active_class: String) -> void:
 	_update_class_panels(active_class)
 
 func _build_subclass_info_text(active_class: String) -> String:
-	var main_class_id := ClassManagerScript.display_name_to_class_id(active_class)
+	var main_class_id := ClassManager.display_name_to_class_id(active_class)
 	if main_class_id.is_empty():
 		return "No subclasses available."
 
 	var visible_subclasses = []
-	for subclass_id in ClassManagerScript.get_subclass_ids_for_main_id(main_class_id):
-		var subclass_instance := ClassManagerScript.get_class_by_id(subclass_id)
+	for subclass_id in ClassManager.get_subclass_ids_for_main_id(main_class_id):
+		var subclass_instance := ClassManager.get_class_by_id(subclass_id)
 		if subclass_instance == null:
 			continue
 		var subclass_display_name := subclass_instance.display_name
@@ -208,9 +210,9 @@ func _build_subclass_info_text(active_class: String) -> String:
 	return "\n\n".join(visible_subclasses)
 
 func _build_party_card(entry: Dictionary) -> Control:
-	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 72)
+	var card = PartyCardScene.instantiate()
 
+	# Apply dynamic style based on host status
 	var style = StyleBoxFlat.new()
 	style.bg_color = PARTY_CARD_BG
 	style.border_width_left = 2
@@ -224,111 +226,44 @@ func _build_party_card(entry: Dictionary) -> Control:
 	style.corner_radius_bottom_left = 10
 	card.add_theme_stylebox_override("panel", style)
 
-	var padding = MarginContainer.new()
-	padding.add_theme_constant_override("margin_left", 10)
-	padding.add_theme_constant_override("margin_top", 8)
-	padding.add_theme_constant_override("margin_right", 10)
-	padding.add_theme_constant_override("margin_bottom", 8)
-	card.add_child(padding)
-
-	var row = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	padding.add_child(row)
-
-	var avatar_holder = Control.new()
-	avatar_holder.custom_minimum_size = Vector2(38, 38)
-	row.add_child(avatar_holder)
-
-	var avatar = ColorRect.new()
-	avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Avatar color from slime variant
+	var avatar: ColorRect = card.get_node("Padding/Row/AvatarHolder/Avatar")
 	var slime_variant = entry.get("slime_variant", "blue")
 	var palette = SlimePaletteRegistry.get_preview_palette(slime_variant)
 	avatar.color = palette.get("mid", Color(0.45, 0.55, 0.85))
-	avatar_holder.add_child(avatar)
 
-	var avatar_letter = Label.new()
-	avatar_letter.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Avatar letter
+	var avatar_letter: Label = card.get_node("Padding/Row/AvatarHolder/AvatarLetter")
 	avatar_letter.text = entry["ign"].substr(0, 1).to_upper()
-	avatar_letter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	avatar_letter.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	avatar_letter.add_theme_font_size_override("font_size", 18)
-	avatar_letter.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-	avatar_holder.add_child(avatar_letter)
 
-	var text_col = VBoxContainer.new()
-	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text_col.add_theme_constant_override("separation", 2)
-	row.add_child(text_col)
-
-	var name_label = Label.new()
+	# Text labels
+	var name_label: Label = card.get_node("Padding/Row/TextCol/NameLabel")
 	name_label.text = entry["ign"]
-	name_label.add_theme_font_size_override("font_size", 14)
-	name_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.92))
-	text_col.add_child(name_label)
 
-	var meta_label = Label.new()
+	var meta_label: Label = card.get_node("Padding/Row/TextCol/MetaLabel")
 	meta_label.text = "Party Leader" if entry.get("is_host", false) else "Party Member"
-	meta_label.add_theme_font_size_override("font_size", 11)
-	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
-	text_col.add_child(meta_label)
 
-	var class_label = Label.new()
+	var class_label: Label = card.get_node("Padding/Row/TextCol/ClassLabel")
 	var selected_class = entry.get("selected_class", "")
 	class_label.text = "Class: " + selected_class if not selected_class.is_empty() else "No class selected"
-	class_label.add_theme_font_size_override("font_size", 10)
 	var class_color = get_class_name_color(selected_class) if not selected_class.is_empty() else Color(0.5, 0.5, 0.5, 0.6)
 	class_label.add_theme_color_override("font_color", class_color)
-	text_col.add_child(class_label)
 
-	var badge = Label.new()
+	var badge: Label = card.get_node("Padding/Row/Badge")
 	badge.text = "*" if entry.get("is_host", false) else "-"
-	badge.add_theme_font_size_override("font_size", 16)
 	badge.add_theme_color_override("font_color", entry.get("accent_color", PARTY_CARD_BORDER))
-	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(badge)
 
 	return card
 
 func _build_waiting_card(slot_number: int) -> Control:
-	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 48)
+	var card = WaitingCardScene.instantiate()
 
 	var style = StyleBoxFlat.new()
 	style.bg_color = PARTY_CARD_MUTED
 	card.add_theme_stylebox_override("panel", style)
 
-	var padding = MarginContainer.new()
-	padding.add_theme_constant_override("margin_left", 12)
-	padding.add_theme_constant_override("margin_top", 8)
-	padding.add_theme_constant_override("margin_right", 12)
-	padding.add_theme_constant_override("margin_bottom", 8)
-	card.add_child(padding)
-
-	var row = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	padding.add_child(row)
-
-	var avatar = ColorRect.new()
-	avatar.custom_minimum_size = Vector2(32, 32)
-	avatar.color = Color(0.86, 0.83, 0.92, 1.0)
-	row.add_child(avatar)
-
-	var text_col = VBoxContainer.new()
-	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text_col.add_theme_constant_override("separation", 1)
-	row.add_child(text_col)
-
-	var name_label = Label.new()
-	name_label.text = "Waiting for Player"
-	name_label.add_theme_font_size_override("font_size", 13)
-	name_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.72))
-	text_col.add_child(name_label)
-
-	var meta_label = Label.new()
+	var meta_label: Label = card.get_node("Padding/Row/TextCol/MetaLabel")
 	meta_label.text = "Open Slot %d" % slot_number
-	meta_label.add_theme_font_size_override("font_size", 11)
-	meta_label.add_theme_color_override("font_color", Color(0, 0, 0, 0.52))
-	text_col.add_child(meta_label)
 
 	return card
 
@@ -352,42 +287,19 @@ func _rebuild_talent_cards(talents: Array) -> void:
 		child.queue_free()
 
 	for talent in talents:
-		var card = PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 72)
+		var card = TalentCardScene.instantiate()
 
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0, 0, 0, 0)
 		card.add_theme_stylebox_override("panel", style)
-		_talent_cards.add_child(card)
 
-		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 10)
-		margin.add_theme_constant_override("margin_top", 10)
-		margin.add_theme_constant_override("margin_right", 10)
-		margin.add_theme_constant_override("margin_bottom", 10)
-		card.add_child(margin)
-
-		var row = HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		margin.add_child(row)
-
-		var text_col = VBoxContainer.new()
-		text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		text_col.add_theme_constant_override("separation", 3)
-		row.add_child(text_col)
-
-		var title = Label.new()
+		var title: Label = card.get_node("Margin/Row/TextCol/Title")
 		title.text = talent.get("name", "Talent")
-		title.add_theme_font_size_override("font_size", 13)
-		title.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-		text_col.add_child(title)
 
-		var desc = Label.new()
+		var desc: Label = card.get_node("Margin/Row/TextCol/Desc")
 		desc.text = talent.get("desc", "")
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		desc.add_theme_font_size_override("font_size", 11)
-		desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.88))
-		text_col.add_child(desc)
+
+		_talent_cards.add_child(card)
 
 func _update_class_panels(class_id: String) -> void:
 	var panel_data: Dictionary = _get_class_panel_data(class_id)

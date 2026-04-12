@@ -33,6 +33,7 @@ SlimePaletteRegistry="*res://scripts/globals/slime_palette_registry.gd"
 ClassManager="*res://scenes/autoload/class_manager.tscn"
 SoloRunSaveManager="*res://scripts/globals/solo_run_save_manager.gd"
 AdminManager="*res://scripts/globals/admin_manager.gd"
+CloudSaveManager="*res://scripts/globals/cloud_save_manager.gd"
 
 [display]
 

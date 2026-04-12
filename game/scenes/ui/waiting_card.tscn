@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[node name="WaitingCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 48)
+
+[node name="Padding" type="MarginContainer" parent="."]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Row" type="HBoxContainer" parent="Padding"]
+theme_override_constants/separation = 10
+
+[node name="Avatar" type="ColorRect" parent="Padding/Row"]
+custom_minimum_size = Vector2(32, 32)
+color = Color(0.86, 0.83, 0.92, 1)
+
+[node name="TextCol" type="VBoxContainer" parent="Padding/Row"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="NameLabel" type="Label" parent="Padding/Row/TextCol"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0, 0, 0, 0.72)
+text = "Waiting for Player"
+
+[node name="MetaLabel" type="Label" parent="Padding/Row/TextCol"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0, 0, 0, 0.52)

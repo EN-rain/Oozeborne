@@ -1,0 +1,65 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_panel"]
+bg_color = Color(0.08, 0.04, 0.12, 0.88)
+border_color = Color(0.6, 0.2, 0.8, 1)
+border_width_bottom = 2
+border_width_top = 2
+border_width_left = 2
+border_width_right = 2
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fg"]
+bg_color = Color(0.7, 0.15, 0.9, 1)
+corner_radius_bottom_left = 3
+corner_radius_bottom_right = 3
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
+bg_color = Color(0.15, 0.08, 0.2, 0.8)
+corner_radius_bottom_left = 3
+corner_radius_bottom_right = 3
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[node name="BossHealthBarContainer" type="PanelContainer"]
+anchors_preset = -1
+offset_top = 8
+offset_left = -180
+offset_right = 180
+visible = false
+theme_override_styles/panel = SubResource("StyleBoxFlat_boss_panel")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+alignment = 1
+
+[node name="TitleRow" type="HBoxContainer" parent="VBox"]
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="VBox/TitleRow"]
+unique_name_in_owner = true
+horizontal_alignment = 0
+theme_override_colors/font_color = Color(0.85, 0.65, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Boss"
+size_flags_horizontal = 3
+
+[node name="PhaseLabel" type="Label" parent="VBox/TitleRow"]
+unique_name_in_owner = true
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "Phase 1"
+
+[node name="HealthBar" type="ProgressBar" parent="VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(340, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_fg")
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")

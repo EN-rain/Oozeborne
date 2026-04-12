@@ -173,7 +173,7 @@ func _add_revive_button() -> void:
 
 	_revive_button = Button.new()
 	_revive_button.name = "ReviveButton"
-	_revive_button.text = "Revive (Stone: %d)" % ShopManager.get_item_count("revive_stone")
+	_revive_button.text = "Revive (Stone: %d)" % ShopManager.get_inventory_quantity("revive_stone")
 	_revive_button.add_theme_font_size_override("font_size", 16)
 	_revive_button.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
 	_revive_button.custom_minimum_size = Vector2(200, 40)

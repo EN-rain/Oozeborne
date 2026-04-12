@@ -64,22 +64,16 @@ func _process_command(message: String) -> void:
 			_add_system_message("Ping: %d ms" % ping_ms)
 			return
 	
-	# Admin commands
-	if MultiplayerManager.is_admin:
-		_process_admin_command(command, args)
+	# Admin-only commands - silently ignore for non-admins
+	if not MultiplayerManager.is_admin:
 		return
 	
-	# Party leader commands
-	if MultiplayerManager.is_host:
-		_process_party_leader_command(command, args)
-		return
-	
-	_add_system_message("Unknown command. Type /help for available commands")
+	_process_admin_command(command, args)
 
 func _process_admin_command(command: String, args: String) -> void:
 	match command:
 		"/help":
-			_add_system_message("Admin commands: /setlevel <1-100>, /addcoins <amount>, /spawn [count], /killall, /pause, /resume, /help, /ping")
+			_add_system_message("Admin commands: /spawn <mob> [count], /add coins <amount>, /add level <amount>, /setlevel <1-100>, /killall, /pause, /resume, /help, /ping")
 		"/setlevel":
 			var level := args.to_int()
 			if level > 0 and level <= 100:
@@ -89,22 +83,10 @@ func _process_admin_command(command: String, args: String) -> void:
 					_add_admin_message("Set level to %d" % level)
 			else:
 				_add_system_message("Invalid level (1-100)")
-		"/addcoins":
-			var amount := args.to_int()
-			if amount > 0:
-				CoinManager.add_coins(amount)
-				_add_admin_message("Added %d coins" % amount)
-			else:
-				_add_system_message("Invalid amount")
+		"/add":
+			_process_add_command(args)
 		"/spawn":
-			var count := args.to_int() if not args.is_empty() else 1
-			var mob_spawner := get_tree().get_first_node_in_group("mob_spawner")
-			if mob_spawner != null:
-				for i in range(count):
-					mob_spawner.spawn_common_mob()
-				_add_admin_message("Spawned %d mobs" % count)
-			else:
-				_add_system_message("Mob spawner not found")
+			_process_spawn_command(args)
 		"/killall":
 			var mobs := get_tree().get_nodes_in_group("mobs")
 			for mob in mobs:
@@ -119,6 +101,58 @@ func _process_admin_command(command: String, args: String) -> void:
 			_add_admin_message("Game resumed")
 		_:
 			_add_system_message("Unknown admin command: %s" % command)
+
+
+func _process_spawn_command(args: String) -> void:
+	# /spawn <mob_name> [count]
+	# e.g. /spawn archer 3
+	var parts := args.split(" ", false)
+	if parts.is_empty():
+		_add_system_message("Usage: /spawn <mob_name> [count]")
+		_add_system_message("Mobs: slime, lancer, archer, warden, boss")
+		return
+	var mob_name := parts[0]
+	var count := parts[1].to_int() if parts.size() > 1 else 1
+	if count <= 0:
+		count = 1
+	var mob_spawner := get_tree().get_first_node_in_group("mob_spawner")
+	if mob_spawner != null and mob_spawner.has_method("spawn_mob_by_name"):
+		var spawned: int = mob_spawner.spawn_mob_by_name(mob_name, count)
+		if spawned > 0:
+			_add_admin_message("Spawned %d %s(s)" % [spawned, mob_name])
+		else:
+			_add_system_message("Unknown mob: %s. Available: slime, lancer, archer, warden, boss" % mob_name)
+	else:
+		_add_system_message("Mob spawner not found")
+
+
+func _process_add_command(args: String) -> void:
+	# /add coins <amount>  - add coins
+	# /add level <amount>  - add levels (current + amount)
+	var parts := args.split(" ", false)
+	if parts.size() < 2:
+		_add_system_message("Usage: /add coins <amount> or /add level <amount>")
+		return
+	var sub_cmd := parts[0].to_lower()
+	var amount := parts[1].to_int()
+	if amount <= 0:
+		_add_system_message("Invalid amount")
+		return
+	match sub_cmd:
+		"coins":
+			CoinManager.add_coins(amount)
+			_add_admin_message("Added %d coins (total: %d)" % [amount, CoinManager.get_coins()])
+		"level":
+			var player := get_tree().get_first_node_in_group("player")
+			if player != null:
+				var current_level := LevelSystem.get_level(player)
+				var new_level := mini(current_level + amount, 100)
+				LevelSystem.set_level(player, new_level)
+				_add_admin_message("Added %d levels (%d -> %d)" % [amount, current_level, new_level])
+			else:
+				_add_system_message("Player not found")
+		_:
+			_add_system_message("Usage: /add coins <amount> or /add level <amount>")
 
 
 func _process_party_leader_command(command: String, args: String) -> void:
@@ -152,9 +186,7 @@ func add_remote_message(sender_name: String, message: String, is_admin: bool = f
 func _show_help() -> void:
 	var commands := "Available commands: /help, /ping"
 	if MultiplayerManager.is_admin:
-		commands += "\nAdmin: /setlevel <1-100>, /addcoins <amount>, /spawn [count], /killall, /pause, /resume"
-	elif MultiplayerManager.is_host:
-		commands += "\nLeader: /pause, /resume, /kick <player>"
+		commands += "\nAdmin: /spawn <mob> [count], /add coins <amount>, /add level <amount>, /setlevel <1-100>, /killall, /pause, /resume"
 	_add_system_message(commands)
 
 

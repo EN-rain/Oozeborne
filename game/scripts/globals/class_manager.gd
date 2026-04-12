@@ -208,19 +208,19 @@ static func _get_class_scripts() -> Dictionary:
 	return manager._class_scripts if manager != null else {}
 
 
-static func get_main_classes() -> Array[PlayerClass]:
+func get_main_classes() -> Array[PlayerClass]:
 	if not _is_initialized:
 		_initialize()
 	return _cached_main_classes.duplicate()
 
 
-static func get_subclasses() -> Array[PlayerClass]:
+func get_subclasses() -> Array[PlayerClass]:
 	if not _is_initialized:
 		_initialize()
 	return _cached_subclasses.duplicate()
 
 
-static func get_subclasses_for_main_class(main_class: PlayerClass) -> Array[PlayerClass]:
+func get_subclasses_for_main_class(main_class: PlayerClass) -> Array[PlayerClass]:
 	if not _is_initialized:
 		_initialize()
 	if main_class == null:
@@ -240,13 +240,13 @@ static func get_subclasses_for_main_class(main_class: PlayerClass) -> Array[Play
 	return filtered if not filtered.is_empty() else _cached_subclasses.duplicate()
 
 
-static func get_all_classes() -> Array[PlayerClass]:
+func get_all_classes() -> Array[PlayerClass]:
 	if not _is_initialized:
 		_initialize()
 	return _cached_all_classes.duplicate()
 
 
-static func get_class_by_id(class_id: String) -> PlayerClass:
+func get_class_by_id(class_id: String) -> PlayerClass:
 	if not _is_initialized:
 		_initialize()
 	if _cached_class_map.has(class_id):
@@ -254,23 +254,23 @@ static func get_class_by_id(class_id: String) -> PlayerClass:
 	return null
 
 
-static func is_main_class(class_id: String) -> bool:
+func is_main_class(class_id: String) -> bool:
 	return class_id in MAIN_CLASS_IDS
 
 
-static func is_subclass(class_id: String) -> bool:
+func is_subclass(class_id: String) -> bool:
 	return class_id in SUBCLASS_IDS
 
 
-static func is_main_class_instance(player_class: PlayerClass) -> bool:
+func is_main_class_instance(player_class: PlayerClass) -> bool:
 	return player_class != null and player_class.is_main_class
 
 
-static func is_subclass_instance(player_class: PlayerClass) -> bool:
+func is_subclass_instance(player_class: PlayerClass) -> bool:
 	return player_class != null and player_class.is_subclass
 
 
-static func get_class_id(player_class: PlayerClass) -> String:
+func get_class_id(player_class: PlayerClass) -> String:
 	if player_class == null:
 		return ""
 	if not _is_initialized:
@@ -289,7 +289,7 @@ static func get_class_id(player_class: PlayerClass) -> String:
 	return ""
 
 
-static func display_name_to_class_id(display_name: String) -> String:
+func display_name_to_class_id(display_name: String) -> String:
 	if not _is_initialized:
 		_initialize()
 	var normalized_display_name := _normalize_display_name(display_name)
@@ -298,7 +298,7 @@ static func display_name_to_class_id(display_name: String) -> String:
 	return ""
 
 
-static func class_id_to_display_name(class_id: String) -> String:
+func class_id_to_display_name(class_id: String) -> String:
 	if not _is_initialized:
 		_initialize()
 	if not _cached_class_map.has(class_id):
@@ -307,7 +307,7 @@ static func class_id_to_display_name(class_id: String) -> String:
 	return p_class.display_name if p_class != null else ""
 
 
-static func get_main_class_display_order() -> Array[String]:
+func get_main_class_display_order() -> Array[String]:
 	if not _is_initialized:
 		_initialize()
 	var result: Array[String] = []
@@ -316,7 +316,7 @@ static func get_main_class_display_order() -> Array[String]:
 	return result
 
 
-static func get_subclass_ids_for_main_id(main_class_id: String) -> Array[String]:
+func get_subclass_ids_for_main_id(main_class_id: String) -> Array[String]:
 	if not MAIN_TO_SUBCLASS_IDS.has(main_class_id):
 		return []
 	var ids: Array = MAIN_TO_SUBCLASS_IDS[main_class_id]
@@ -326,7 +326,7 @@ static func get_subclass_ids_for_main_id(main_class_id: String) -> Array[String]
 	return result
 
 
-static func get_class_role(class_id: String) -> String:
+func get_class_role(class_id: String) -> String:
 	if class_id in TANK_CLASS_IDS:
 		return "tank"
 	if class_id in DPS_CLASS_IDS:
@@ -340,11 +340,11 @@ static func get_class_role(class_id: String) -> String:
 	return "unknown"
 
 
-static func get_class_role_from_instance(player_class: PlayerClass) -> String:
+func get_class_role_from_instance(player_class: PlayerClass) -> String:
 	return get_class_role(get_class_id(player_class))
 
 
-static func get_classes_by_role(role: String) -> Array[PlayerClass]:
+func get_classes_by_role(role: String) -> Array[PlayerClass]:
 	if not _is_initialized:
 		_initialize()
 	var result: Array[PlayerClass] = []
@@ -362,7 +362,7 @@ static func get_classes_by_role(role: String) -> Array[PlayerClass]:
 	return result
 
 
-static func create_class_instance(class_id: String) -> PlayerClass:
+func create_class_instance(class_id: String) -> PlayerClass:
 	var class_scripts := _get_class_scripts()
 	if class_scripts.has(class_id) and class_scripts[class_id] != null:
 		var instance: PlayerClass = class_scripts[class_id].new()
@@ -397,7 +397,7 @@ func _validate_class_configuration() -> void:
 			push_error("ClassManager config invalid: class '%s' cannot be both main and subclass" % class_id)
 
 
-static func get_class_info(class_id: String) -> Dictionary:
+func get_class_info(class_id: String) -> Dictionary:
 	var player_class = get_class_by_id(class_id)
 	if player_class == null:
 		return {}
@@ -415,14 +415,14 @@ static func get_class_info(class_id: String) -> Dictionary:
 	}
 
 
-static func get_main_classes_info() -> Array[Dictionary]:
+func get_main_classes_info() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for class_id in MAIN_CLASS_IDS:
 		result.append(get_class_info(class_id))
 	return result
 
 
-static func get_subclasses_info() -> Array[Dictionary]:
+func get_subclasses_info() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for class_id in SUBCLASS_IDS:
 		result.append(get_class_info(class_id))

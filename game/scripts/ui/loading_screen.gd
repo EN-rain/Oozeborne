@@ -33,6 +33,8 @@ var _needs_class_selection: bool = false
 func _ready() -> void:
 	_setup_signals()
 	_setup_player_display()
+	# Defer remote display setup so MultiplayerManager.players can populate from lobby state
+	_remote_player_displays_ready.call_deferred()
 	_start_loading()
 
 
@@ -69,8 +71,16 @@ func _setup_player_display() -> void:
 	player_display.position = Vector2(get_viewport_rect().size.x / 2, get_viewport_rect().size.y - 100)
 	player_display.modulate.a = 0.0
 	
-	# Show remote players alongside local player
+	# Remote player displays are set up after a deferred call
+
+
+func _remote_player_displays_ready() -> void:
 	_setup_remote_player_displays()
+	# Fade in any newly created remote displays
+	for r_display in _remote_player_displays:
+		if is_instance_valid(r_display) and r_display.modulate.a < 1.0:
+			var r_tween = create_tween()
+			r_tween.tween_property(r_display, "modulate:a", 1.0, 0.5)
 
 
 func _setup_remote_player_displays() -> void:
@@ -228,8 +238,8 @@ func _on_match_state(match_state) -> void:
 				_setup_remote_player_displays()
 		elif msg_type == "class_selected":
 			var user_id = str(data.get("user_id", ""))
-			var slime_variant = str(data.get("slime_variant", ""))
-			if not user_id.is_empty() and not slime_variant.is_empty():
+			var slime_variant = str(data.get("slime_variant", "blue"))
+			if not user_id.is_empty():
 				if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
 					_setup_player_display()
 				else:
@@ -246,11 +256,13 @@ func _on_match_state(match_state) -> void:
 func _on_player_joined(_user_id: String, _ign: String, _is_host: bool) -> void:
 	_expected_player_count = _get_expected_player_count()
 	_update_player_count_display()
+	_setup_remote_player_displays()
 
 
 func _on_player_left(_user_id: String) -> void:
 	_expected_player_count = _get_expected_player_count()
 	_update_player_count_display()
+	_setup_remote_player_displays()
 
 
 func _get_expected_player_count() -> int:

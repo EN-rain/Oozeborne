@@ -1,7 +1,6 @@
 extends Control
 class_name ClassSelectionUI
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 const ClassSelectionMainSlotScript := preload("res://scripts/ui/lobby/class_selection_main_slot.gd")
 
 ## Main-class-only selection screen.
@@ -58,7 +57,7 @@ func _ready() -> void:
 
 
 func _load_available_classes() -> void:
-	available_main_classes = ClassManagerScript.get_main_classes()
+	available_main_classes = ClassManager.get_main_classes()
 	if available_main_classes.size() > max_main_class_options:
 		available_main_classes = available_main_classes.slice(0, max_main_class_options)
 
@@ -148,7 +147,7 @@ func _populate_subclass_preview(main_class: PlayerClass) -> void:
 		subclass_preview_label.text = ""
 		return
 
-	var subclasses: Array[PlayerClass] = ClassManagerScript.get_subclasses_for_main_class(main_class)
+	var subclasses: Array[PlayerClass] = ClassManager.get_subclasses_for_main_class(main_class)
 	var lines: PackedStringArray = []
 	for subclass in subclasses:
 		lines.append("%s - %s" % [subclass.display_name, subclass.description])
@@ -224,8 +223,8 @@ func auto_select_random_class() -> PlayerClass:
 
 
 func _on_select_pressed_for_class(player_class: PlayerClass) -> void:
-	var class_id := ClassManagerScript.get_class_id(player_class)
-	var resolved_class := ClassManagerScript.create_class_instance(class_id) if not class_id.is_empty() else player_class
+	var class_id := ClassManager.get_class_id(player_class)
+	var resolved_class := ClassManager.create_class_instance(class_id) if not class_id.is_empty() else player_class
 	selected_class = resolved_class
 	_update_class_info(selected_class)
 	MultiplayerManager.player_class = selected_class

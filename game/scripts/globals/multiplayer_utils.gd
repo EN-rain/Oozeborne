@@ -26,7 +26,7 @@ const DEBUG_MULTIPLAYER_UTILS_LOGS := false
 ## Local player reference for reconciliation
 var _local_player_node: WeakRef = WeakRef.new()
 
-var _reconciliation_threshold: float = 15.0  # Only correct if desync > 15 pixels
+var _reconciliation_threshold: float = 30.0  # Snap if desync > 30 pixels
 var _dash_end_time: float = -1.0  # Timestamp when last dash ended
 const DASH_GRACE_PERIOD: float = 0.3  # Seconds to skip reconciliation after dash ends
 
@@ -553,7 +553,7 @@ func get_interpolation_delay() -> float:
 
 ## Reconcile local player with server state
 ## Call this when receiving server snapshot for local player
-func reconcile_local_player(server_pos: Vector2, _server_vel: Vector2, server_seq: int) -> void:
+func reconcile_local_player(server_pos: Vector2, server_vel: Vector2, server_seq: int) -> void:
 	if not _prediction_enabled:
 		return
 	
@@ -592,16 +592,15 @@ func reconcile_local_player(server_pos: Vector2, _server_vel: Vector2, server_se
 	if _input_sequence % 100 == 0:
 		_debug_log("Prediction error: %s px | Pending: %s" % [snapped(error_dist, 0.1), _pending_inputs.size()])
 	
-	# Smooth reconciliation: nudge toward server position instead of hard snap
+	# Smooth reconciliation: blend toward server position instead of hard snap
 	# Hard snaps cause visible stutter (dash snap-back, forward-back jitter near players)
 	# and wall collision issues since server doesn't simulate move_and_slide
 	if error_dist > _reconciliation_threshold:
-		# Gentle nudge: move a fixed small step toward server position each frame
-		# This converges without causing oscillation or wall-clipping
-		var max_correction = 4.0  # Max pixels corrected per frame
-		var correction_amount = minf(error_dist, max_correction)
-		var direction = (server_pos - player_node.global_position).normalized()
-		player_node.global_position += direction * correction_amount
+		# Progressive blend: larger errors get faster correction, but never instant snap
+		# This avoids wall-clipping from hard snaps while still converging quickly
+		var blend = clamp(error_dist / 200.0, 0.3, 0.8)
+		player_node.global_position = player_node.global_position.lerp(server_pos, blend)
+		player_node.velocity = server_vel
 	
 ## Enable/disable prediction (for debugging)
 func set_prediction_enabled(enabled: bool) -> void:

@@ -1,7 +1,6 @@
 extends Node
 class_name RoomLobbyPartyController
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 const CROWN_EMOJI = "👑 "
 
@@ -210,13 +209,27 @@ func move_right() -> void:
 func on_select_class_pressed() -> void:
 	if _class_selection_locked:
 		# Clear current selection so user can freely re-select any class
+		var previous_class_name := ""
+		if _selected_class != null:
+			previous_class_name = _selected_class.display_name
 		_selected_class = null
 		MultiplayerManager.player_class = null
-		if MultiplayerManager.session != null and _player_entries.has(MultiplayerManager.session.user_id):
-			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = ""
+		if MultiplayerManager.session != null:
+			MultiplayerManager.player_classes.erase(MultiplayerManager.session.user_id)
+			if _player_entries.has(MultiplayerManager.session.user_id):
+				_player_entries[MultiplayerManager.session.user_id]["selected_class"] = ""
 		refresh_party_cards()
 		_set_class_selection_locked(false)
 		refresh_start_button_state()
+		# Notify remote players that this class was cleared
+		if not previous_class_name.is_empty() and MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
+			add_chat_message(system_sender_name, change_class_hint_format % _get_local_player_chat_name(), change_class_hint_color)
+			MultiplayerManager.send_match_state({
+				"type": "class_selected",
+				"user_id": MultiplayerManager.session.user_id,
+				"class_name": "",
+				"slime_variant": MultiplayerManager.player_slime_variant
+			})
 		return
 	var active_class := get_active_class_name()
 	if _is_class_taken_by_other_player(active_class):
@@ -305,9 +318,9 @@ func _on_active_class_changed(_class_name: String) -> void:
 
 
 func get_player_class_for_name(selected_name: String) -> PlayerClass:
-	var class_id := ClassManagerScript.display_name_to_class_id(selected_name)
+	var class_id := ClassManager.display_name_to_class_id(selected_name)
 	if not class_id.is_empty():
-		return ClassManagerScript.create_class_instance(class_id)
+		return ClassManager.create_class_instance(class_id)
 	return null
 
 
@@ -353,17 +366,25 @@ func handle_player_info_state(data: Dictionary) -> void:
 func handle_remote_class_selected(sender_id: String, selected_name: String, slime_variant: String = "") -> void:
 	if sender_id.is_empty() or sender_id == MultiplayerManager.session.user_id:
 		return
-	var player_class := get_player_class_for_name(selected_name)
-	if player_class != null:
-		MultiplayerManager.set_player_class(sender_id, player_class)
+	if selected_name.is_empty():
+		# Remote player cleared their class selection
+		MultiplayerManager.player_classes.erase(sender_id)
+		if _player_entries.has(sender_id):
+			_player_entries[sender_id]["selected_class"] = ""
+			refresh_party_cards()
+		add_chat_message(system_sender_name, change_class_hint_format % _get_player_chat_name(sender_id), change_class_hint_color)
+	else:
+		var player_class := get_player_class_for_name(selected_name)
+		if player_class != null:
+			MultiplayerManager.set_player_class(sender_id, player_class)
+		# Update player entry with selected class
+		if _player_entries.has(sender_id):
+			_player_entries[sender_id]["selected_class"] = selected_name
+			refresh_party_cards()
+		add_chat_message(system_sender_name, selected_class_format % [_get_player_chat_name(sender_id), selected_name], selected_class_color)
 	# Update slime variant if provided
 	if not slime_variant.is_empty() and MultiplayerManager.players.has(sender_id):
 		MultiplayerManager.players[sender_id]["slime_variant"] = slime_variant
-	# Update player entry with selected class
-	if _player_entries.has(sender_id):
-		_player_entries[sender_id]["selected_class"] = selected_name
-		refresh_party_cards()
-	add_chat_message(system_sender_name, selected_class_format % [_get_player_chat_name(sender_id), selected_name], selected_class_color)
 	_refresh_select_class_button_state()
 	refresh_start_button_state()
 

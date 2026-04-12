@@ -352,6 +352,17 @@ theme_override_styles/pressed = SubResource("btn_secondary_pressed")
 theme_override_styles/hover = SubResource("btn_secondary_hover")
 text = "Save Round"
 
+[node name="SaveSlotsButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
+theme_override_colors/font_color = Color(0.968627, 0.980392, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_secondary_normal")
+theme_override_styles/pressed = SubResource("btn_secondary_pressed")
+theme_override_styles/hover = SubResource("btn_secondary_hover")
+text = "Save Slots (Cloud)"
+
 [node name="RestartButton" type="Button" parent="PausePanel/VBoxContainer/ButtonsVBox" unique_id=983637769]
 unique_name_in_owner = true
 layout_mode = 2
@@ -382,6 +393,7 @@ text = "Press Esc to resume instantly."
 horizontal_alignment = 1
 
 [connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/SaveSlotsButton" to="." method="_on_save_slots_pressed"]
 [connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/RestartButton" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/SaveRoundButton" to="." method="_on_save_round_pressed"]
 [connection signal="pressed" from="PausePanel/VBoxContainer/ButtonsVBox/MenuButton" to="." method="_on_menu_pressed"]

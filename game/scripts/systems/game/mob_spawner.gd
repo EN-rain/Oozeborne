@@ -142,6 +142,41 @@ func get_round_elite_count(round_number: int) -> int:
 	return clampi(elite_count, initial_elite_mob_count, max(total - 1, 0))
 
 
+## Map of mob name aliases to their scene paths
+const MOB_NAME_MAP: Dictionary = {
+	"slime": "res://scenes/entities/enemies/blue_slime.tscn",
+	"common": "res://scenes/entities/enemies/blue_slime.tscn",
+	"lancer": "res://scenes/entities/enemies/plagued_lancer.tscn",
+	"archer": "res://scenes/entities/enemies/archer.tscn",
+	"warden": "res://scenes/entities/enemies/void_warden.tscn",
+	"boss": "res://scenes/entities/enemies/void_warden.tscn",
+}
+
+
+func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
+	var scene_path: String = MOB_NAME_MAP.get(mob_name.to_lower().strip_edges(), "")
+	if scene_path.is_empty():
+		return 0
+	var scene: PackedScene = load(scene_path)
+	if scene == null:
+		return 0
+	var spawned := 0
+	for i in range(count):
+		var mob: Node2D = scene.instantiate() as Node2D
+		if mob == null:
+			continue
+		mob.global_position = get_random_spawn_position()
+		mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+		_parent.add_child(mob)
+		if _round_manager != null:
+			_round_manager.register_mob(mob)
+		mob_spawned.emit(mob)
+		_round_active_mobs += 1
+		spawned += 1
+	_emit_active_count()
+	return spawned
+
+
 func get_alive_mob_count() -> int:
 	return _round_active_mobs
 

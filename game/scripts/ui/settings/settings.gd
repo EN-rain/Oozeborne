@@ -29,6 +29,8 @@ const REMAPPABLE_ACTIONS: Dictionary = {
 	"pause": "Pause",
 }
 
+const KeybindRowScene := preload("res://scenes/ui/keybind_row.tscn")
+
 var _keybind_buttons: Dictionary = {}  # action_name -> Button
 var _listening_for_action: String = ""
 var _listening_button: Button = null
@@ -276,29 +278,11 @@ func _create_keybind_ui() -> void:
 	keybind_container.add_child(sep)
 
 	for action_name in REMAPPABLE_ACTIONS:
-		var row := HBoxContainer.new()
-
-		var name_label := Label.new()
-		name_label.text = REMAPPABLE_ACTIONS[action_name]
-		name_label.add_theme_font_size_override("font_size", 14)
-		name_label.custom_minimum_size.x = 120
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(name_label)
-
-		var bind_btn := Button.new()
-		bind_btn.custom_minimum_size = Vector2(160, 32)
-		bind_btn.add_theme_font_size_override("font_size", 13)
+		var row := KeybindRowScene.instantiate()
+		row.get_node("NameLabel").text = REMAPPABLE_ACTIONS[action_name]
+		var bind_btn: Button = row.get_node("BindButton")
 		bind_btn.pressed.connect(_on_keybind_button_pressed.bind(action_name))
-		row.add_child(bind_btn)
-
-		var reset_btn := Button.new()
-		reset_btn.text = "Reset"
-		reset_btn.add_theme_font_size_override("font_size", 11)
-		reset_btn.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-		reset_btn.custom_minimum_size = Vector2(60, 28)
-		reset_btn.pressed.connect(_on_keybind_reset_pressed.bind(action_name))
-		row.add_child(reset_btn)
-
+		row.get_node("ResetButton").pressed.connect(_on_keybind_reset_pressed.bind(action_name))
 		keybind_container.add_child(row)
 		_keybind_buttons[action_name] = bind_btn
 

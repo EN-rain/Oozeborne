@@ -7,6 +7,11 @@ extends CanvasLayer
 @onready var skills_root: HudSkillBar = %Skills
 @onready var stats_panel: HudStatsPanel = $Stats
 @onready var chat_box: Control = %ChatBox
+@onready var player_info_panel: PanelContainer = %PlayerInfoPanel
+
+const DisconnectOverlayScene := preload("res://scenes/ui/disconnect_overlay.tscn")
+const BossHealthBarScene := preload("res://scenes/ui/boss_health_bar.tscn")
+const MainMenuScene := preload("res://scenes/ui/main_menu.tscn")
 
 var _disconnect_overlay: PanelContainer = null
 var _disconnect_label: Label = null
@@ -58,6 +63,8 @@ func set_player(player: CharacterBody2D) -> void:
 		minimap.set_player(player)
 	if skills_root != null:
 		skills_root.refresh_skill_hud()
+	if player_info_panel != null and player_info_panel.has_method("set_player"):
+		player_info_panel.set_player(player)
 
 	if not LevelSystem.xp_gained.is_connected(_on_xp_gained):
 		LevelSystem.xp_gained.connect(_on_xp_gained)
@@ -91,6 +98,8 @@ func _on_xp_gained(entity_id: int, _amount: int, _total: int) -> void:
 	var resolved_player := _resolve_player_ref()
 	if resolved_player != null and resolved_player.get_instance_id() == entity_id and player_panel != null:
 		player_panel.refresh_level_display(LevelSystem.get_level(resolved_player), LevelSystem.get_xp_progress(resolved_player))
+	if player_info_panel != null and player_info_panel.has_method("_refresh_display"):
+		player_info_panel._refresh_display()
 
 
 func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
@@ -98,6 +107,8 @@ func _on_level_up(entity_id: int, new_level: int, _stats: Dictionary) -> void:
 	if resolved_player != null and resolved_player.get_instance_id() == entity_id:
 		if player_panel != null:
 			player_panel.refresh_level_display(new_level, LevelSystem.get_xp_progress(resolved_player))
+		if player_info_panel != null and player_info_panel.has_method("_refresh_display"):
+			player_info_panel._refresh_display()
 		refresh_player_stat_cards()
 
 
@@ -115,6 +126,8 @@ func refresh_player_level_display() -> void:
 		return
 	if player_panel != null:
 		player_panel.refresh_level_display(LevelSystem.get_level(resolved_player), LevelSystem.get_xp_progress(resolved_player))
+	if player_info_panel != null and player_info_panel.has_method("_refresh_display"):
+		player_info_panel._refresh_display()
 	refresh_player_stat_cards()
 
 
@@ -251,45 +264,11 @@ func _process(delta: float) -> void:
 
 
 func _create_disconnect_overlay() -> void:
-	_disconnect_overlay = PanelContainer.new()
-	_disconnect_overlay.name = "DisconnectOverlay"
+	_disconnect_overlay = DisconnectOverlayScene.instantiate()
 	_disconnect_overlay.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	_disconnect_overlay.offset_top = 40
-	_disconnect_overlay.offset_left = -160
-	_disconnect_overlay.offset_right = 160
-	_disconnect_overlay.visible = false
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.05, 0.05, 0.92)
-	style.border_color = Color(0.9, 0.2, 0.2)
-	style.border_width_bottom = 2
-	style.border_width_top = 2
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	_disconnect_overlay.add_theme_stylebox_override("panel", style)
-
-	var vbox := VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-
-	_disconnect_label = Label.new()
-	_disconnect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_disconnect_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-	_disconnect_label.add_theme_font_size_override("font_size", 16)
-	_disconnect_label.text = "Connection Lost — Reconnecting..."
-	vbox.add_child(_disconnect_label)
-
-	_disconnect_reconnect_btn = Button.new()
-	_disconnect_reconnect_btn.text = "Return to Menu"
-	_disconnect_reconnect_btn.add_theme_color_override("font_color", Color(0.9, 0.7, 0.7))
-	_disconnect_reconnect_btn.add_theme_font_size_override("font_size", 14)
+	_disconnect_label = _disconnect_overlay.get_node("VBox/Label")
+	_disconnect_reconnect_btn = _disconnect_overlay.get_node("VBox/Button")
 	_disconnect_reconnect_btn.pressed.connect(_on_disconnect_return_menu)
-	vbox.add_child(_disconnect_reconnect_btn)
-
-	_disconnect_overlay.add_child(vbox)
 	add_child(_disconnect_overlay)
 
 
@@ -306,80 +285,15 @@ func _on_disconnect_return_menu() -> void:
 		_disconnect_overlay.visible = false
 	MultiplayerManager._cleanup_socket_connection()
 	MultiplayerManager._reset_match_state()
-	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+	get_tree().change_scene_to_packed(MainMenuScene)
 
 
 func _create_boss_health_bar() -> void:
-	_boss_bar_container = PanelContainer.new()
-	_boss_bar_container.name = "BossHealthBarContainer"
+	_boss_bar_container = BossHealthBarScene.instantiate()
 	_boss_bar_container.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	_boss_bar_container.offset_top = 8
-	_boss_bar_container.offset_left = -180
-	_boss_bar_container.offset_right = 180
-	_boss_bar_container.visible = false
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.04, 0.12, 0.88)
-	style.border_color = Color(0.6, 0.2, 0.8)
-	style.border_width_bottom = 2
-	style.border_width_top = 2
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	_boss_bar_container.add_theme_stylebox_override("panel", style)
-
-	var vbox := VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-
-	var title_row := HBoxContainer.new()
-	title_row.alignment = BoxContainer.ALIGNMENT_CENTER
-
-	_boss_name_label = Label.new()
-	_boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_boss_name_label.add_theme_color_override("font_color", Color(0.85, 0.65, 1.0))
-	_boss_name_label.add_theme_font_size_override("font_size", 14)
-	_boss_name_label.text = "Boss"
-	_boss_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_row.add_child(_boss_name_label)
-
-	_boss_phase_label = Label.new()
-	_boss_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_boss_phase_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
-	_boss_phase_label.add_theme_font_size_override("font_size", 12)
-	_boss_phase_label.text = "Phase 1"
-	title_row.add_child(_boss_phase_label)
-
-	vbox.add_child(title_row)
-
-	_boss_health_bar = ProgressBar.new()
-	_boss_health_bar.min_value = 0.0
-	_boss_health_bar.max_value = 100.0
-	_boss_health_bar.value = 100.0
-	_boss_health_bar.show_percentage = false
-	_boss_health_bar.custom_minimum_size = Vector2(340, 16)
-
-	var bar_fg := StyleBoxFlat.new()
-	bar_fg.bg_color = Color(0.7, 0.15, 0.9)
-	bar_fg.corner_radius_bottom_left = 3
-	bar_fg.corner_radius_bottom_right = 3
-	bar_fg.corner_radius_top_left = 3
-	bar_fg.corner_radius_top_right = 3
-	_boss_health_bar.add_theme_stylebox_override("fill", bar_fg)
-
-	var bar_bg := StyleBoxFlat.new()
-	bar_bg.bg_color = Color(0.15, 0.08, 0.2, 0.8)
-	bar_bg.corner_radius_bottom_left = 3
-	bar_bg.corner_radius_bottom_right = 3
-	bar_bg.corner_radius_top_left = 3
-	bar_bg.corner_radius_top_right = 3
-	_boss_health_bar.add_theme_stylebox_override("background", bar_bg)
-
-	vbox.add_child(_boss_health_bar)
-
-	_boss_bar_container.add_child(vbox)
+	_boss_name_label = _boss_bar_container.get_node("VBox/TitleRow/NameLabel")
+	_boss_phase_label = _boss_bar_container.get_node("VBox/TitleRow/PhaseLabel")
+	_boss_health_bar = _boss_bar_container.get_node("VBox/HealthBar")
 	add_child(_boss_bar_container)
 
 

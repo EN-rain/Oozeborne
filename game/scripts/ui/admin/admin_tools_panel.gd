@@ -52,6 +52,9 @@ func _check_admin_status() -> void:
 	if MultiplayerManager.session != null:
 		AdminManager.check_admin_status(MultiplayerManager.session.user_id)
 	
+	# Sync admin status to MultiplayerManager so chat commands can check it
+	MultiplayerManager.is_admin = AdminManager.is_admin()
+	
 	if AdminManager.is_admin():
 		if toggle_button != null:
 			toggle_button.show()

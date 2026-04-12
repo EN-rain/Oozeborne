@@ -5,9 +5,13 @@ extends CanvasLayer
 @onready var resume_button: Button = %ResumeButton
 @onready var restart_button: Button = %RestartButton
 @onready var save_round_button: Button = %SaveRoundButton
+@onready var save_slots_button: Button = %SaveSlotsButton
 @onready var menu_button: Button = %MenuButton
 
 @export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/ui/main_menu.tscn"
+@export_file("*.tscn") var save_slots_scene_path: String = "res://scenes/ui/save_slots_ui.tscn"
+
+var _save_slots_ui: Control = null
 
 
 func _ready():
@@ -62,6 +66,26 @@ func _on_save_round_pressed():
 	var saved: bool = SoloRunSaveManager.save_current_run_from_scene(current_scene)
 	if save_round_button != null:
 		save_round_button.text = "Saved" if saved else "Save Failed"
+
+
+func _on_save_slots_pressed():
+	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
+		_save_slots_ui.show()
+		return
+	if save_slots_scene_path.is_empty():
+		return
+	var scene: PackedScene = load(save_slots_scene_path)
+	if scene == null:
+		return
+	_save_slots_ui = scene.instantiate()
+	add_child(_save_slots_ui)
+	_save_slots_ui.closed.connect(_on_save_slots_closed)
+
+
+func _on_save_slots_closed() -> void:
+	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
+		_save_slots_ui.queue_free()
+		_save_slots_ui = null
 
 
 func _restart_current_run() -> void:

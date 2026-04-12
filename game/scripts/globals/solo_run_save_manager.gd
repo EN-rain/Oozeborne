@@ -1,6 +1,5 @@
 extends Node
 
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 const SAVE_PATH := "user://solo_run_save.json"
 const SAVE_VERSION := 1
 
@@ -79,4 +78,4 @@ func _apply_snapshot_to_globals(snapshot: Dictionary) -> void:
 func _resolve_class_instance(class_id: String) -> PlayerClass:
 	if class_id.is_empty():
 		return null
-	return ClassManagerScript.create_class_instance(class_id)
+	return ClassManager.create_class_instance(class_id)

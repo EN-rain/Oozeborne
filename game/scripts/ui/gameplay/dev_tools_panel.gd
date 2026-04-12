@@ -11,7 +11,6 @@ const DEBUG_LOGS := false
 const DEBUG_COMMON_MOB_SCENE_PATH := "res://scenes/entities/enemies/blue_slime.tscn"
 const DEBUG_ELITE_LANCER_SCENE_PATH := "res://scenes/entities/enemies/plagued_lancer.tscn"
 const DEBUG_ELITE_ARCHER_SCENE_PATH := "res://scenes/entities/enemies/archer.tscn"
-const ClassManagerScript := preload("res://scripts/globals/class_manager.gd")
 
 @onready var close_button: Button = %CloseButton
 @onready var level_input: LineEdit = %LevelInput
@@ -41,7 +40,7 @@ func _populate_class_options() -> void:
 	class_option.clear()
 	
 	# Add main classes
-	var main_classes := ClassManagerScript.get_main_classes()
+	var main_classes := ClassManager.get_main_classes()
 	for player_class in main_classes:
 		class_option.add_item(player_class.display_name)
 	
@@ -49,7 +48,7 @@ func _populate_class_options() -> void:
 	class_option.add_separator()
 	
 	# Add subclasses
-	var subclasses := ClassManagerScript.get_subclasses()
+	var subclasses := ClassManager.get_subclasses()
 	for player_class in subclasses:
 		class_option.add_item(player_class.display_name)
 
@@ -195,13 +194,13 @@ func _on_apply_class_pressed() -> void:
 		return
 
 	var selected_name := class_option.get_item_text(selected_idx)
-	var class_id := ClassManagerScript.display_name_to_class_id(selected_name)
+	var class_id := ClassManager.display_name_to_class_id(selected_name)
 
 	if class_id.is_empty():
 		push_warning("[DevTools] Could not find class ID for: %s" % selected_name)
 		return
 
-	var new_class := ClassManagerScript.create_class_instance(class_id)
+	var new_class := ClassManager.create_class_instance(class_id)
 	if new_class == null:
 		push_warning("[DevTools] Could not create class instance for: %s" % class_id)
 		return
