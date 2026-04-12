@@ -21,11 +21,6 @@ func _init():
 	modifiers_defense = 0.95   # -5% Defense
 	modifiers_attack_speed = 1.05   # +5% Attack Speed
 
-	# Passive bonuses
-	passive_name = "Borrowed Seconds"
-	passive_description = "Applying control effects grants a short cooldown reduction burst."
-	passive_dodge_chance = 8.0
-	
 	# Mana & Regen
 	mana_bonus = 25         # +25 MP (time magic)
 	mana_regen_bonus = 1.0  # +1.0 MP/s

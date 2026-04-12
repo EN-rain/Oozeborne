@@ -132,3 +132,16 @@ const ABILITY_COOLDOWNS := {
 	"tank_main_fortify_special": 14.0,
 	"tank_paladin_divine_shield_special": 25.0,
 }
+
+const ABILITY_DURATIONS := {
+	"tank_main_taunt_ability": 2.0,
+	"tank_main_frenzy_ability": 4.0,
+	"tank_main_fortify_special": 3.0,
+	"tank_berserker_frenzy_ability": 4.0,
+	"tank_guardian_shield_wall_special": 2.0,
+	"dps_main_smoke_bomb_ability": 1.0,
+	"dps_main_surge_ability": 4.0,
+	"dps_assassin_smoke_bomb_ability": 1.0,
+	"controller_main_bramble_wall_ability": 2.0,
+	"controller_warden_bramble_wall_ability": 2.0,
+}

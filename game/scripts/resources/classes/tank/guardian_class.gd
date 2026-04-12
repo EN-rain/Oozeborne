@@ -17,11 +17,6 @@ func _init():
 	modifiers_defense = 1.3   # +30% Defense
 	modifiers_attack_speed = 0.9   # -10% Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Iron Will"
-	passive_description = "Gain 5% damage reduction for each nearby ally."
-	passive_thorns_damage = 5.0  # Reflects 5 damage when hit
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

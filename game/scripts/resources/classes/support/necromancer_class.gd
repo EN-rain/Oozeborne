@@ -19,11 +19,6 @@ func _init():
 	modifiers_crit_chance = 1.08  # +8% Crit Chance
 	modifiers_crit_damage = 1.15  # +15% Crit Damage
 
-	# Passive bonuses
-	passive_name = "Soul Harvest"
-	passive_description = "Defeated enemies restore a small amount of health and briefly amplify your spell damage."
-	passive_lifesteal = 14.0
-	
 	# Mana & Regen
 	mana_bonus = 20         # +20 MP (dark caster)
 	mana_regen_bonus = 0.5  # +0.5 MP/s

@@ -23,10 +23,6 @@ func _init():
 	modifiers_crit_chance = 1.03     # +3% Crit Chance
 	modifiers_crit_damage = 1.05     # +5% Crit Damage
 	
-	# Passive bonuses
-	passive_name = "Steady Hands"
-	passive_description = "Improves sustain effects and cooldown rhythm."
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

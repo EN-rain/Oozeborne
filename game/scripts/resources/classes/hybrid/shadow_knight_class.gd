@@ -21,11 +21,6 @@ func _init():
 	modifiers_defense = 0.98  # -2% Defense
 	modifiers_attack_speed = 1.0     # Normal Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Vampiric Embrace"
-	passive_description = "Lifesteal is 50% more effective. Healing from abilities is 25% stronger."
-	passive_lifesteal = 15.0  # 15% base lifesteal
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

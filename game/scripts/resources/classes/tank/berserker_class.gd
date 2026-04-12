@@ -17,11 +17,6 @@ func _init():
 	modifiers_defense = 0.78  # -22% Defense
 	modifiers_attack_speed = 1.14  # +14% Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Adrenaline"
-	passive_description = "Deal up to 50% more damage based on missing HP. At 1 HP, deal maximum bonus damage."
-	passive_lifesteal = 5.0   # 5% lifesteal
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

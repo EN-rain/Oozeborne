@@ -145,6 +145,13 @@ func _on_overlay_closed() -> void:
 
 func _update_overlay_pause() -> void:
 	_overlay_pause_active = _block_input_when_overlay_open and _is_overlay_open()
+	var overlay_open := _is_overlay_open()
+	if skills_root != null:
+		skills_root.visible = not overlay_open
+	if stats_root != null:
+		stats_root.visible = not overlay_open
+	if minimap != null:
+		minimap.visible = not overlay_open
 
 
 func has_blocking_overlay_open() -> bool:

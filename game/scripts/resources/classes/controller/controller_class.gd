@@ -23,10 +23,6 @@ func _init():
 	modifiers_crit_chance = 1.06   # +6% Crit Chance
 	modifiers_crit_damage = 1.10   # +10% Crit Damage
 
-	# Passive bonuses
-	passive_name = "Tempo Lock"
-	passive_description = "Enemies affected by your control effects take bonus damage from your abilities."
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

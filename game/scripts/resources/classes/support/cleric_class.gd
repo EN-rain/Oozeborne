@@ -17,11 +17,6 @@ func _init():
 	modifiers_defense = 1.2   # +20% Defense
 	modifiers_attack_speed = 0.85   # -15% Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Healing Aura"
-	passive_description = "Nearby allies regenerate 2 HP per second. Self-healing is 50% more effective."
-	passive_lifesteal = 10.0
-	
 	# Mana & Regen
 	mana_bonus = 30         # +30 MP (holy healer)
 	mana_regen_bonus = 1.0  # +1.0 MP/s

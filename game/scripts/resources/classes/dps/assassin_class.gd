@@ -19,11 +19,6 @@ func _init():
 	modifiers_crit_chance = 1.28    # +28% Crit Chance
 	modifiers_crit_damage = 1.55    # +55% Crit Damage
 	
-	# Passive bonuses
-	passive_name = "Backstab"
-	passive_description = "Attacks from behind deal 50% bonus damage and always crit."
-	passive_dodge_chance = 10.0  # 10% dodge chance
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

@@ -21,11 +21,6 @@ func _init():
 	modifiers_attack_speed = 1.2     # +20% Attack Speed
 	modifiers_crit_chance = 1.15     # +15% Crit Chance
 	
-	# Passive bonuses
-	passive_name = "Flow State"
-	passive_description = "Dodging an attack grants +20% attack speed for 3 seconds. Each consecutive hit increases dodge chance by 2% (max 20%)."
-	passive_dodge_chance = 15.0
-	
 	# Mana & Regen
 	mana_bonus = 5          # +5 MP (chi/energy user)
 	mana_regen_bonus = 1.0  # +1.0 MP/s

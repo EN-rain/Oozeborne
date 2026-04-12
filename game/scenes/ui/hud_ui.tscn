@@ -12,45 +12,7 @@
 [ext_resource type="Script" uid="uid://d1u7yr1n34bw6" path="res://scripts/ui/gameplay/hud_ui.gd" id="13_hudroot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_active_skill_slot.tscn" id="14_activeslot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_passive_skill_icon.tscn" id="15_passiveicon"]
-[ext_resource type="Script" path="res://scripts/ui/gameplay/hud_player_info_panel.gd" id="16_playerinfo"]
-
-[sub_resource type="StyleBoxFlat" id="info_panel_bg"]
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
-bg_color = Color(0.06, 0.05, 0.1, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.3, 0.25, 0.4, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="info_hp_fill"]
-content_margin_left = 2.0
-content_margin_top = 2.0
-content_margin_right = 2.0
-content_margin_bottom = 2.0
-bg_color = Color(0.2, 0.7, 0.35, 1)
-corner_radius_top_left = 1
-corner_radius_top_right = 1
-corner_radius_bottom_right = 1
-corner_radius_bottom_left = 1
-
-[sub_resource type="StyleBoxFlat" id="info_mana_fill"]
-content_margin_left = 2.0
-content_margin_top = 2.0
-content_margin_right = 2.0
-content_margin_bottom = 2.0
-bg_color = Color(0.3, 0.5, 0.9, 1)
-corner_radius_top_left = 1
-corner_radius_top_right = 1
-corner_radius_bottom_right = 1
-corner_radius_bottom_left = 1
+[ext_resource type="Script" uid="uid://bh4xffp22lrww" path="res://scripts/ui/gameplay/hud_player_info_panel.gd" id="16_playerinfo"]
 
 [sub_resource type="StyleBoxFlat" id="hp_bg"]
 content_margin_left = 3.0
@@ -74,6 +36,28 @@ content_margin_top = 2.0
 content_margin_right = 2.0
 content_margin_bottom = 2.0
 bg_color = Color(0.2, 0.7, 0.35, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="info_hp_fill"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.2, 0.7, 0.35, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="info_mana_fill"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.3, 0.5, 0.9, 1)
 corner_radius_top_left = 1
 corner_radius_top_right = 1
 corner_radius_bottom_right = 1
@@ -297,8 +281,15 @@ script = ExtResource("9_hudcontrol")
 [node name="PlayerStats" type="Control" parent="Control" unique_id=1019271898]
 layout_mode = 1
 anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
 offset_right = 589.0
 offset_bottom = 191.0
+grow_horizontal = 1
+grow_vertical = 1
+mouse_filter = 2
 script = ExtResource("8_hudplayer")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Control/PlayerStats" unique_id=888559358]
@@ -527,6 +518,69 @@ offset_right = 1570.0
 offset_bottom = 34.0
 theme_override_font_sizes/font_size = 14
 
+[node name="PlayerInfoPanel" type="PanelContainer" parent="Control" unique_id=998877001]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 210.0
+offset_bottom = 123.0
+grow_horizontal = 1
+grow_vertical = 1
+script = ExtResource("16_playerinfo")
+
+[node name="VBox" type="VBoxContainer" parent="Control/PlayerInfoPanel" unique_id=998877002]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="InfoHeaderLabel" type="Label" parent="Control/PlayerInfoPanel/VBox" unique_id=998877003]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "Player Lvl1 —"
+
+[node name="HPSection" type="VBoxContainer" parent="Control/PlayerInfoPanel/VBox" unique_id=998877006]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="InfoHPLabel" type="Label" parent="Control/PlayerInfoPanel/VBox/HPSection" unique_id=998877007]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "HP 100 / 100"
+
+[node name="InfoHPBar" type="ProgressBar" parent="Control/PlayerInfoPanel/VBox/HPSection" unique_id=998877008]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+theme_override_styles/fill = SubResource("info_hp_fill")
+show_percentage = false
+
+[node name="ManaSection" type="VBoxContainer" parent="Control/PlayerInfoPanel/VBox" unique_id=998877009]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="InfoManaLabel" type="Label" parent="Control/PlayerInfoPanel/VBox/ManaSection" unique_id=998877010]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.6, 1, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "XP 0%"
+
+[node name="InfoManaBar" type="ProgressBar" parent="Control/PlayerInfoPanel/VBox/ManaSection" unique_id=998877011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+theme_override_styles/fill = SubResource("info_mana_fill")
+show_percentage = false
+
 [node name="SoloClassSelection" parent="." unique_id=622513519 instance=ExtResource("3_classselect")]
 visible = false
 
@@ -534,10 +588,12 @@ visible = false
 unique_name_in_owner = true
 visible = false
 mouse_filter = 2
+z_index = 10
 
 [node name="SkillTreeUI" parent="." unique_id=1280852712 instance=ExtResource("6_skilltree")]
 unique_name_in_owner = true
 visible = false
+z_index = 10
 
 [node name="Death" type="Control" parent="." unique_id=1587043198]
 unique_name_in_owner = true
@@ -549,6 +605,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+z_index = 10
 
 [node name="ColorRect" type="ColorRect" parent="Death" unique_id=1468384267]
 unique_name_in_owner = true
@@ -712,15 +769,14 @@ theme_override_constants/separation = 6
 
 [node name="Stats" type="Control" parent="." unique_id=281895974]
 layout_mode = 3
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
+anchors_preset = 15
+anchor_left = 0.0
+anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -40.0
-offset_top = -40.0
-grow_horizontal = 0
-grow_vertical = 0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("11_hudstats")
 
 [node name="ClassStats" type="PanelContainer" parent="Stats" unique_id=1374798923]
@@ -994,68 +1050,6 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.5803922, 0.8117647, 1)
 theme_override_font_sizes/font_size = 18
-
-[node name="PlayerInfoPanel" type="PanelContainer" parent="Control" unique_id=998877001]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 4
-anchor_left = 0.0
-anchor_top = 0.5
-anchor_right = 0.0
-anchor_bottom = 0.5
-offset_left = 10.0
-offset_top = -90.0
-offset_right = 210.0
-offset_bottom = 90.0
-grow_vertical = 2
-script = ExtResource("16_playerinfo")
-
-[node name="VBox" type="VBoxContainer" parent="Control/PlayerInfoPanel" unique_id=998877002]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="InfoHeaderLabel" type="Label" parent="Control/PlayerInfoPanel/VBox" unique_id=998877003]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.95)
-theme_override_font_sizes/font_size = 15
-text = "Player Lvl1 —"
-
-[node name="HPSection" type="VBoxContainer" parent="Control/PlayerInfoPanel/VBox" unique_id=998877006]
-layout_mode = 2
-theme_override_constants/separation = 1
-
-[node name="InfoHPLabel" type="Label" parent="Control/PlayerInfoPanel/VBox/HPSection" unique_id=998877007]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 0.9)
-theme_override_font_sizes/font_size = 11
-text = "HP 100 / 100"
-
-[node name="InfoHPBar" type="ProgressBar" parent="Control/PlayerInfoPanel/VBox/HPSection" unique_id=998877008]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 14)
-layout_mode = 2
-theme_override_styles/fill = SubResource("info_hp_fill")
-show_percentage = false
-
-[node name="ManaSection" type="VBoxContainer" parent="Control/PlayerInfoPanel/VBox" unique_id=998877009]
-layout_mode = 2
-theme_override_constants/separation = 1
-
-[node name="InfoManaLabel" type="Label" parent="Control/PlayerInfoPanel/VBox/ManaSection" unique_id=998877010]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.6, 1, 0.9)
-theme_override_font_sizes/font_size = 11
-text = "XP 0%"
-
-[node name="InfoManaBar" type="ProgressBar" parent="Control/PlayerInfoPanel/VBox/ManaSection" unique_id=998877011]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 14)
-layout_mode = 2
-theme_override_styles/fill = SubResource("info_mana_fill")
-show_percentage = false
 
 [connection signal="pressed" from="Control/Store" to="Control" method="_on_store_pressed"]
 [connection signal="pressed" from="Control/SkillTree" to="Control" method="_on_skill_tree_pressed"]

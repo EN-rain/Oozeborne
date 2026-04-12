@@ -17,7 +17,6 @@ func _init():
 	# Stat modifiers
 	modifiers_hp = 1.15        # +15% HP
 	modifiers_speed = 0.95     # -5% Speed
-	passive_thorns_damage = 8.0
 	modifiers_damage = 1.0     # Base Damage
 	modifiers_defense = 1.15   # +15% Defense
 	modifiers_attack_speed = 0.95   # -5% Attack Speed
@@ -26,7 +25,3 @@ func _init():
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0
 	hp_regen_bonus = 0.5    # +0.5 HP/s out of combat
-
-	# Passive bonuses
-	passive_name = "Line Holder"
-	passive_description = "Enemies near your control zones deal less damage."

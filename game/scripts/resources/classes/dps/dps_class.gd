@@ -21,10 +21,6 @@ func _init():
 	modifiers_crit_chance = 1.08    # +8% Crit Chance
 	modifiers_crit_damage = 1.10    # +10% Crit Damage
 	
-	# Passive bonuses
-	passive_name = "Executioner"
-	passive_description = "Deal bonus damage to low-health enemies."
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

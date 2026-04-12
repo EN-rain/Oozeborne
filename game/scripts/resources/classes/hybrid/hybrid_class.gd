@@ -23,10 +23,6 @@ func _init():
 	modifiers_crit_chance = 1.06    # +6% Crit Chance
 	modifiers_crit_damage = 1.08    # +8% Crit Damage
 	
-	# Passive bonuses
-	passive_name = "Versatility"
-	passive_description = "Gain small bonuses to multiple stats."
-	
 	# Mana & Regen
 	mana_bonus = 10         # +10 MP (versatile magic)
 	mana_regen_bonus = 0.5  # +0.5 MP/s

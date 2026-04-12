@@ -17,11 +17,6 @@ func _init():
 	modifiers_defense = 1.05  # +5% Defense
 	modifiers_attack_speed = 1.1     # +10% Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Inspiring Presence"
-	passive_description = "Allies near you gain +10% damage. Enemies near you deal -10% damage."
-	passive_gold_bonus = 20.0  # +20% gold from all sources
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

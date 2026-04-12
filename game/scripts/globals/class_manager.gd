@@ -150,14 +150,14 @@ func _load_all_classes() -> void:
 		if script == null:
 			continue
 		var instance: PlayerClass = script.new()
-		_apply_class_identity(instance, class_id)
+		ClassManager._apply_class_identity(instance, class_id)
 		_assign_class_icon(instance, class_id)
 		_cached_all_classes.append(instance)
 		_cached_class_map[class_id] = instance
 		var script_name := str(script.get_global_name())
 		if not script_name.is_empty():
 			_cached_script_name_to_id[script_name] = class_id
-		var normalized_display_name := _normalize_display_name(instance.display_name)
+		var normalized_display_name: String = ClassManager._normalize_display_name(instance.display_name)
 		if not normalized_display_name.is_empty():
 			_cached_display_name_to_id[normalized_display_name] = class_id
 
@@ -283,7 +283,7 @@ func get_class_id(player_class: PlayerClass) -> String:
 	if _cached_script_name_to_id.has(class_type):
 		return _cached_script_name_to_id[class_type]
 
-	var normalized_display_name := _normalize_display_name(player_class.display_name)
+	var normalized_display_name: String = ClassManager._normalize_display_name(player_class.display_name)
 	if _cached_display_name_to_id.has(normalized_display_name):
 		return _cached_display_name_to_id[normalized_display_name]
 	return ""
@@ -292,7 +292,7 @@ func get_class_id(player_class: PlayerClass) -> String:
 func display_name_to_class_id(display_name: String) -> String:
 	if not _is_initialized:
 		_initialize()
-	var normalized_display_name := _normalize_display_name(display_name)
+	var normalized_display_name: String = ClassManager._normalize_display_name(display_name)
 	if _cached_display_name_to_id.has(normalized_display_name):
 		return _cached_display_name_to_id[normalized_display_name]
 	return ""
@@ -366,7 +366,7 @@ func create_class_instance(class_id: String) -> PlayerClass:
 	var class_scripts := _get_class_scripts()
 	if class_scripts.has(class_id) and class_scripts[class_id] != null:
 		var instance: PlayerClass = class_scripts[class_id].new()
-		_apply_class_identity(instance, class_id)
+		ClassManager._apply_class_identity(instance, class_id)
 		return instance
 	return null
 
@@ -410,9 +410,19 @@ func get_class_info(class_id: String) -> Dictionary:
 		"is_subclass": is_subclass(class_id),
 		"ability_name": _get_special_ability_name(class_id),
 		"ability_description": _get_special_ability_description(class_id),
-		"passive_name": player_class.passive_name,
-		"passive_description": player_class.passive_description
+		"passive_name": _get_passive_skill_name(class_id),
+		"passive_description": _get_passive_skill_description(class_id)
 	}
+
+
+func _get_passive_skill_name(class_id: String) -> String:
+	var skill := SkillRegistry.get_passive_skill_for_class(class_id)
+	return skill.display_name if skill != null else ""
+
+
+func _get_passive_skill_description(class_id: String) -> String:
+	var skill := SkillRegistry.get_passive_skill_for_class(class_id)
+	return skill.description_template if skill != null else ""
 
 
 func _get_special_ability_name(class_id: String) -> String:

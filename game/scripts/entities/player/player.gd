@@ -586,8 +586,8 @@ func reapply_class_modifiers_after_level_sync(base_stats: Dictionary) -> void:
 	var atk_speed_mult: float = main_class.modifiers_attack_speed
 	var crit_chance_mult: float = main_class.modifiers_crit_chance
 	var crit_damage_mult: float = main_class.modifiers_crit_damage
-	var lifesteal: float = main_class.passive_lifesteal / 100.0
-	var dodge: float = main_class.passive_dodge_chance / 100.0
+	var lifesteal: float = 0.0
+	var dodge: float = 0.0
 
 	if player_subclass != null:
 		speed_mult *= 1.0 + (player_subclass.modifiers_speed - 1.0) * 0.5
@@ -597,8 +597,6 @@ func reapply_class_modifiers_after_level_sync(base_stats: Dictionary) -> void:
 		atk_speed_mult *= 1.0 + (player_subclass.modifiers_attack_speed - 1.0) * 0.5
 		crit_chance_mult *= 1.0 + (player_subclass.modifiers_crit_chance - 1.0) * 0.5
 		crit_damage_mult *= 1.0 + (player_subclass.modifiers_crit_damage - 1.0) * 0.5
-		lifesteal += (player_subclass.passive_lifesteal / 100.0) * 0.5
-		dodge += (player_subclass.passive_dodge_chance / 100.0) * 0.5
 
 	var raw_speed: float = float(base_stats.get("speed", speed))
 	var raw_dash_speed: float = float(base_stats.get("dash_speed", dash_speed))

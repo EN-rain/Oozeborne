@@ -19,11 +19,6 @@ func _init():
 	modifiers_crit_chance = 1.10    # +10% Crit Chance
 	modifiers_crit_damage = 1.15    # +15% Crit Damage
 	
-	# Passive bonuses
-	passive_name = "Hunter's Mark"
-	passive_description = "Marked enemies take 15% more damage from all sources and reveal their position."
-	passive_xp_bonus = 15.0   # +15% XP from kills
-	
 	# Mana & Regen
 	mana_bonus = 0          # Non-mana class
 	mana_regen_bonus = 0.0

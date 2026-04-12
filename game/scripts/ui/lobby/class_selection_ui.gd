@@ -187,7 +187,8 @@ func _update_class_info(target_class: PlayerClass) -> void:
 		ability_label.text = ability_prefix + special_skill.display_name + "\n" + special_skill.description_template
 	else:
 		ability_label.text = ""
-	passive_label.text = passive_prefix + target_class.passive_name + "\n" + target_class.passive_description if target_class.passive_name else ""
+	var passive_skill := SkillRegistry.get_passive_skill_for_class(class_id)
+	passive_label.text = passive_prefix + passive_skill.display_name + "\n" + passive_skill.description_template if passive_skill != null else ""
 
 
 func _on_select_pressed() -> void:

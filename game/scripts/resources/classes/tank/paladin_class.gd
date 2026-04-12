@@ -17,11 +17,6 @@ func _init():
 	modifiers_defense = 1.18  # +18% Defense
 	modifiers_attack_speed = 0.9    # -10% Attack Speed
 	
-	# Passive bonuses
-	passive_name = "Holy Light"
-	passive_description = "Heal for 5% of damage dealt. Killing enemies grants an additional 10 HP heal."
-	passive_lifesteal = 5.0
-	
 	# Mana & Regen
 	mana_bonus = 15         # +15 MP (holy magic)
 	mana_regen_bonus = 0.5  # +0.5 MP/s

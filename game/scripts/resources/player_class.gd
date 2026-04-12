@@ -20,15 +20,6 @@ class_name PlayerClass extends Resource
 @export_range(0.5, 2.0) var modifiers_crit_chance: float = 1.0
 @export_range(0.5, 2.0) var modifiers_crit_damage: float = 1.0
 
-@export_group("Passive Bonuses", "passive")
-@export var passive_name: String = ""
-@export_multiline var passive_description: String = ""
-@export var passive_lifesteal: float = 0.0
-@export var passive_dodge_chance: float = 0.0
-@export var passive_thorns_damage: float = 0.0
-@export var passive_xp_bonus: float = 0.0
-@export var passive_gold_bonus: float = 0.0
-
 @export_group("Mana", "mana")
 @export var mana_bonus: int = 0 ## Flat MP added to base (0 = non-mana class)
 @export var mana_regen_bonus: float = 0.0 ## Additional MP/s
