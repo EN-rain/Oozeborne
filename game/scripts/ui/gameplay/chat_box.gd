@@ -171,7 +171,7 @@ func _process_party_leader_command(command: String, args: String) -> void:
 			else:
 				_kick_player(args)
 		_:
-			_add_system_message("Unknown command. Type /help for available commands")
+			pass
 
 
 func add_remote_message(sender_name: String, message: String, is_admin: bool = false, is_party_leader: bool = false) -> void:
@@ -184,9 +184,9 @@ func add_remote_message(sender_name: String, message: String, is_admin: bool = f
 
 
 func _show_help() -> void:
-	var commands := "Available commands: /help, /ping"
-	if MultiplayerManager.is_admin:
-		commands += "\nAdmin: /spawn <mob> [count], /add coins <amount>, /add level <amount>, /setlevel <1-100>, /killall, /pause, /resume"
+	if not MultiplayerManager.is_admin:
+		return
+	var commands := "Admin commands: /spawn <mob> [count], /add coins <amount>, /add level <amount>, /setlevel <1-100>, /killall, /pause, /resume, /help, /ping"
 	_add_system_message(commands)
 
 

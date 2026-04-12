@@ -17,15 +17,6 @@ config/icon="res://assets/icon.svg"
 
 [autoload]
 
-McpInteractionServer="*res://mcp_interaction_server.gd"
-
-
-
-
-
-
-
-
 
 
 Nakama="*uid://bmf6nk0fuaur8"

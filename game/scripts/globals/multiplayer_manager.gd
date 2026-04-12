@@ -79,7 +79,6 @@ func _reset_match_state() -> void:
 	subclass_choice_made = false
 	player_level = 1
 
-
 func resolve_player_scene() -> PackedScene:
 	if not _cached_player_scenes.has(player_slime_variant):
 		_cached_player_scenes[player_slime_variant] = load(SlimePaletteRegistry.get_scene_path(player_slime_variant)) as PackedScene
@@ -107,6 +106,7 @@ func _cleanup_client() -> void:
 func _clear_auth_state() -> void:
 	session = null
 	account_email = ""
+	is_admin = false
 
 func _set_authenticated_session(new_session: NakamaSession, email: String = "") -> void:
 	session = new_session
@@ -114,6 +114,21 @@ func _set_authenticated_session(new_session: NakamaSession, email: String = "") 
 	if player_ign.is_empty() and session != null and not session.username.is_empty():
 		player_ign = session.username
 	_emit_auth_state()
+	# Fetch admin status from group membership
+	if session != null and client != null:
+		_fetch_admin_status.call_deferred()
+
+func _fetch_admin_status() -> void:
+	if session == null or client == null:
+		return
+	var result = await client.list_user_groups_async(session, session.user_id)
+	if result == null or result.is_exception():
+		return
+	for user_group in result.user_groups:
+		if user_group.group.name.to_lower() == "admins":
+			is_admin = true
+			return
+	is_admin = false
 
 func _emit_auth_state() -> void:
 	var username = ""

@@ -5,11 +5,17 @@
 [ext_resource type="PackedScene" uid="uid://dcv73vimtuhsq" path="res://scenes/entities/player/slime_blue.tscn" id="4_player"]
 [ext_resource type="PackedScene" uid="uid://ndd30h5ijflg" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
 [ext_resource type="Script" uid="uid://jx31lxl2ga28" path="res://scripts/systems/game/main.gd" id="6_mainscript"]
+[ext_resource type="PackedScene" uid="uid://2k0ri6y3u4g5" path="res://scenes/entities/enemies/blue_slime.tscn" id="7_blueslime"]
+[ext_resource type="PackedScene" uid="uid://b2fhc13ouapkd" path="res://scenes/entities/enemies/plagued_lancer.tscn" id="8_lancer"]
+[ext_resource type="PackedScene" uid="uid://b4ucijbuciv4j" path="res://scenes/entities/enemies/archer.tscn" id="9_archer"]
 
 [node name="Main" type="Node2D" unique_id=1316580081]
 y_sort_enabled = true
 script = ExtResource("6_mainscript")
 player_scene = ExtResource("4_player")
+common_mob_scene = ExtResource("7_blueslime")
+elite_lancer_scene = ExtResource("8_lancer")
+elite_archer_scene = ExtResource("9_archer")
 
 [node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
 

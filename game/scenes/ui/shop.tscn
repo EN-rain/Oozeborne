@@ -1,57 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ns5bq4j54akg"]
 
-[ext_resource type="Script" path="res://scripts/ui/gameplay/shop_ui.gd" id="1_shopui"]
+[ext_resource type="Script" uid="uid://jkdbjm8hvkn3" path="res://scripts/ui/gameplay/shop_ui.gd" id="1_shopui"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_item_card.tscn" id="2_shopitemcard"]
-
-[sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 20.0
-content_margin_top = 16.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
-bg_color = Color(0.08, 0.06, 0.14, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.55, 0.45, 0.2, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="btn_close_normal"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.5, 0.12, 0.12, 0.8)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.65, 0.18, 0.18, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="btn_close_hover"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.7, 0.18, 0.18, 0.9)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85, 0.25, 0.25, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
 
 [node name="ShopUI" type="Control" unique_id=1473691007]
 process_mode = 3
@@ -61,7 +11,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1_shopui")
 item_card_scene = ExtResource("2_shopitemcard")
 
@@ -72,8 +21,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
-color = Color(0.03, 0, 0.06, 0.65)
+color = Color(0, 0, 0, 0.5)
 
 [node name="Panel" type="PanelContainer" parent="." unique_id=1489132823]
 layout_mode = 1
@@ -84,14 +32,11 @@ anchor_right = 0.95
 anchor_bottom = 0.94
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
-theme_override_styles/panel = SubResource("panel_style")
 
 [node name="VBox" type="VBoxContainer" parent="Panel" unique_id=6387817]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 10
 
 [node name="Header" type="HBoxContainer" parent="Panel/VBox" unique_id=1503847482]
 layout_mode = 2
@@ -99,27 +44,18 @@ layout_mode = 2
 [node name="TitleLabel" type="Label" parent="Panel/VBox/Header" unique_id=1605193949]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 text = "🏪 SHOP"
 
 [node name="CoinsLabel" type="Label" parent="Panel/VBox/Header" unique_id=1592584335]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 text = "Coins: 0"
 
 [node name="CloseButton" type="Button" parent="Panel/VBox/Header" unique_id=186572287]
-process_mode = 3
 unique_name_in_owner = true
-layout_mode = 2
+process_mode = 3
 custom_minimum_size = Vector2(88, 36)
-focus_mode = 2
-mouse_filter = 0
-theme_override_styles/normal = SubResource("btn_close_normal")
-theme_override_styles/hover = SubResource("btn_close_hover")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+layout_mode = 2
 text = "Close"
 
 [node name="TabContainer" type="TabContainer" parent="Panel/VBox" unique_id=92499757]
@@ -129,7 +65,6 @@ size_flags_vertical = 3
 current_tab = 0
 
 [node name="Consumables" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=410603817]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -140,8 +75,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
 columns = 3
 
 [node name="Upgrades" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=564899692]
@@ -156,8 +89,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
 columns = 3
 
 [node name="Equipment" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=1681604979]
@@ -172,8 +103,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
 columns = 3
 
 [node name="Special" type="ScrollContainer" parent="Panel/VBox/TabContainer" unique_id=145862779]
@@ -188,8 +117,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
 columns = 3
 
 [connection signal="pressed" from="Panel/VBox/Header/CloseButton" to="." method="_on_close_pressed"]
