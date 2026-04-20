@@ -17,7 +17,6 @@ config/icon="res://assets/icon.svg"
 
 [autoload]
 
-McpInteractionServer="*res://mcp_interaction_server.gd"
 Nakama="*uid://bmf6nk0fuaur8"
 MultiplayerManager="*res://scripts/globals/multiplayer_manager.gd"
 NetworkMessaging="*res://scripts/globals/network_messaging.gd"

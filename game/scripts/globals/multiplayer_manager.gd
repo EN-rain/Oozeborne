@@ -149,6 +149,9 @@ func _ensure_client() -> void:
 		http_adapter = NakamaHTTPAdapter.new()
 		http_adapter.name = "NakamaHTTPAdapter"
 		add_child(http_adapter)
+	# Align adapter timeout with our client timeout to avoid premature HTTP failures on slow networks.
+	# NakamaHTTPAdapter defaults to 3 seconds which is often too aggressive in the wild.
+	http_adapter.timeout = TIMEOUT
 
 	client = NakamaClient.new(
 		http_adapter,
@@ -206,8 +209,15 @@ func get_last_auth_error(session_result: NakamaSession) -> String:
 		return "Authentication failed"
 	if session_result.is_exception():
 		var raw_error := str(session_result.get_exception().message)
-		if raw_error.to_lower().contains("http request failed"):
-			return "Cannot reach auth server at %s. Check server availability and server_config.cfg." % get_server_endpoint_summary()
+		var raw_lower := raw_error.to_lower()
+		if raw_lower.contains("http request failed"):
+			# Common causes:
+			# - server not reachable (host/port)
+			# - scheme mismatch (http vs https)
+			# - too-short timeout (handled by setting adapter timeout above)
+			return "Cannot reach auth server at %s. Check server availability, scheme, and server_config.cfg." % get_server_endpoint_summary()
+		if raw_lower.contains("timeout"):
+			return "Auth request timed out contacting %s." % get_server_endpoint_summary()
 		return raw_error
 	if not session_result.is_valid():
 		return "Authentication failed"
