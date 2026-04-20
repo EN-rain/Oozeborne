@@ -204,18 +204,41 @@ func clear_session() -> void:
 	player_ign = ""
 	_clear_saved_auth_session()
 
+func _describe_http_request_result(result_code: int) -> String:
+	match result_code:
+		HTTPRequest.RESULT_CANT_CONNECT:
+			return "Can't connect"
+		HTTPRequest.RESULT_CANT_RESOLVE:
+			return "Can't resolve host"
+		HTTPRequest.RESULT_CONNECTION_ERROR:
+			return "Connection error"
+		HTTPRequest.RESULT_TLS_HANDSHAKE_ERROR:
+			return "TLS handshake error (try switching scheme http/https)"
+		HTTPRequest.RESULT_TIMEOUT:
+			return "Timeout"
+		HTTPRequest.RESULT_REQUEST_FAILED:
+			return "Request failed"
+		HTTPRequest.RESULT_BODY_SIZE_LIMIT_EXCEEDED:
+			return "Body size limit exceeded"
+		HTTPRequest.RESULT_DOWNLOAD_FILE_CANT_OPEN:
+			return "Can't open download file"
+		HTTPRequest.RESULT_DOWNLOAD_FILE_WRITE_ERROR:
+			return "Download file write error"
+		HTTPRequest.RESULT_REDIRECT_LIMIT_REACHED:
+			return "Redirect limit reached"
+		_:
+			return "Result %d" % result_code
+
 func get_last_auth_error(session_result: NakamaSession) -> String:
 	if session_result == null:
 		return "Authentication failed"
 	if session_result.is_exception():
-		var raw_error := str(session_result.get_exception().message)
+		var ex := session_result.get_exception()
+		var raw_error := str(ex.message)
 		var raw_lower := raw_error.to_lower()
 		if raw_lower.contains("http request failed"):
-			# Common causes:
-			# - server not reachable (host/port)
-			# - scheme mismatch (http vs https)
-			# - too-short timeout (handled by setting adapter timeout above)
-			return "Cannot reach auth server at %s. Check server availability, scheme, and server_config.cfg." % get_server_endpoint_summary()
+			var detail := _describe_http_request_result(int(ex.status_code))
+			return "Cannot reach auth server at %s (%s). Check host/port, firewall, and scheme in server_config.cfg." % [get_server_endpoint_summary(), detail]
 		if raw_lower.contains("timeout"):
 			return "Auth request timed out contacting %s." % get_server_endpoint_summary()
 		return raw_error

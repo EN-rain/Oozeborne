@@ -14,7 +14,7 @@ var hp_regen: float = 0.0 ## HP/s out of combat
 var hp_regen_bonus: float = 0.0 ## Additional HP/s from stats/skills
 var _combat_timer: float = 0.0
 var _is_in_combat: bool = false
-@onready var hide_timer: Timer = $HideTimer
+@onready var hide_timer: Timer = get_node_or_null("HideTimer")
 var is_dead := false
 
 func initialize(healthbar: ProgressBar):
@@ -22,8 +22,16 @@ func initialize(healthbar: ProgressBar):
 	set_process(true)
 	
 	# Setup hide timer
-	hide_timer.wait_time = health_bar_hide_time
-	hide_timer.timeout.connect(_on_hide_timer_timeout)
+	if hide_timer == null:
+		hide_timer = Timer.new()
+		hide_timer.name = "HideTimer"
+		add_child(hide_timer)
+
+	if hide_timer:
+		hide_timer.one_shot = true
+		hide_timer.wait_time = health_bar_hide_time
+		if not hide_timer.timeout.is_connected(_on_hide_timer_timeout):
+			hide_timer.timeout.connect(_on_hide_timer_timeout)
 	
 	# Setup health bar
 	health_bar = healthbar
