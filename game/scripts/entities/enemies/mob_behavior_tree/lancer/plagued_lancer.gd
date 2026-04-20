@@ -31,9 +31,15 @@ var current_state = State.IDLE
 
 const TELEPORT_FADE_TIME := 0.3
 const INITIAL_TELEPORT_OFFSET := 20.0  # Reduced from 100 to teleport closer
+@export_range(0.0, 1.0, 0.01) var melee_hit_timing: float = 0.55
 const ATTACK_HIT_DELAY := 2
+const LOS_CHECK_INTERVAL_SEC := 0.12
+const DETECTION_SCAN_INTERVAL_SEC := 0.20
+const WORLD_LAYER_MASK := 1
+const PLAYER_BODY_LAYER_MASK := 2
 
 var player: CharacterBody2D = null
+var _attack_target: CharacterBody2D = null
 var can_damage := true
 var knockback_velocity := Vector2.ZERO
 var is_taking_damage := false
@@ -52,10 +58,18 @@ var health: HealthComponent
 var _idle_move_timer: float = 0.0
 var _idle_target: Vector2 = Vector2.ZERO
 var _has_idle_target: bool = false
+var _los_cached: bool = true
+var _los_next_check_ms: int = 0
+var _detect_next_scan_ms: int = 0
 
 func _ready():
 	# Assign unique ID for debugging
 	lancer_id = randi() % 1000
+
+	# Ensure the lancer never physically blocks players (especially noticeable after blink teleports).
+	# Combat/detection is handled via Area2D + RayCast2D, so the body only needs to collide with world.
+	collision_layer = 8
+	collision_mask = WORLD_LAYER_MASK
 	
 	health = HealthComponent.new()
 	health.max_health = max_health
@@ -67,6 +81,7 @@ func _ready():
 	detection_area.body_entered.connect(_on_detection_area_entered)
 	detection_area.body_exited.connect(_on_detection_area_exited)
 	attack_area.body_entered.connect(_on_attack_area_entered)
+	attack_area.body_exited.connect(_on_attack_area_exited)
 	
 	damage_timer.wait_time = damage_cooldown
 	damage_timer.one_shot = true
@@ -75,6 +90,9 @@ func _ready():
 	sight_ray.enabled = true
 	sight_ray.collide_with_bodies = true
 	sight_ray.collide_with_areas = false
+	sight_ray.collision_mask = WORLD_LAYER_MASK | PLAYER_BODY_LAYER_MASK
+	detection_area.collision_mask = PLAYER_BODY_LAYER_MASK
+	attack_area.collision_mask = PLAYER_BODY_LAYER_MASK
 	
 	blink_cooldown_timer.wait_time = blink_cooldown
 	blink_cooldown_timer.one_shot = true
@@ -85,6 +103,11 @@ func _ready():
 	_reset_idle_roam()
 
 func _physics_process(delta):
+	# Multiplayer: remote player nodes may have collisions disabled; don't rely only on Area2D signals.
+	# Periodically reacquire the closest targetable player within our detection radius.
+	if not _is_action_locked() and (not _has_valid_player() or not player_in_detection_range):
+		_acquire_player_fallback()
+
 	if not is_dying:
 		_idle_move_timer -= delta
 	# Failsafe: reset stuck animation flags if animation isn't playing
@@ -215,7 +238,12 @@ func die():
 # ---------------- ATTACK ----------------
 func _on_attack_area_entered(body):
 	if _is_targetable_player(body) and not is_teleporting:
+		_attack_target = body as CharacterBody2D
 		start_attack(body)
+
+func _on_attack_area_exited(body) -> void:
+	if body == _attack_target:
+		_attack_target = null
 
 func start_attack(body: CharacterBody2D):
 	if is_attacking or is_taking_damage or is_dying or is_teleporting:
@@ -225,11 +253,14 @@ func start_attack(body: CharacterBody2D):
 	velocity = Vector2.ZERO
 	animated_sprite.play("attack")
 	
-	await get_tree().create_timer(ATTACK_HIT_DELAY).timeout
+	var hit_delay := _get_attack_hit_delay()
+	await get_tree().create_timer(hit_delay).timeout
 	
 	# Guard: lancer or player may have died during the await
 	if is_dying or not is_instance_valid(body):
 		is_attacking = false
+		return
+	if not is_attacking:
 		return
 	
 	if can_damage and body.has_method("apply_damage"):
@@ -239,6 +270,8 @@ func start_attack(body: CharacterBody2D):
 
 func _on_damage_timer_timeout():
 	can_damage = true
+	if _attack_target != null and is_instance_valid(_attack_target) and attack_area != null and attack_area.overlaps_body(_attack_target):
+		start_attack(_attack_target)
 
 # ---------------- DETECTION ----------------
 func _on_detection_area_entered(body):
@@ -395,21 +428,95 @@ func _on_blink_cooldown_timeout():
 func has_line_of_sight() -> bool:
 	if not _has_valid_player():
 		return false
+
+	var now_ms := Time.get_ticks_msec()
+	if now_ms < _los_next_check_ms:
+		return _los_cached
+	_los_next_check_ms = now_ms + int(LOS_CHECK_INTERVAL_SEC * 1000.0)
 	
-	sight_ray.target_position = player.global_position - global_position
+	sight_ray.target_position = sight_ray.to_local(player.global_position)
 	sight_ray.force_raycast_update()
 	
 	if sight_ray.is_colliding():
 		var collider = sight_ray.get_collider()
-		return _is_targetable_player(collider)
+		_los_cached = _is_targetable_player(collider)
+		return _los_cached
 	
-	return true
+	_los_cached = true
+	return _los_cached
+
+func _get_attack_hit_delay() -> float:
+	var length_sec := 0.0
+	if animated_sprite != null and animated_sprite.sprite_frames != null and animated_sprite.sprite_frames.has_animation("attack"):
+		var frame_count := animated_sprite.sprite_frames.get_frame_count("attack")
+		var anim_speed := animated_sprite.sprite_frames.get_animation_speed("attack")
+		if frame_count > 0 and anim_speed > 0.0:
+			length_sec = float(frame_count) / anim_speed
+	if length_sec <= 0.0:
+		return float(ATTACK_HIT_DELAY)
+	return clampf(length_sec * melee_hit_timing, 0.0, length_sec)
 
 func _is_action_locked() -> bool:
 	return is_taking_damage or is_dying or is_attacking or is_teleporting or is_blinking
 
 func _has_valid_player() -> bool:
 	return _is_targetable_player(player)
+
+
+func _acquire_player_fallback() -> void:
+	var now_ms := Time.get_ticks_msec()
+	if now_ms < _detect_next_scan_ms:
+		return
+	_detect_next_scan_ms = now_ms + int(DETECTION_SCAN_INTERVAL_SEC * 1000.0)
+
+	var radius := _get_detection_radius(detection_area)
+	if radius <= 0.0:
+		return
+
+	var candidates := get_tree().get_nodes_in_group(player_group_name)
+	var best: CharacterBody2D = null
+	var best_dist_sq := radius * radius
+	for candidate in candidates:
+		var body := candidate as CharacterBody2D
+		if body == null:
+			continue
+		if not _is_targetable_player(body):
+			continue
+		var dist_sq := global_position.distance_squared_to(body.global_position)
+		if dist_sq <= best_dist_sq:
+			best_dist_sq = dist_sq
+			best = body
+
+	if best != null:
+		player = best
+		player_in_detection_range = true
+
+		# Mirror DetectionArea enter behavior when collisions are disabled in multiplayer.
+		if not has_teleported_to_player:
+			has_teleported_to_player = true
+			initial_teleport()
+
+
+func _get_detection_radius(area: Area2D) -> float:
+	if area == null:
+		return 0.0
+
+	for child in area.get_children():
+		var shape_node := child as CollisionShape2D
+		if shape_node == null or shape_node.disabled or shape_node.shape == null:
+			continue
+		var shape := shape_node.shape
+		var scale_factor := maxf(absf(area.global_scale.x), absf(area.global_scale.y))
+		if shape is CircleShape2D:
+			return (shape as CircleShape2D).radius * scale_factor
+		if shape is RectangleShape2D:
+			var rect := shape as RectangleShape2D
+			return rect.size.length() * 0.5 * scale_factor
+		if shape is CapsuleShape2D:
+			var cap := shape as CapsuleShape2D
+			return (cap.height * 0.5 + cap.radius) * scale_factor
+
+	return 0.0
 
 
 func _is_targetable_player(body: Node) -> bool:

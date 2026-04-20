@@ -214,7 +214,8 @@ func _on_connect_pressed() -> void:
 				get_tree().change_scene_to_file(room_lobby_scene_path)
 			return
 		else:
-			_set_status(join_room_failed_text, error_status_color)
+			var detail := MultiplayerManager.get_last_room_error()
+			_set_status(join_room_failed_text if detail.is_empty() else (join_room_failed_text + "\n" + detail), error_status_color)
 	else:
 		_set_status(connection_failed_format % MultiplayerManager.get_server_endpoint_summary(), error_status_color)
 	_set_menu_busy(false)

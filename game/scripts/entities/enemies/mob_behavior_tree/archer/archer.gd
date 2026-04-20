@@ -24,6 +24,12 @@ var current_state = State.IDLE
 @export var idle_move_speed_multiplier: float = 0.35
 @export var player_group_name: StringName = &"player"
 
+const LOS_CHECK_INTERVAL_SEC := 0.12
+var _los_cached: bool = true
+var _los_next_check_ms: int = 0
+const WORLD_LAYER_MASK := 1
+const PLAYER_BODY_LAYER_MASK := 2
+
 var player: CharacterBody2D = null
 var health: HealthComponent
 var is_taking_damage := false
@@ -38,6 +44,10 @@ var _idle_target: Vector2 = Vector2.ZERO
 var _has_idle_target: bool = false
 
 func _ready():
+	# Prevent sticky body collisions with the player; use areas for detection/attacks.
+	collision_layer = 8
+	collision_mask = WORLD_LAYER_MASK
+
 	health = HealthComponent.new()
 	health.max_health = max_health
 	add_child(health)
@@ -53,6 +63,9 @@ func _ready():
 	sight_ray.enabled = true
 	sight_ray.collide_with_bodies = true
 	sight_ray.collide_with_areas = false
+	sight_ray.collision_mask = WORLD_LAYER_MASK | PLAYER_BODY_LAYER_MASK
+	detection_area.collision_mask = PLAYER_BODY_LAYER_MASK
+	attack_range.collision_mask = PLAYER_BODY_LAYER_MASK
 	
 	attack_cooldown_timer.wait_time = attack_cooldown
 	attack_cooldown_timer.one_shot = true
@@ -302,14 +315,21 @@ func _on_detection_area_exited(body):
 func has_line_of_sight() -> bool:
 	if not player:
 		return false
+
+	var now_ms := Time.get_ticks_msec()
+	if now_ms < _los_next_check_ms:
+		return _los_cached
+	_los_next_check_ms = now_ms + int(LOS_CHECK_INTERVAL_SEC * 1000.0)
 	
-	sight_ray.target_position = player.global_position - global_position
+	sight_ray.target_position = sight_ray.to_local(player.global_position)
 	sight_ray.force_raycast_update()
 	
 	if sight_ray.is_colliding():
-		return _is_targetable_player(sight_ray.get_collider())
+		_los_cached = _is_targetable_player(sight_ray.get_collider())
+		return _los_cached
 	
-	return true
+	_los_cached = true
+	return _los_cached
 
 
 func _is_targetable_player(body: Node) -> bool:

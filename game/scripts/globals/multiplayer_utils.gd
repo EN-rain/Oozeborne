@@ -276,7 +276,7 @@ func set_local_player(player_node: Node) -> void:
 	_local_player_node = weakref(player_node)
 
 ## Send input to authoritative server (replaces send_position)
-func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0, dash_seq: int = 0) -> void:
+func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing: int = 1, is_dashing: bool = false, attack_rotation: float = 0.0, attack_seq: int = 0, dash_seq: int = 0, client_pos: Vector2 = Vector2.ZERO) -> void:
 	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
 	
@@ -291,7 +291,10 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing
 		"attack_rotation": attack_rotation,
 		"attack_seq": attack_seq,
 		"dash_seq": dash_seq,
-		"seq": _input_sequence
+		"seq": _input_sequence,
+		# Client-authoritative position (prevents server/client collision mismatches from causing jitter).
+		"pos_x": client_pos.x,
+		"pos_y": client_pos.y
 	}
 	
 	# Store pending input for reconciliation
@@ -371,7 +374,10 @@ func _send_input_updates(player_node: Node) -> void:
 		if not MultiplayerManager.is_socket_open():
 			_debug_log("Stopping input updates - socket closed before send")
 			break
-		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation, attack_seq, dash_seq)
+		var client_pos := Vector2.ZERO
+		if player_node is Node2D:
+			client_pos = (player_node as Node2D).global_position
+		send_input(move_x, move_y, is_attacking, facing, is_dashing, attack_rotation, attack_seq, dash_seq, client_pos)
 		
 		# Wait for next input tick
 		await Engine.get_main_loop().create_timer(INPUT_RATE).timeout

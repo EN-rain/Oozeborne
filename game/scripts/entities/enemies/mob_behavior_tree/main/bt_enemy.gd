@@ -63,8 +63,21 @@ var _pending_arrow_direction: Vector2 = Vector2.ZERO
 var _pending_arrow_speed: float = 0.0
 var _pending_attack_resolved := false
 
+const LOS_CHECK_INTERVAL_SEC := 0.12
+var _los_cached: bool = true
+var _los_next_check_ms: int = 0
+var _attack_cooldown_fallback_timer: SceneTreeTimer = null
+
+const WORLD_LAYER_MASK := 1
+const PLAYER_BODY_LAYER_MASK := 2
+
 
 func _ready() -> void:
+	# Enemy bodies should not physically collide with the player (that causes sticky movement/jitter).
+	# Use Area2D for detection/attacks; keep body collisions for world only.
+	collision_layer = 8
+	collision_mask = WORLD_LAYER_MASK
+
 	health = HealthComponent.new()
 	health.max_health = max_health
 	add_child(health)
@@ -89,10 +102,22 @@ func _ready() -> void:
 		sight_ray.enabled = true
 		sight_ray.collide_with_bodies = true
 		sight_ray.collide_with_areas = false
+		sight_ray.collision_mask = WORLD_LAYER_MASK | PLAYER_BODY_LAYER_MASK
+
+	# Ensure detection/attack areas are active even if scene settings got toggled off.
+	if detection_area != null:
+		detection_area.monitoring = true
+		detection_area.monitorable = true
+	if attack_area != null:
+		attack_area.monitoring = true
+		attack_area.monitorable = true
 
 	detection_area.body_entered.connect(_on_detection_area_entered)
 	detection_area.body_exited.connect(_on_detection_area_exited)
 	attack_area.body_entered.connect(_on_attack_area_entered)
+	# Ensure areas can see the player body regardless of editor collision-mask setup.
+	detection_area.collision_mask = PLAYER_BODY_LAYER_MASK
+	attack_area.collision_mask = PLAYER_BODY_LAYER_MASK
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	attack_animation_timer.timeout.connect(_on_attack_animation_timeout)
 
@@ -109,6 +134,7 @@ func _ready() -> void:
 			bt_player.scene_root_hint = self
 		if "agent" in bt_player:
 			bt_player.agent = self
+		bt_player.active = true
 		_sync_blackboard()
 
 
@@ -187,13 +213,20 @@ func has_target_line_of_sight() -> bool:
 	if player == null or not is_instance_valid(player) or sight_ray == null:
 		return false
 
-	sight_ray.target_position = player.global_position - global_position
+	var now_ms := Time.get_ticks_msec()
+	if now_ms < _los_next_check_ms:
+		return _los_cached
+	_los_next_check_ms = now_ms + int(LOS_CHECK_INTERVAL_SEC * 1000.0)
+
+	sight_ray.target_position = sight_ray.to_local(player.global_position)
 	sight_ray.force_raycast_update()
 
 	if sight_ray.is_colliding():
-		return is_targetable_player(sight_ray.get_collider())
+		_los_cached = is_targetable_player(sight_ray.get_collider())
+		return _los_cached
 
-	return true
+	_los_cached = true
+	return _los_cached
 
 
 func _sync_blackboard() -> void:
@@ -235,6 +268,7 @@ func _on_damage_timer_timeout() -> void:
 
 func _on_attack_cooldown_timeout() -> void:
 	can_attack = true
+	_attack_cooldown_fallback_timer = null
 
 
 func _on_blink_cooldown_timeout() -> void:
@@ -242,10 +276,17 @@ func _on_blink_cooldown_timeout() -> void:
 
 
 func _on_detection_area_entered(body: Node) -> void:
-	if is_targetable_player(body):
-		player = body as CharacterBody2D
-		last_player_position = player.global_position
-		player_velocity_samples.clear()
+	if not is_targetable_player(body):
+		return
+
+	# Latch the FIRST player that enters detection range. Don't retarget until the
+	# current target exits (prevents target swapping when multiple players overlap).
+	if player != null and is_instance_valid(player) and is_targetable_player(player):
+		return
+
+	player = body as CharacterBody2D
+	last_player_position = player.global_position
+	player_velocity_samples.clear()
 
 
 func _on_detection_area_exited(body: Node) -> void:
@@ -419,8 +460,25 @@ func _resolve_ranged_attack() -> void:
 	arrow.speed = _pending_arrow_speed
 	arrow.rotation = _pending_arrow_direction.angle()
 
+	_start_attack_cooldown()
+
+
+func _start_attack_cooldown() -> void:
 	if attack_cooldown_timer != null:
 		attack_cooldown_timer.start()
+		return
+	if _attack_cooldown_fallback_timer != null:
+		return
+	if not is_inside_tree():
+		can_attack = true
+		return
+	_attack_cooldown_fallback_timer = get_tree().create_timer(maxf(0.01, attack_cooldown))
+	_attack_cooldown_fallback_timer.timeout.connect(_on_attack_cooldown_fallback_timeout)
+
+
+func _on_attack_cooldown_fallback_timeout() -> void:
+	_attack_cooldown_fallback_timer = null
+	can_attack = true
 
 
 func _face_direction(direction: Vector2) -> void:

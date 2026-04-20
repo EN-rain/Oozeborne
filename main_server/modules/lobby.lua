@@ -159,42 +159,33 @@ local function move_players_with_blocking(state, dt)
     for _, user_id in ipairs(player_ids) do
         local player = state.players[user_id]
         if player then
-            -- Skip server-side movement for dashing players.
-            -- The client is authoritative for dash movement (uses move_and_slide
-            -- with wall collisions). Server just relays the client position.
-            if player.is_dashing then
-                -- Use velocity direction to estimate position, but clamp to world
-                local proposed_x = player.pos_x + player.vel_x * dt
-                local proposed_y = player.pos_y + player.vel_y * dt
-                player.pos_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
-                player.pos_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
-            else
-                local previous_x = player.pos_x
-                local previous_y = player.pos_y
+            -- If we received a client-authoritative position update this tick, do not
+            -- integrate movement again (prevents double-moving and client jitter).
+            local skip_integration = (player.client_pos_tick == state.tick)
 
-                local proposed_x = previous_x + player.vel_x * dt
-                proposed_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
-                if not is_blocked_by_any_player(state, user_id, previous_x, previous_y, proposed_x, previous_y) then
-                    player.pos_x = proposed_x
+            if not skip_integration then
+                -- Skip server-side movement for dashing players.
+                -- The client is authoritative for dash movement (uses move_and_slide
+                -- with wall collisions). Server just relays the client position.
+                if player.is_dashing then
+                    -- Use velocity direction to estimate position, but clamp to world
+                    local proposed_x = player.pos_x + player.vel_x * dt
+                    local proposed_y = player.pos_y + player.vel_y * dt
+                    player.pos_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
+                    player.pos_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
                 else
-                    player.vel_x = 0.0
-                end
-
-                local current_x = player.pos_x
-                local proposed_y = previous_y + player.vel_y * dt
-                proposed_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
-                if not is_blocked_by_any_player(state, user_id, current_x, previous_y, current_x, proposed_y) then
-                    player.pos_y = proposed_y
-                else
-                    player.vel_y = 0.0
+                    -- Clients simulate real collisions; server keeps movement simple and
+                    -- allows player overlap to avoid client/server divergence jitter.
+                    local proposed_x = player.pos_x + player.vel_x * dt
+                    local proposed_y = player.pos_y + player.vel_y * dt
+                    player.pos_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
+                    player.pos_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
                 end
             end
 
             clamp_player_to_world(player)
         end
     end
-
-    resolve_remaining_overlaps(state)
 end
 
 function M.match_init(context, setupstate)
@@ -227,6 +218,7 @@ function M.match_init(context, setupstate)
             slime_variant = "blue",
             speed = DEFAULT_PLAYER_SPEED,
             dash_speed = DEFAULT_DASH_SPEED,
+            client_pos_tick = -1,
             last_attack_time = 0,
             attack_damage = 10
         }
@@ -274,7 +266,8 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         dash_seq = existing.dash_seq or 0,
         slime_variant = existing.slime_variant or "blue",
         speed = existing.speed or DEFAULT_PLAYER_SPEED,
-        dash_speed = existing.dash_speed or DEFAULT_DASH_SPEED
+        dash_speed = existing.dash_speed or DEFAULT_DASH_SPEED,
+        client_pos_tick = existing.client_pos_tick or -1
     }
     nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
     return state, true
@@ -298,6 +291,7 @@ function M.match_join(context, dispatcher, tick, state, presences)
                 slime_variant = "blue",
                 speed = DEFAULT_PLAYER_SPEED,
                 dash_speed = DEFAULT_DASH_SPEED,
+                client_pos_tick = -1,
                 last_attack_time = 0,
                 attack_damage = 10
             }
@@ -348,6 +342,17 @@ function M.match_loop(context, dispatcher, tick, state, messages)
                     speed = player.dash_speed or DEFAULT_DASH_SPEED
                 end
                 player.vel_x, player.vel_y = move_x * speed, move_y * speed
+
+                -- Client-authoritative position to prevent jitter when client has
+                -- world collisions that the server doesn't simulate.
+                if input.pos_x ~= nil and input.pos_y ~= nil then
+                    local proposed_x = tonumber(input.pos_x) or player.pos_x
+                    local proposed_y = tonumber(input.pos_y) or player.pos_y
+                    player.pos_x = math.max(WORLD_MIN_X, math.min(WORLD_MAX_X, proposed_x))
+                    player.pos_y = math.max(WORLD_MIN_Y, math.min(WORLD_MAX_Y, proposed_y))
+                    player.client_pos_tick = tick
+                end
+
                 if input.facing ~= nil then
                     player.facing = input.facing
                 elseif move_x > 0 then

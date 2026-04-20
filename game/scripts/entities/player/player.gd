@@ -59,14 +59,19 @@ func _get_player_skill_manager() -> Node:
 	return PlayerSkillManager
 
 func _ready():
+	# Enemy AI relies on this group for detection (Area2D overlap + is_in_group checks).
+	if not is_in_group("player"):
+		add_to_group("player")
+
 	if is_local_player:
-		# Local player on layer 2 (player body), mask layer 1 (world) + 8 (enemies)
-		# This prevents player-player collision while keeping world/enemy collision
+		# Local player on layer 2 (player body), mask layer 1 (world only).
+		# Enemies use Area2D for detection/attacks; physical body collision with enemies causes jitter/stutter (esp. during dash).
 		collision_layer = 2
-		collision_mask = 9  # 1 (world) + 8 (enemies)
+		collision_mask = 1  # 1 (world)
 	else:
-		# Remote players: no collision layer/mask so they pass through everyone
-		collision_layer = 0
+		# Remote players: keep them on the player body layer so enemy Area2D/RayCast2D can detect/target them,
+		# but disable their own collision mask so they don't drive physics responses locally.
+		collision_layer = 2
 		collision_mask = 0
 	
 	_apply_slime_size_tuning()
@@ -77,6 +82,11 @@ func _ready():
 	health.died.connect(_on_player_died)
 	if death_sequence != null:
 		death_sequence.sequence_finished.connect(_on_death_sequence_finished)
+
+	# HealthComponent requires explicit initialization (it does not set current_health on its own).
+	# If current_health stays at 0, enemies treat the player as not targetable (and LevelSystem ratio math keeps it at 0).
+	if health != null and health.has_method("initialize"):
+		health.initialize(null)
 	
 	# Register with LevelSystem singleton
 	LevelSystem.register_player(self)

@@ -21,8 +21,8 @@ var is_slow_arrow := false
 @onready var slow_particles: CPUParticles2D = $SlowParticles
 
 func _ready():
-	# Arrow detects player on layer 1
-	collision_mask = 1
+	# Arrow should hit both world (layer 1) and player bodies (layer 2).
+	collision_mask = 1 | 2
 	
 	body_entered.connect(_on_body_entered)
 	

@@ -29,10 +29,15 @@ var _starting_round_transition: bool = false
 # FPS/Ping display
 var _fps_label: Label
 @onready var _ping_timer: Timer = %PingTimer
+const FPS_LABEL_UPDATE_INTERVAL_SEC := 0.25
+var _fps_label_update_timer_sec: float = 0.0
 
 func _process(_delta):
-	# Update FPS display every frame
 	if _fps_label:
+		_fps_label_update_timer_sec += _delta
+		if _fps_label_update_timer_sec < FPS_LABEL_UPDATE_INTERVAL_SEC:
+			return
+		_fps_label_update_timer_sec = 0.0
 		var fps = Engine.get_frames_per_second()
 		var ping_ms = int(MultiplayerUtils.get_ping() * 1000)
 		var interp_delay = int(MultiplayerUtils.get_interpolation_delay() * 1000)

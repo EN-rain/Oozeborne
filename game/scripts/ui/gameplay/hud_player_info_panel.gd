@@ -81,7 +81,26 @@ func _build_header_text() -> String:
 	var cls: String = "—"
 	if p_class != null:
 		cls = str(p_class.display_name)
-	return "%s Lvl%d %s" % [MultiplayerManager.player_ign, level, cls]
+	var local_line := "%s Lvl%d %s" % [MultiplayerManager.player_ign, level, cls]
+
+	# Show other connected players (names only). Remote HP/MP isn't replicated yet.
+	var other_names: Array[String] = []
+	if MultiplayerManager.session != null:
+		for user_id in MultiplayerManager.players.keys():
+			if user_id == MultiplayerManager.session.user_id:
+				continue
+			var entry = MultiplayerManager.players.get(user_id, {})
+			var ign := str(entry.get("ign", ""))
+			if ign.is_empty():
+				ign = "Player"
+			other_names.append(ign)
+	other_names.sort()
+
+	if MultiplayerManager.match_id.is_empty():
+		return local_line
+	if other_names.is_empty():
+		return "%s\nAlly: (waiting...)" % local_line
+	return "%s\nAlly: %s" % [local_line, ", ".join(other_names)]
 
 
 func _on_health_changed(current_health: int, max_health: int) -> void:

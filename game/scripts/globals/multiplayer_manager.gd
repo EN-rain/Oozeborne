@@ -8,6 +8,7 @@ var player_ign: String = ""
 var account_email: String = ""
 var room_code: String = ""  # 9-char alphanumeric display code
 var lobby_name: String = ""
+var last_room_error: String = ""
 var is_host: bool = false
 var is_admin: bool = false
 var match_phase: String = "lobby"
@@ -26,7 +27,7 @@ const SERVER_CONFIG_SECTION = "server"
 const DEFAULT_SERVER_KEY = "defaultkey"
 const DEFAULT_SERVER_HOST = "127.0.0.1"
 const DEFAULT_SERVER_PORT = 7350
-const DEFAULT_SCHEME = "https"
+const DEFAULT_SCHEME = "http"
 const TIMEOUT = 20
 const ROOM_COLLECTION = "room_registry"
 const AUTH_SESSION_FILE = "user://auth_session.json"
@@ -78,6 +79,11 @@ func _reset_match_state() -> void:
 	player_subclass = null
 	subclass_choice_made = false
 	player_level = 1
+	last_room_error = ""
+
+
+func get_last_room_error() -> String:
+	return last_room_error
 
 func resolve_player_scene() -> PackedScene:
 	if not _cached_player_scenes.has(player_slime_variant):
@@ -152,6 +158,9 @@ func _ensure_client() -> void:
 	# Align adapter timeout with our client timeout to avoid premature HTTP failures on slow networks.
 	# NakamaHTTPAdapter defaults to 3 seconds which is often too aggressive in the wild.
 	http_adapter.timeout = TIMEOUT
+	# Workaround: threaded HTTPRequest can be flaky on some Windows setups; auth may hang or fail.
+	if OS.get_name() == "Windows":
+		http_adapter.use_threads = false
 
 	client = NakamaClient.new(
 		http_adapter,
@@ -236,7 +245,7 @@ func get_last_auth_error(session_result: NakamaSession) -> String:
 		var ex := session_result.get_exception()
 		var raw_error := str(ex.message)
 		var raw_lower := raw_error.to_lower()
-		if raw_lower.contains("http request failed"):
+		if raw_lower.contains("http request failed") or raw_lower.contains("httprequest failed"):
 			var detail := _describe_http_request_result(int(ex.status_code))
 			return "Cannot reach auth server at %s (%s). Check host/port, firewall, and scheme in server_config.cfg." % [get_server_endpoint_summary(), detail]
 		if raw_lower.contains("timeout"):
@@ -381,12 +390,16 @@ func _resolve_server_config() -> Dictionary:
 		"source": "built_in_defaults"
 	}
 
-	var project_config_path := ProjectSettings.globalize_path("res://" + SERVER_CONFIG_FILE)
+	# NOTE: Keep the path as `res://...` so it also works when resources are packed in an export (PCK).
+	# Using `globalize_path()` can point to a non-existent OS path in exported builds.
+	var project_config_path := "res://" + SERVER_CONFIG_FILE
 	_merge_server_config(resolved, project_config_path, "project_config")
 
-	if OS.has_feature("debug"):
+	# Allow overriding config in exported builds by placing `server_config.cfg` next to the executable.
+	# Avoid doing this in the editor, where OS.get_executable_path() would point at the editor binary.
+	if not OS.has_feature("editor"):
 		var external_config_path := OS.get_executable_path().get_base_dir().path_join(SERVER_CONFIG_FILE)
-		_merge_server_config(resolved, external_config_path, "external_release_config")
+		_merge_server_config(resolved, external_config_path, "external_config")
 
 	return resolved
 
@@ -440,6 +453,7 @@ func connect_to_server(device_id: String = "") -> bool:
 
 func create_room() -> String:
 	if session == null or socket == null:
+		last_room_error = "Not connected"
 		return ""
 	
 	_reset_match_state()
@@ -458,16 +472,19 @@ func create_room() -> String:
 	var rpc_result = await client.rpc_async(session, "create_room", payload)
 	
 	if rpc_result.is_exception():
+		last_room_error = "create_room RPC failed: " + str(rpc_result.get_exception().message)
 		return ""
 	
 	var result_data = JSON.parse_string(rpc_result.payload)
 	if result_data == null or not result_data.get("success", false):
 		_debug_log("RPC returned failure")
+		last_room_error = "Server rejected room creation"
 		return ""
 	
 	match_id = result_data.get("match_id", "")
 	if match_id.is_empty():
 		_debug_log("No match_id in RPC response")
+		last_room_error = "Server returned empty match_id"
 		return ""
 	
 	_debug_log("Created room: %s | Match: %s" % [room_code, match_id])
@@ -476,6 +493,7 @@ func create_room() -> String:
 	var join_result = await socket.join_match_async(match_id, {"ign": player_ign})
 	if join_result.is_exception():
 		_debug_log("Failed to join created match: " + join_result.get_exception().message)
+		last_room_error = "Failed to join created match: " + str(join_result.get_exception().message)
 		return ""
 	
 	# Store our own presence
@@ -488,12 +506,17 @@ func create_room() -> String:
 
 func join_room(join_code: String) -> bool:
 	if session == null or socket == null:
+		last_room_error = "Not connected"
 		return false
 	
 	_reset_match_state()
 
 	# Normalize the join code
 	join_code = join_code.strip_edges().to_upper()
+	join_code = join_code.replace(" ", "").replace("-", "")
+	if join_code.is_empty():
+		last_room_error = "Room code is empty"
+		return false
 	_debug_log("Attempting to join room: '%s'" % join_code)
 
 	# Call RPC to look up room code and get match_id
@@ -502,16 +525,19 @@ func join_room(join_code: String) -> bool:
 	
 	if rpc_result.is_exception():
 		_debug_log("RPC join_room failed: " + rpc_result.get_exception().message)
+		last_room_error = "join_room RPC failed: " + str(rpc_result.get_exception().message)
 		return false
 	
 	var result_data = JSON.parse_string(rpc_result.payload)
 	if result_data == null:
 		_debug_log("Invalid RPC response")
+		last_room_error = "Invalid server response"
 		return false
 	
 	var target_match_id = result_data.get("match_id", "")
 	if target_match_id.is_empty():
 		_debug_log("No match_id in RPC response")
+		last_room_error = "Room code not found (no match_id)"
 		return false
 	
 	var host_ign = result_data.get("host_ign", "Unknown")
@@ -521,6 +547,7 @@ func join_room(join_code: String) -> bool:
 	var join_result = await socket.join_match_async(target_match_id, {"ign": player_ign})
 	if join_result.is_exception():
 		_debug_log("Failed to join match: " + join_result.get_exception().message)
+		last_room_error = "Failed to join match: " + str(join_result.get_exception().message)
 		return false
 
 	match_id = target_match_id
