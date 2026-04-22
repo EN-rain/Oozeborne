@@ -599,13 +599,18 @@ func _on_match_presence(p_presence):
 		if leave.user_id == session.user_id:
 			continue
 		_debug_log("Player left match: %s" % leave.username)
+		var removed_any := false
 		if players.has(leave.user_id):
 			players.erase(leave.user_id)
+			removed_any = true
 		if player_classes.has(leave.user_id):
 			player_classes.erase(leave.user_id)
+			removed_any = true
 		if player_subclasses.has(leave.user_id):
 			player_subclasses.erase(leave.user_id)
-		player_left.emit(leave.user_id)
+			removed_any = true
+		if removed_any:
+			player_left.emit(leave.user_id)
 
 func _on_socket_closed() -> void:
 	if _connection_lost_emitted:
@@ -680,11 +685,49 @@ func _on_match_state(match_state) -> void:
 			var server_phase = join_payload.get("phase", "lobby")
 			if server_phase == "in_game":
 				_set_match_phase("in_game")
+			# Also capture authoritative join info (more reliable than presence events),
+			# especially with 3-4 players where presence order can be flaky.
+			if session != null:
+				var joined_user_id := str(join_payload.get("user_id", ""))
+				if not joined_user_id.is_empty():
+					var existing = players.get(joined_user_id, {})
+					var authoritative_ign := str(join_payload.get("ign", existing.get("ign", "")))
+					var authoritative_is_host := bool(join_payload.get("is_host", existing.get("is_host", false)))
+					var presence = existing.get("presence", null)
+					var was_known = players.has(joined_user_id)
+					var previous_ign = str(existing.get("ign", ""))
+					players[joined_user_id] = {
+						"ign": authoritative_ign,
+						"is_host": authoritative_is_host,
+						"presence": presence,
+						"slime_variant": str(existing.get("slime_variant", "blue"))
+					}
+					if joined_user_id != session.user_id and (not was_known or previous_ign != authoritative_ign):
+						player_joined.emit(joined_user_id, authoritative_ign if not authoritative_ign.is_empty() else "Player", authoritative_is_host)
+		return
+
+	# Handle OP_PLAYER_LEAVE (op code 4) - server broadcasts this when players leave
+	if match_state.op_code == MultiplayerUtils.OP_PLAYER_LEAVE:
+		var leave_payload = JSON.parse_string(match_state.data)
+		if leave_payload != null:
+			var left_user_id := str(leave_payload.get("user_id", ""))
+			if not left_user_id.is_empty() and session != null and left_user_id != session.user_id:
+				if players.has(left_user_id):
+					players.erase(left_user_id)
+				if player_classes.has(left_user_id):
+					player_classes.erase(left_user_id)
+				if player_subclasses.has(left_user_id):
+					player_subclasses.erase(left_user_id)
+				player_left.emit(left_user_id)
 		return
 
 	var data = JSON.parse_string(match_state.data)
 	if data == null:
 		return
+
+	var sender_user_id := ""
+	if match_state.presence != null:
+		sender_user_id = str(match_state.presence.user_id)
 
 	# Log op_code=0 messages for debugging
 	if match_state.op_code == 0:
@@ -694,32 +737,63 @@ func _on_match_state(match_state) -> void:
 		if data.has("phase"):
 			_set_match_phase(str(data.phase))
 
+		# Reconcile players list with authoritative snapshot to avoid phantom players
+		# (common source of "buggy" behavior when >2 players join/leave quickly).
+		var snapshot_user_ids: Dictionary = {}
 		for player_data in data.get("players", []):
 			var user_id := str(player_data.get("user_id", ""))
 			if user_id.is_empty():
 				continue
+			snapshot_user_ids[user_id] = true
 
 			var existing = players.get(user_id, {})
 			var authoritative_ign = str(player_data.get("ign", existing.get("ign", "")))
 			var authoritative_is_host = bool(player_data.get("is_host", existing.get("is_host", false)))
+			var snapshot_variant := str(player_data.get("slime_variant", ""))
 			var presence = existing.get("presence", null)
 
 			var was_known = players.has(user_id)
 			var previous_ign = str(existing.get("ign", ""))
+			var resolved_variant := str(existing.get("slime_variant", "blue"))
+			if not snapshot_variant.is_empty():
+				resolved_variant = snapshot_variant
+			# Never let a remote snapshot clobber the local player's chosen cosmetics.
+			if session != null and user_id == session.user_id and not player_slime_variant.is_empty():
+				resolved_variant = player_slime_variant
 			players[user_id] = {
 				"ign": authoritative_ign,
 				"is_host": authoritative_is_host,
 				"presence": presence,
-				"slime_variant": existing.get("slime_variant", "blue")
+				"slime_variant": resolved_variant
 			}
 
 			if user_id != session.user_id and (not was_known or previous_ign != authoritative_ign):
 				player_joined.emit(user_id, authoritative_ign if not authoritative_ign.is_empty() else "Player", authoritative_is_host)
+
+		if session != null:
+			var local_id := session.user_id
+			var keys := players.keys()
+			for k in keys:
+				var key_user_id := str(k)
+				if key_user_id.is_empty() or key_user_id == local_id:
+					continue
+				if not snapshot_user_ids.has(key_user_id):
+					players.erase(key_user_id)
+					if player_classes.has(key_user_id):
+						player_classes.erase(key_user_id)
+					if player_subclasses.has(key_user_id):
+						player_subclasses.erase(key_user_id)
+					player_left.emit(key_user_id)
 		return
 
 	if data.get("type", "") == "player_info":
 		var entry_id := str(data.get("user_id", ""))
 		if entry_id.is_empty():
+			return
+		# Ignore "player_info" messages about ourselves if they weren't sent by us.
+		# The host may rebroadcast stale info for everyone; with 3-4 players this can
+		# briefly overwrite local cosmetics/labels and cause lobby/gameplay desync.
+		if session != null and entry_id == session.user_id and not sender_user_id.is_empty() and sender_user_id != session.user_id:
 			return
 
 		var existing = players.get(entry_id, {})
@@ -727,11 +801,17 @@ func _on_match_state(match_state) -> void:
 		var authoritative_is_host = bool(data.get("is_host", existing.get("is_host", false)))
 		var previous_ign = str(existing.get("ign", ""))
 		var was_known = players.has(entry_id)
+		var incoming_variant := str(data.get("slime_variant", ""))
+		var resolved_variant := str(existing.get("slime_variant", "blue"))
+		if not incoming_variant.is_empty():
+			resolved_variant = incoming_variant
+		if session != null and entry_id == session.user_id and not player_slime_variant.is_empty():
+			resolved_variant = player_slime_variant
 		players[entry_id] = {
 			"ign": authoritative_ign,
 			"is_host": authoritative_is_host,
 			"presence": existing.get("presence", null),
-			"slime_variant": existing.get("slime_variant", str(data.get("slime_variant", "blue")))
+			"slime_variant": resolved_variant
 		}
 
 		if session != null and entry_id != session.user_id and (not was_known or previous_ign != authoritative_ign):
