@@ -12,6 +12,10 @@ signal round_cleared(round_number: int)
 @export var common_mob_scene: PackedScene
 @export var elite_mob_lancer_scene: PackedScene
 @export var elite_mob_archer_scene: PackedScene
+@export var warden_mob_scene: PackedScene
+@export var boss_mob_scene: PackedScene
+
+var MOB_NAME_MAP: Dictionary = {}
 
 @export var initial_common_mob_count: int = 7
 @export var initial_elite_mob_count: int = 3
@@ -39,6 +43,18 @@ var _network_spawn_enabled: bool = false
 func initialize(parent: Node, player: Node):
 	_parent = parent
 	_player = player
+	_build_mob_name_map()
+
+
+func _build_mob_name_map() -> void:
+	MOB_NAME_MAP = MobSceneRegistry.build_mob_name_map(
+		null, # slime uses common in this spawner
+		common_mob_scene,
+		elite_mob_lancer_scene,
+		elite_mob_archer_scene,
+		warden_mob_scene,
+		boss_mob_scene
+	)
 
 
 func set_round_manager(round_manager: RoundManager) -> void:
@@ -212,24 +228,11 @@ func get_round_elite_count(round_number: int) -> int:
 	return clampi(elite_count, initial_elite_mob_count, max(total - 1, 0))
 
 
-## Map of mob name aliases to their scene paths
-const MOB_NAME_MAP: Dictionary = {
-	"slime": "res://scenes/entities/enemies/blue_slime.tscn",
-	"common": "res://scenes/entities/enemies/blue_slime.tscn",
-	"lancer": "res://scenes/entities/enemies/plagued_lancer.tscn",
-	"archer": "res://scenes/entities/enemies/archer.tscn",
-	"warden": "res://scenes/entities/enemies/void_warden.tscn",
-	"boss": "res://scenes/entities/enemies/void_warden.tscn",
-}
-
-
 func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 	if _network_spawn_enabled:
 		return 0
-	var scene_path: String = MOB_NAME_MAP.get(mob_name.to_lower().strip_edges(), "")
-	if scene_path.is_empty():
-		return 0
-	var scene: PackedScene = load(scene_path)
+	var key := mob_name.to_lower().strip_edges()
+	var scene := MOB_NAME_MAP.get(key) as PackedScene
 	if scene == null:
 		return 0
 	var spawned := 0
@@ -238,7 +241,7 @@ func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 		if mob == null:
 			continue
 		mob.global_position = get_random_spawn_position()
-		mob.set_meta("mob_type", mob_name.to_lower().strip_edges())
+		mob.set_meta("mob_type", key)
 		mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
 		_parent.add_child(mob)
 		if _round_manager != null:
@@ -252,10 +255,7 @@ func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 
 func spawn_mob_by_name_at(mob_name: String, world_pos: Vector2) -> Node2D:
 	var key := mob_name.to_lower().strip_edges()
-	var scene_path: String = MOB_NAME_MAP.get(key, "")
-	if scene_path.is_empty():
-		return null
-	var scene: PackedScene = load(scene_path)
+	var scene := MOB_NAME_MAP.get(key) as PackedScene
 	if scene == null:
 		return null
 	var mob: Node2D = scene.instantiate() as Node2D

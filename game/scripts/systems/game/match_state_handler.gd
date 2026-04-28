@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 ## MatchStateHandler - Handles parsing and dispatching match state events
 ## Add as child to your game scene to handle network events
 
@@ -144,6 +144,6 @@ func _handle_ping(data: Dictionary, sender_id: String) -> void:
 		ping_received.emit(sender_id, data.get("timestamp", 0))
 
 
-func _handle_pong(data: Dictionary, sender_id: String) -> void:
+func _handle_pong(data: Dictionary, _sender_id: String) -> void:
 	var target = data.get("target", "")
 	pong_received.emit(target, data.get("timestamp", 0))

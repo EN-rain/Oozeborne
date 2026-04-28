@@ -1,4 +1,4 @@
-extends Node2D
+﻿extends Node2D
 
 const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_button.tscn")
 
@@ -13,6 +13,8 @@ const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_butt
 @export var common_mob_scene: PackedScene
 @export var elite_lancer_scene: PackedScene
 @export var elite_archer_scene: PackedScene
+@export var warden_mob_scene: PackedScene
+@export var boss_mob_scene: PackedScene
 
 var mob_spawner: MobSpawner
 var round_manager: RoundManager
@@ -29,67 +31,20 @@ const DEBUG_MAIN_LOGS := false
 var _solo_class_selection_ui: ClassSelectionUI = null
 var _solo_class_locked: bool = false
 var _starting_round_transition: bool = false
-# FPS/Ping display
-var _fps_label: Label
 @onready var _ping_timer: Timer = %PingTimer
 const FPS_LABEL_UPDATE_INTERVAL_SEC := 0.25
-var _fps_label_update_timer_sec: float = 0.0
 const PLAYER_STATS_BROADCAST_INTERVAL_SEC := 0.35
-var _player_stats_broadcast_timer_sec: float = 0.0
+
+var _debug_stats_overlay: DebugStatsOverlay
+var _player_stats_broadcaster: PlayerStatsBroadcaster
+var _match_state_router: MatchStateRouter
 
 func _process(delta):
-	_update_fps_label(delta)
-	_maybe_broadcast_player_stats(delta)
+	if _debug_stats_overlay != null:
+		_debug_stats_overlay.tick(delta)
+	if _player_stats_broadcaster != null:
+		_player_stats_broadcaster.tick(delta, player)
 
-
-func _update_fps_label(delta: float) -> void:
-	if _fps_label == null:
-		return
-	_fps_label_update_timer_sec += delta
-	if _fps_label_update_timer_sec < FPS_LABEL_UPDATE_INTERVAL_SEC:
-		return
-	_fps_label_update_timer_sec = 0.0
-	var fps = Engine.get_frames_per_second()
-	var ping_ms = int(MultiplayerUtils.get_ping() * 1000)
-	var interp_delay = int(MultiplayerUtils.get_interpolation_delay() * 1000)
-	var pending = MultiplayerUtils.get_pending_input_count()
-	_fps_label.text = "FPS: %d | MS: %d | Interp: %dms | Pending: %d" % [fps, ping_ms, interp_delay, pending]
-
-
-func _maybe_broadcast_player_stats(delta: float) -> void:
-	if not MultiplayerManager.is_socket_open() or MultiplayerManager.session == null or player == null or not is_instance_valid(player):
-		return
-	_player_stats_broadcast_timer_sec += delta
-	if _player_stats_broadcast_timer_sec < PLAYER_STATS_BROADCAST_INTERVAL_SEC:
-		return
-	_player_stats_broadcast_timer_sec = 0.0
-
-	var health = player.get_node_or_null("Health")
-	var hp := int(health.current_health) if health != null and "current_health" in health else 0
-	var hp_max := int(health.max_health) if health != null and "max_health" in health else 0
-	var mana = player.get_node_or_null("Mana")
-	var mp := int(mana.current_mana) if mana != null and "current_mana" in mana else 0
-	var mp_max := int(mana.max_mana) if mana != null and "max_mana" in mana else 0
-	var lvl := int(LevelSystem.get_level(player)) if LevelSystem != null else int(MultiplayerManager.player_level)
-	var uid := str(MultiplayerManager.session.user_id)
-
-	if MultiplayerManager.players.has(uid):
-		MultiplayerManager.players[uid]["level"] = lvl
-		MultiplayerManager.players[uid]["hp"] = hp
-		MultiplayerManager.players[uid]["hp_max"] = hp_max
-		MultiplayerManager.players[uid]["mp"] = mp
-		MultiplayerManager.players[uid]["mp_max"] = mp_max
-
-	MultiplayerManager.send_match_state({
-		"type": "player_stats",
-		"user_id": uid,
-		"level": lvl,
-		"hp": hp,
-		"hp_max": hp_max,
-		"mp": mp,
-		"mp_max": mp_max,
-	})
-	
 func _physics_process(delta):
 	# Interpolate remote players positions in physics process to align with movement timeline
 	MultiplayerUtils.interpolate_remote_players(delta)
@@ -123,6 +78,8 @@ func _ready():
 	mob_spawner.common_mob_scene = common_mob_scene
 	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
 	mob_spawner.elite_mob_archer_scene = elite_archer_scene
+	mob_spawner.warden_mob_scene = warden_mob_scene
+	mob_spawner.boss_mob_scene = boss_mob_scene
 	# Only the host should generate random mob spawns. Clients receive spawns via match messages.
 	mob_spawner.set_network_spawn_enabled(not MultiplayerManager.is_host)
 	mob_spawner.initialize(self, player)
@@ -136,12 +93,16 @@ func _ready():
 	_restore_saved_solo_run_if_needed()
 	
 	# Create FPS/Ping display
-	_create_fps_display()
+	_debug_stats_overlay = DebugStatsOverlay.new()
+	_debug_stats_overlay.setup(ui, DEBUG_STATS_LABEL_NODE_PATH, _ping_timer, FPS_LABEL_UPDATE_INTERVAL_SEC)
+	_player_stats_broadcaster = PlayerStatsBroadcaster.new(PLAYER_STATS_BROADCAST_INTERVAL_SEC)
+	_match_state_router = MatchStateRouter.new()
+	_match_state_router.bind(self, player, ui, mob_spawner, round_manager)
 	
 	# Listen for match events
 	if MultiplayerManager.socket:
-		if not MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-			MultiplayerManager.socket.received_match_state.connect(_on_match_state)
+		if _match_state_router != null and not MultiplayerManager.socket.received_match_state.is_connected(_match_state_router.on_match_state):
+			MultiplayerManager.socket.received_match_state.connect(_match_state_router.on_match_state)
 		# Listen for player_joined signal to spawn late joiners
 		if not MultiplayerManager.player_joined.is_connected(_on_player_joined):
 			MultiplayerManager.player_joined.connect(_on_player_joined)
@@ -440,29 +401,12 @@ func _start_initial_mob_spawns() -> void:
 	mob_spawner.initialize(self, player)
 	call_deferred("_start_round", round_manager.current_round, false)
 
-func _create_fps_display():
-	_fps_label = ui.get_node_or_null(DEBUG_STATS_LABEL_NODE_PATH) as Label
-	if _fps_label == null:
-		push_warning("[Main] Missing UI node: %s" % DEBUG_STATS_LABEL_NODE_PATH)
-	else:
-		_fps_label.visible = true
-	
-	if _ping_timer and not _ping_timer.timeout.is_connected(_on_ping_timeout):
-		_ping_timer.timeout.connect(_on_ping_timeout)
-		_ping_timer.start()
-
-func _on_ping_timeout():
-	if MultiplayerManager.socket and MultiplayerManager.match_id:
-		# Send ping timestamp using monotonic time
-		MultiplayerManager.send_match_state({
-			"type": "ping",
-			"timestamp": Time.get_ticks_usec() / 1000000.0
-		})
-
 func _on_match_state(match_state):
-	# Handle op codes from authoritative server
-	var op_code = match_state.op_code
-	var data = JSON.parse_string(match_state.data)
+	if _match_state_router != null:
+		_match_state_router.on_match_state(match_state)
+		return
+	return
+	"""
 	
 	# Op code 2 = Server state snapshot
 	if op_code == MultiplayerUtils.OP_STATE:
@@ -600,6 +544,7 @@ func _on_match_state(match_state):
 					var remote_node = MultiplayerUtils.get_remote_player_node(subclass_sender_id)
 					if remote_node != null and remote_node.has_method("apply_subclass_modifiers"):
 						remote_node.apply_subclass_modifiers(subclass_res)
+	"""
 
 func spawn_players():
 	# Spawn all connected players, filtering out empty keys
@@ -705,7 +650,7 @@ func send_attack(pos: Vector2, rotation_angle: float):
 	# Send attack to other players
 	MultiplayerUtils.send_attack(pos, rotation_angle)
 
-func _on_match_presence(presence_event):
+func _on_match_presence(_presence_event):
 	# Presence events are handled centrally in `MultiplayerManager`.
 	# Keeping a second handler here causes double-add/late-remove flakiness with 3-4 players.
 	return
@@ -860,65 +805,6 @@ func _is_authoritative_host() -> bool:
 	return bool(local_entry.get("is_host", MultiplayerManager.is_host))
 
 
-func _handle_round_start(data: Dictionary) -> void:
-	if data == null:
-		return
-	var round_number := int(data.get("round", 1))
-	# Ensure local scaling matches host.
-	round_manager.set_round(round_number)
-	if mob_spawner != null:
-		mob_spawner.begin_network_round(round_number)
-
-
-func _handle_mob_spawn(data: Dictionary) -> void:
-	if data == null or mob_spawner == null:
-		return
-	var mob_id := str(data.get("mob_id", ""))
-	if mob_id.is_empty() or _network_mobs.has(mob_id):
-		return
-	var mob_type := str(data.get("mob_type", "common")).to_lower().strip_edges()
-	var pos_data: Dictionary = data.get("pos", {}) if data.get("pos") is Dictionary else {}
-	var world_pos := Vector2(float(pos_data.get("x", 0.0)), float(pos_data.get("y", 0.0)))
-	var spawned: Node2D = null
-	if mob_type in ["common", "slime"]:
-		spawned = mob_spawner.spawn_common_mob_at(world_pos)
-	elif mob_type in ["lancer", "archer"]:
-		spawned = mob_spawner.spawn_elite_mob_at(mob_type, world_pos)
-	else:
-		spawned = mob_spawner.spawn_mob_by_name_at(mob_type, world_pos)
-	if spawned != null:
-		spawned.set_meta("network_mob_id", mob_id)
-		_network_mobs[mob_id] = weakref(spawned)
-
-
-func _handle_player_stats(sender_id: String, data: Dictionary) -> void:
-	if data == null:
-		return
-	var entry_id := str(data.get("user_id", ""))
-	if entry_id.is_empty():
-		entry_id = sender_id
-	if entry_id.is_empty() or MultiplayerManager.session == null:
-		return
-	# Ignore stats echoes about ourselves from other senders.
-	if entry_id == MultiplayerManager.session.user_id and not sender_id.is_empty() and sender_id != MultiplayerManager.session.user_id:
-		return
-
-	var existing: Dictionary = MultiplayerManager.players.get(entry_id, {}) if MultiplayerManager.players.get(entry_id) is Dictionary else {}
-	if existing.is_empty():
-		existing = {"ign": "", "is_host": false, "presence": null, "slime_variant": "blue"}
-	var lvl := int(data.get("level", existing.get("level", 1)))
-	var hp := int(data.get("hp", existing.get("hp", 0)))
-	var hp_max := int(data.get("hp_max", existing.get("hp_max", 0)))
-	var mp := int(data.get("mp", existing.get("mp", 0)))
-	var mp_max := int(data.get("mp_max", existing.get("mp_max", 0)))
-
-	existing["level"] = lvl
-	existing["hp"] = hp
-	existing["hp_max"] = hp_max
-	existing["mp"] = mp
-	existing["mp_max"] = mp_max
-	MultiplayerManager.players[entry_id] = existing
-
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
 	_debug_log("Player joined signal received for: %s" % username)
 	_spawn_player_for_user(user_id)
@@ -997,108 +883,6 @@ func _clear_subclass_choice_buttons() -> void:
 		child.queue_free()
 
 
-## Handle server state snapshot (op code 2)
-func _handle_server_snapshot(data: Dictionary) -> void:
-	if data == null:
-		return
-
-	var phase = str(data.get("phase", MultiplayerManager.match_phase))
-	if phase != MultiplayerManager.match_phase:
-		MultiplayerManager.match_phase = phase
-
-	var players = data.get("players", [])
-	for player_data in players:
-		var user_id = player_data.get("user_id", "")
-		if user_id.is_empty():
-			continue
-		
-		var pos_data = player_data.get("pos", {})
-		var new_pos = Vector2(pos_data.get("x", 0), pos_data.get("y", 0))
-		var vel_data = player_data.get("vel", {})
-		var velocity = Vector2(vel_data.get("x", 0), vel_data.get("y", 0))
-		var server_seq = player_data.get("input_seq", 0)
-		var facing = player_data.get("facing", 1)
-		var is_attacking = player_data.get("is_attacking", false)
-		var is_dashing = player_data.get("is_dashing", false)
-		var attack_rotation = player_data.get("attack_rotation", 0.0)
-		var attack_seq = int(player_data.get("attack_seq", 0))
-		var dash_seq = int(player_data.get("dash_seq", 0))
-		var ign = player_data.get("ign", "Unknown")
-		var is_host_flag = player_data.get("is_host", false)
-		var snapshot_variant = str(player_data.get("slime_variant", ""))
-
-		var existing_info = MultiplayerManager.players.get(user_id, {})
-		# Prefer snapshot variant, fall back to existing, then default
-		var resolved_variant = snapshot_variant if not snapshot_variant.is_empty() else str(existing_info.get("slime_variant", "blue"))
-		MultiplayerManager.players[user_id] = {
-			"ign": ign,
-			"is_host": is_host_flag,
-			"presence": existing_info.get("presence", null),
-			"slime_variant": resolved_variant
-		}
-		_apply_authoritative_player_info(user_id, ign, is_host_flag)
-		
-		# Handle local player - reconcile with server
-		if MultiplayerUtils.is_local_player(user_id):
-			MultiplayerUtils.reconcile_local_player(new_pos, velocity, server_seq)
-			continue
-		
-		# Handle remote player
-		if not MultiplayerUtils.has_remote_player(user_id):
-			# Player not yet spawned - spawn them with initial position
-			MultiplayerManager.players[user_id] = {
-				"ign": ign,
-				"is_host": is_host_flag,
-				"presence": existing_info.get("presence", null),
-				"slime_variant": resolved_variant
-			}
-			_spawn_player_for_user(user_id, new_pos)
-		
-		if MultiplayerUtils.has_remote_player(user_id):
-			MultiplayerUtils.update_remote_player_target(user_id, new_pos, velocity, facing, is_attacking, is_dashing, attack_rotation, attack_seq, dash_seq)
-			_update_player_minimap_indicator(user_id, new_pos)
-			
-			# Show player if not visible
-			var node = MultiplayerUtils.get_remote_player_node(user_id)
-			if node and not node.visible and MultiplayerUtils.is_remote_player_visible(user_id):
-				node.visible = true
-				node.global_position = new_pos
-				var sprite = node.get_node_or_null("AnimatedSprite2D")
-				if sprite:
-					sprite.modulate = Color(1, 1, 1, 0)
-					var tween = create_tween()
-					tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
-
-
-## Handle player join from server (op code 3)
-func _handle_player_join(data: Dictionary) -> void:
-	if data == null:
-		return
-	
-	var user_id = data.get("user_id", "")
-	if user_id.is_empty() or MultiplayerUtils.is_local_player(user_id):
-		return
-	
-	var ign = data.get("ign", "Unknown")
-	var is_host_flag = data.get("is_host", false)
-	var pos_data = data.get("pos", {})
-	var fallback_spawn := _get_local_spawn_position()
-	var spawn_pos = Vector2(pos_data.get("x", fallback_spawn.x), pos_data.get("y", fallback_spawn.y))
-	
-	var existing_info = MultiplayerManager.players.get(user_id, {})
-	MultiplayerManager.players[user_id] = {
-		"ign": ign,
-		"is_host": is_host_flag,
-		"presence": existing_info.get("presence", null),
-		"slime_variant": existing_info.get("slime_variant", "blue")
-	}
-	
-	if not MultiplayerUtils.has_remote_player(user_id):
-		_spawn_player_for_user(user_id, spawn_pos)
-	else:
-		_apply_authoritative_player_info(user_id, ign, is_host_flag)
-
-
 func _apply_authoritative_player_info(user_id: String, ign: String, _is_host_flag: bool) -> void:
 	if user_id.is_empty() or ign.is_empty():
 		return
@@ -1118,26 +902,6 @@ func _apply_authoritative_player_info(user_id: String, ign: String, _is_host_fla
 
 	if ui and ui.has_method("update_remote_player_ign"):
 		ui.update_remote_player_ign(user_id, ign)
-
-
-## Handle player leave from server (op code 4)
-func _handle_player_leave(data: Dictionary) -> void:
-	if data == null:
-		return
-	
-	var user_id = data.get("user_id", "")
-	if user_id.is_empty():
-		return
-	
-	if MultiplayerManager.players.has(user_id):
-		MultiplayerManager.players.erase(user_id)
-	
-	if MultiplayerUtils.has_remote_player(user_id):
-		var node = MultiplayerUtils.get_remote_player_node(user_id)
-		if is_instance_valid(node):
-			node.queue_free()
-		MultiplayerUtils.unregister_remote_player(user_id)
-		_remove_player_minimap_indicator(user_id)
 
 
 func _debug_log(message: String) -> void:
