@@ -3,11 +3,17 @@ extends PanelContainer
 ## Party info panel - shows all connected players (2-4p): level, name, HP, MP.
 ## Remote HP/MP/level are broadcast via `player_stats` match messages.
 
-@onready var header_label: Label = %InfoHeaderLabel
-@onready var hp_bar: ProgressBar = %InfoHPBar
-@onready var hp_label: Label = %InfoHPLabel
-@onready var mana_bar: ProgressBar = %InfoManaBar
-@onready var mana_label: Label = %InfoManaLabel
+@export var header_label_path: NodePath
+@export var hp_bar_path: NodePath
+@export var hp_label_path: NodePath
+@export var mana_bar_path: NodePath
+@export var mana_label_path: NodePath
+
+@onready var header_label: Label = get_node_or_null(header_label_path) as Label
+@onready var hp_bar: ProgressBar = get_node_or_null(hp_bar_path) as ProgressBar
+@onready var hp_label: Label = get_node_or_null(hp_label_path) as Label
+@onready var mana_bar: ProgressBar = get_node_or_null(mana_bar_path) as ProgressBar
+@onready var mana_label: Label = get_node_or_null(mana_label_path) as Label
 
 var _player_ref: CharacterBody2D = null
 
@@ -79,4 +85,3 @@ func _render_party_info() -> void:
 	hp_label.text = "\n".join(lines)
 	if mana_label != null:
 		mana_label.visible = false
-

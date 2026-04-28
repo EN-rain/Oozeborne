@@ -7,7 +7,7 @@ extends CanvasLayer
 @onready var skills_root: HudSkillBar = %Skills
 @onready var stats_panel: HudStatsPanel = $Stats
 @onready var chat_box: Control = %ChatBox
-@onready var player_info_panel: PanelContainer = %PlayerInfoPanel
+@onready var player_info_panel: PanelContainer = %OtherPlayerInfo
 
 const DisconnectOverlayScene := preload("res://scenes/ui/disconnect_overlay.tscn")
 const BossHealthBarScene := preload("res://scenes/ui/boss_health_bar.tscn")

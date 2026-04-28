@@ -1,14 +1,14 @@
-[gd_resource type="BehaviorTree" format=3 uid="uid://voidwardenbt001"]
+[gd_resource type="BehaviorTree" format=3 uid="uid://bkk6vq5xehbnc"]
 
-[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_detect_player.gd" id="1_detect"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_condition_has_player.gd" id="2_hasplayer"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_boss_chase.gd" id="3_chase"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_shadow_strike.gd" id="4_shadow"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_void_pulse.gd" id="5_void"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_dark_chains.gd" id="6_chains"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_soul_drain.gd" id="7_drain"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_condition_phase.gd" id="8_phase"]
-[ext_resource type="Script" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_idle.gd" id="9_idle"]
+[ext_resource type="Script" uid="uid://sw5y78nqr2lo" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_detect_player.gd" id="1_detect"]
+[ext_resource type="Script" uid="uid://b06f8eoqqwiiw" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_condition_has_player.gd" id="2_hasplayer"]
+[ext_resource type="Script" uid="uid://252yb2hey851" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_boss_chase.gd" id="3_chase"]
+[ext_resource type="Script" uid="uid://vugkek3v5ynb" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_shadow_strike.gd" id="4_shadow"]
+[ext_resource type="Script" uid="uid://d1lhty7jtuod8" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_void_pulse.gd" id="5_void"]
+[ext_resource type="Script" uid="uid://blqpdbtde3blx" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_dark_chains.gd" id="6_chains"]
+[ext_resource type="Script" uid="uid://c714lqlyjwod1" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_action_soul_drain.gd" id="7_drain"]
+[ext_resource type="Script" uid="uid://cftiehcxfn6c4" path="res://scripts/entities/enemies/boss_behavior_tree/void_warden/bt_condition_phase.gd" id="8_phase"]
+[ext_resource type="Script" uid="uid://38bgutxdnisg" path="res://scripts/entities/enemies/mob_behavior_tree/main/bt_action_idle.gd" id="9_idle"]
 
 [sub_resource type="BlackboardPlan" id="BlackboardPlan_boss"]
 
@@ -23,14 +23,9 @@ script = ExtResource("3_chase")
 
 [sub_resource type="BTAction" id="BTAction_shadow"]
 script = ExtResource("4_shadow")
-damage = 80
-cooldown = 5.0
 
 [sub_resource type="BTAction" id="BTAction_void"]
 script = ExtResource("5_void")
-damage = 40
-cooldown = 8.0
-radius = 200.0
 
 [sub_resource type="BTCondition" id="BTCondition_phase2"]
 script = ExtResource("8_phase")
@@ -38,8 +33,6 @@ min_phase = 2
 
 [sub_resource type="BTAction" id="BTAction_chains"]
 script = ExtResource("6_chains")
-duration = 3.0
-cooldown = 12.0
 
 [sub_resource type="BTSequence" id="BTSequence_chains"]
 children = [SubResource("BTCondition_phase2"), SubResource("BTAction_chains")]
@@ -50,9 +43,6 @@ min_phase = 3
 
 [sub_resource type="BTAction" id="BTAction_drain"]
 script = ExtResource("7_drain")
-damage = 60
-heal_percent = 0.5
-cooldown = 15.0
 
 [sub_resource type="BTSequence" id="BTSequence_drain"]
 children = [SubResource("BTCondition_phase3"), SubResource("BTAction_drain")]

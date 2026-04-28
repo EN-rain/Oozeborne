@@ -275,7 +275,7 @@ func _handle_player_join(data: Dictionary) -> void:
 	var ign = data.get("ign", "Unknown")
 	var is_host_flag = data.get("is_host", false)
 	var pos_data = data.get("pos", {})
-	var fallback_spawn := _main._get_local_spawn_position()
+	var fallback_spawn: Vector2 = _main._get_local_spawn_position()
 	var spawn_pos = Vector2(pos_data.get("x", fallback_spawn.x), pos_data.get("y", fallback_spawn.y))
 
 	var existing_info = MultiplayerManager.players.get(user_id, {})
