@@ -563,12 +563,9 @@ func join_room(join_code: String) -> bool:
 	if join_result.self_user != null:
 		players[session.user_id]["presence"] = join_result.self_user
 	
-	# Store existing players from join result (they're already in the match)
-	if join_result.presences != null:
-		for presence in join_result.presences:
-			if presence.user_id != session.user_id:
-				_debug_log("Found existing player presence: %s" % presence.user_id.substr(0, 8))
-				players[presence.user_id] = {"ign": "", "is_host": false, "presence": presence, "slime_variant": "blue"}
+	# Note: we intentionally do not materialize `players[...]` entries from raw match presences.
+	# The authoritative server broadcasts OP_PLAYER_JOIN / OP_STATE snapshots which define who counts as a "player"
+	# (important when admins can join as spectators and shouldn't be counted).
 	
 	# Send player info to others
 	send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": false, "slime_variant": player_slime_variant})
@@ -585,11 +582,9 @@ func _on_match_presence(p_presence):
 		if join.user_id == session.user_id:
 			continue
 		_debug_log("Player joined match: %s" % join.user_id.substr(0, 8))
-		if not players.has(join.user_id):
-			players[join.user_id] = {"ign": "", "is_host": false, "presence": join, "slime_variant": "blue"}
-			var display_name = join.username if not join.username.is_empty() else "Player"
-			player_joined.emit(join.user_id, display_name, false)
-		else:
+		# Don't create a player entry from presence alone (spectators/admins should not appear as party members).
+		# We'll attach presence only once the server has included this user in OP_PLAYER_JOIN / OP_STATE snapshots.
+		if players.has(join.user_id):
 			players[join.user_id]["presence"] = join
 		# Send our info to the new player immediately
 		send_match_state({"type": "player_info", "user_id": session.user_id, "ign": player_ign, "is_host": is_host, "slime_variant": player_slime_variant})
@@ -659,6 +654,42 @@ func set_player_subclass(user_id: String, assigned_subclass: PlayerClass) -> voi
 	player_subclasses[user_id] = assigned_subclass
 
 var _cached_player_scenes: Dictionary = {}
+
+
+const DEVICE_ID_PATH := "user://device_id.txt"
+
+
+func get_or_create_device_id() -> String:
+	if FileAccess.file_exists(DEVICE_ID_PATH):
+		var file := FileAccess.open(DEVICE_ID_PATH, FileAccess.READ)
+		if file != null:
+			var existing := file.get_as_text().strip_edges()
+			if not existing.is_empty():
+				return existing
+
+	var generated := "device_" + str(Time.get_unix_time_from_system()) + "_" + str(randi_range(100000, 999999))
+	var write_file := FileAccess.open(DEVICE_ID_PATH, FileAccess.WRITE)
+	if write_file != null:
+		write_file.store_string(generated)
+	return generated
+
+
+func ensure_cloud_session(device_id: String = "") -> bool:
+	_ensure_client()
+	if is_authenticated():
+		return true
+	if client == null:
+		return false
+	var resolved_device_id := device_id
+	if resolved_device_id.is_empty():
+		resolved_device_id = get_or_create_device_id()
+	var result = await client.authenticate_device_async(resolved_device_id, null, true, null)
+	var auth_error = get_last_auth_error(result)
+	if not auth_error.is_empty():
+		_debug_log("Failed to authenticate (cloud session): " + auth_error)
+		return false
+	_set_authenticated_session(result)
+	return true
 
 func _set_match_phase(new_phase: String) -> void:
 	if new_phase.is_empty() or match_phase == new_phase:

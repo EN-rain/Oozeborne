@@ -11,6 +11,7 @@ local OP_START_GAME = 5
 
 -- Constants
 local TICKRATE = 20
+local MAX_PLAYERS = 4
 local DEFAULT_PLAYER_SPEED = 100.0
 local DEFAULT_DASH_SPEED = 400.0
 local SNAP_THRESHOLD = 50.0
@@ -241,14 +242,39 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         nk.logger_info("Host user id was empty, defaulting host to first joiner " .. presence.user_id)
     end
 
+    local admin_role = get_user_admin_role(presence.user_id)
+
+    -- Allow admins to join as spectators (not counted towards MAX_PLAYERS).
+    -- Host is always treated as a normal player.
+    local is_host = presence.user_id == state.host_user_id
+    local is_spectator = (not is_host) and admin_role >= ADMIN_ROLE.ADMIN
+    state.spectators = state.spectators or {}
+
+    if is_spectator then
+        state.spectators[presence.user_id] = {
+            ign = requested_ign,
+            admin_role = admin_role
+        }
+        nk.logger_info("match_join_attempt spectator user=" .. presence.user_id .. " ign=" .. requested_ign .. " admin_role=" .. tostring(admin_role))
+        return state, true
+    end
+
+    local player_count = 0
+    for _, _ in pairs(state.players) do
+        player_count = player_count + 1
+    end
+    if not state.players[presence.user_id] and player_count >= MAX_PLAYERS then
+        nk.logger_warn("Rejecting join: match " .. context.match_id .. " is full (" .. tostring(player_count) .. "/" .. tostring(MAX_PLAYERS) .. ") user=" .. presence.user_id)
+        return state, false, "match is full"
+    end
+
     local existing = state.players[presence.user_id] or {}
     local spawn_x = existing.pos_x
     local spawn_y = existing.pos_y
     if spawn_x == nil or spawn_y == nil then
         spawn_x, spawn_y = get_next_spawn_point(state)
     end
-    
-    local admin_role = get_user_admin_role(presence.user_id)
+
     state.players[presence.user_id] = {
         pos_x = spawn_x,
         pos_y = spawn_y,
@@ -256,7 +282,7 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         vel_y = existing.vel_y or 0.0,
         facing = existing.facing or 1,
         ign = requested_ign,
-        is_host = presence.user_id == state.host_user_id,
+        is_host = is_host,
         admin_role = admin_role,
         input_seq = existing.input_seq or 0,
         is_attacking = existing.is_attacking or false,
@@ -269,52 +295,62 @@ function M.match_join_attempt(context, dispatcher, tick, state, presence, metada
         dash_speed = existing.dash_speed or DEFAULT_DASH_SPEED,
         client_pos_tick = existing.client_pos_tick or -1
     }
-    nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(state.players[presence.user_id].is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
+    nk.logger_info("match_join_attempt user=" .. presence.user_id .. " ign=" .. requested_ign .. " is_host=" .. tostring(is_host) .. " admin_role=" .. tostring(admin_role) .. " spawn=" .. spawn_x .. "," .. spawn_y)
     return state, true
 end
 
 function M.match_join(context, dispatcher, tick, state, presences)
     for _, p in ipairs(presences) do
-        local player = state.players[p.user_id]
-        if not player then
-            local spawn_x, spawn_y = get_next_spawn_point(state)
-            player = {
-                pos_x = spawn_x, pos_y = spawn_y,
-                vel_x = 0.0, vel_y = 0.0,
-                facing = 1, ign = p.username,
-                is_host = p.user_id == state.host_user_id,
-                input_seq = 0,
-                is_attacking = false, is_dashing = false,
-                attack_rotation = 0.0,
-                attack_seq = 0,
-                dash_seq = 0,
-                slime_variant = "blue",
-                speed = DEFAULT_PLAYER_SPEED,
-                dash_speed = DEFAULT_DASH_SPEED,
-                client_pos_tick = -1,
-                last_attack_time = 0,
-                attack_damage = 10
-            }
-            state.players[p.user_id] = player
-        end
+        if state.spectators and state.spectators[p.user_id] then
+            -- Spectators join the match transport but are not represented as in-game players.
+            nk.logger_info("match_join spectator user=" .. p.user_id)
+        else
+            local player = state.players[p.user_id]
+            if not player then
+                local spawn_x, spawn_y = get_next_spawn_point(state)
+                player = {
+                    pos_x = spawn_x, pos_y = spawn_y,
+                    vel_x = 0.0, vel_y = 0.0,
+                    facing = 1, ign = p.username,
+                    is_host = p.user_id == state.host_user_id,
+                    input_seq = 0,
+                    is_attacking = false, is_dashing = false,
+                    attack_rotation = 0.0,
+                    attack_seq = 0,
+                    dash_seq = 0,
+                    slime_variant = "blue",
+                    speed = DEFAULT_PLAYER_SPEED,
+                    dash_speed = DEFAULT_DASH_SPEED,
+                    client_pos_tick = -1,
+                    last_attack_time = 0,
+                    attack_damage = 10
+                }
+                state.players[p.user_id] = player
+            end
 
-        local join_msg = nk.json_encode({
-            user_id = p.user_id,
-            ign = player.ign,
-            is_host = player.is_host or false,
-            pos = {x = player.pos_x, y = player.pos_y},
-            phase = state.phase
-        })
-        nk.logger_info("match_join broadcast user=" .. p.user_id .. " spawn=" .. player.pos_x .. "," .. player.pos_y .. " phase=" .. state.phase)
-        dispatcher.broadcast_message(OP_PLAYER_JOIN, join_msg)
+            local join_msg = nk.json_encode({
+                user_id = p.user_id,
+                ign = player.ign,
+                is_host = player.is_host or false,
+                pos = {x = player.pos_x, y = player.pos_y},
+                phase = state.phase
+            })
+            nk.logger_info("match_join broadcast user=" .. p.user_id .. " spawn=" .. player.pos_x .. "," .. player.pos_y .. " phase=" .. state.phase)
+            dispatcher.broadcast_message(OP_PLAYER_JOIN, join_msg)
+        end
     end
     return state
 end
 
 function M.match_leave(context, dispatcher, tick, state, presences)
     for _, p in ipairs(presences) do
-        state.players[p.user_id] = nil
-        dispatcher.broadcast_message(OP_PLAYER_LEAVE, nk.json_encode({user_id = p.user_id}))
+        if state.spectators and state.spectators[p.user_id] then
+            state.spectators[p.user_id] = nil
+        end
+        if state.players[p.user_id] ~= nil then
+            state.players[p.user_id] = nil
+            dispatcher.broadcast_message(OP_PLAYER_LEAVE, nk.json_encode({user_id = p.user_id}))
+        end
     end
 
     -- Auto-terminate match if no players remain

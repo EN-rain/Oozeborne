@@ -33,6 +33,7 @@ var _current_round: int = 1
 var _round_total_mobs: int = 0
 var _round_active_mobs: int = 0
 var _round_in_progress: bool = false
+var _network_spawn_enabled: bool = false
 
 
 func initialize(parent: Node, player: Node):
@@ -44,11 +45,33 @@ func set_round_manager(round_manager: RoundManager) -> void:
 	_round_manager = round_manager
 
 
+func set_network_spawn_enabled(enabled: bool) -> void:
+	# When disabled, this spawner will not generate random spawns locally.
+	# Used for non-host clients where mob spawns are replicated from the host.
+	_network_spawn_enabled = enabled
+
+
+func begin_network_round(round_number: int) -> void:
+	# Prepare internal counters for a replicated round (mobs will be spawned via *_at()).
+	_current_round = max(1, round_number)
+	_round_total_mobs = get_round_total_mobs(_current_round)
+	_round_active_mobs = 0
+	current_common_mob_count = 0
+	current_elite_mob_count = 0
+	_round_in_progress = true
+	_emit_active_count()
+	round_started.emit(_current_round, _round_total_mobs)
+
+
 func spawn_initial_mobs() -> void:
 	start_round(1)
 
 
 func start_round(round_number: int) -> void:
+	if _network_spawn_enabled:
+		# Non-host client: round is driven by replicated spawn messages.
+		begin_network_round(round_number)
+		return
 	_current_round = max(1, round_number)
 	_round_total_mobs = get_round_total_mobs(_current_round)
 	_round_active_mobs = 0
@@ -69,6 +92,8 @@ func start_round(round_number: int) -> void:
 
 
 func spawn_common_mob() -> void:
+	if _network_spawn_enabled:
+		return
 	if common_mob_scene == null:
 		return
 	
@@ -76,6 +101,7 @@ func spawn_common_mob() -> void:
 	if mob == null:
 		return
 	mob.global_position = get_random_spawn_position()
+	mob.set_meta("mob_type", "common")
 	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
 	
 	_parent.add_child(mob)
@@ -88,6 +114,25 @@ func spawn_common_mob() -> void:
 	_emit_active_count()
 
 
+func spawn_common_mob_at(world_pos: Vector2) -> Node2D:
+	if common_mob_scene == null:
+		return null
+	var mob: Node2D = common_mob_scene.instantiate() as Node2D
+	if mob == null:
+		return null
+	mob.global_position = world_pos
+	mob.set_meta("mob_type", "common")
+	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+	_parent.add_child(mob)
+	if _round_manager != null:
+		_round_manager.register_mob(mob)
+	mob_spawned.emit(mob)
+	current_common_mob_count += 1
+	_round_active_mobs += 1
+	_emit_active_count()
+	return mob
+
+
 func _on_common_mob_died(_mob: Node) -> void:
 	current_common_mob_count = max(current_common_mob_count - 1, 0)
 	_round_active_mobs = max(_round_active_mobs - 1, 0)
@@ -98,15 +143,19 @@ func _on_common_mob_died(_mob: Node) -> void:
 
 
 func spawn_elite_mob() -> void:
+	if _network_spawn_enabled:
+		return
 	if elite_mob_lancer_scene == null or elite_mob_archer_scene == null:
 		return
 	
 	var elite_scene: PackedScene = elite_mob_lancer_scene if randf() < 0.5 else elite_mob_archer_scene
+	var elite_type := "lancer" if elite_scene == elite_mob_lancer_scene else "archer"
 	
 	var elite: Node2D = elite_scene.instantiate() as Node2D
 	if elite == null:
 		return
 	elite.global_position = get_random_spawn_position()
+	elite.set_meta("mob_type", elite_type)
 	elite.tree_exiting.connect(_on_elite_mob_died.bind(elite))
 	
 	_parent.add_child(elite)
@@ -117,6 +166,27 @@ func spawn_elite_mob() -> void:
 	current_elite_mob_count += 1
 	_round_active_mobs += 1
 	_emit_active_count()
+
+
+func spawn_elite_mob_at(elite_type: String, world_pos: Vector2) -> Node2D:
+	if elite_mob_lancer_scene == null or elite_mob_archer_scene == null:
+		return null
+	var normalized := elite_type.to_lower().strip_edges()
+	var elite_scene: PackedScene = elite_mob_lancer_scene if normalized == "lancer" else elite_mob_archer_scene
+	var elite: Node2D = elite_scene.instantiate() as Node2D
+	if elite == null:
+		return null
+	elite.global_position = world_pos
+	elite.set_meta("mob_type", "lancer" if elite_scene == elite_mob_lancer_scene else "archer")
+	elite.tree_exiting.connect(_on_elite_mob_died.bind(elite))
+	_parent.add_child(elite)
+	if _round_manager != null:
+		_round_manager.register_mob(elite)
+	mob_spawned.emit(elite)
+	current_elite_mob_count += 1
+	_round_active_mobs += 1
+	_emit_active_count()
+	return elite
 
 
 func _on_elite_mob_died(_elite: Node) -> void:
@@ -154,6 +224,8 @@ const MOB_NAME_MAP: Dictionary = {
 
 
 func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
+	if _network_spawn_enabled:
+		return 0
 	var scene_path: String = MOB_NAME_MAP.get(mob_name.to_lower().strip_edges(), "")
 	if scene_path.is_empty():
 		return 0
@@ -166,6 +238,7 @@ func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 		if mob == null:
 			continue
 		mob.global_position = get_random_spawn_position()
+		mob.set_meta("mob_type", mob_name.to_lower().strip_edges())
 		mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
 		_parent.add_child(mob)
 		if _round_manager != null:
@@ -175,6 +248,29 @@ func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 		spawned += 1
 	_emit_active_count()
 	return spawned
+
+
+func spawn_mob_by_name_at(mob_name: String, world_pos: Vector2) -> Node2D:
+	var key := mob_name.to_lower().strip_edges()
+	var scene_path: String = MOB_NAME_MAP.get(key, "")
+	if scene_path.is_empty():
+		return null
+	var scene: PackedScene = load(scene_path)
+	if scene == null:
+		return null
+	var mob: Node2D = scene.instantiate() as Node2D
+	if mob == null:
+		return null
+	mob.global_position = world_pos
+	mob.set_meta("mob_type", key)
+	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+	_parent.add_child(mob)
+	if _round_manager != null:
+		_round_manager.register_mob(mob)
+	mob_spawned.emit(mob)
+	_round_active_mobs += 1
+	_emit_active_count()
+	return mob
 
 
 func get_alive_mob_count() -> int:

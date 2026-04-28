@@ -78,7 +78,7 @@ func _update_auth_ui() -> void:
 	account_label.text = account_label_format % account_name
 	logout_button.disabled = _menu_busy or not authenticated
 	start_button.disabled = _menu_busy
-	load_button.disabled = _menu_busy or not MultiplayerManager.is_authenticated()
+	load_button.disabled = _menu_busy
 	host_button.disabled = _menu_busy or not authenticated
 	connect_button.disabled = _menu_busy or not authenticated
 
@@ -127,7 +127,7 @@ func _on_start_pressed() -> void:
 	_set_menu_busy(true)
 	_set_status(preparing_solo_run_text, preparing_solo_run_color)
 	await MultiplayerManager.disconnect_server()
-	SoloRunSaveManager.clear_saved_run()
+	await MultiplayerManager.ensure_cloud_session()
 	MultiplayerManager.player_ign = _get_ign()
 	MultiplayerManager.player_class = null
 	MultiplayerManager.player_subclass = null
@@ -139,8 +139,12 @@ var _save_slots_ui: Control = null
 
 
 func _on_load_pressed() -> void:
-	if not MultiplayerManager.is_authenticated():
-		_set_status("Login required for cloud saves", error_status_color)
+	_set_menu_busy(true)
+	_set_status("Connecting...", preparing_solo_run_color)
+	var session_ok := await MultiplayerManager.ensure_cloud_session()
+	_set_menu_busy(false)
+	if not session_ok:
+		_set_status("Failed to connect", error_status_color)
 		return
 	if _save_slots_ui != null and is_instance_valid(_save_slots_ui):
 		_save_slots_ui.show()

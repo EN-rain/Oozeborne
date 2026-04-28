@@ -17,6 +17,9 @@ const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_butt
 var mob_spawner: MobSpawner
 var round_manager: RoundManager
 var kill_count: int = 0
+var _network_mob_seq: int = 0
+var _network_mobs: Dictionary = {}  # mob_id -> WeakRef/Node
+var _authoritative_host_user_id: String = ""
 
 const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
 const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
@@ -31,18 +34,61 @@ var _fps_label: Label
 @onready var _ping_timer: Timer = %PingTimer
 const FPS_LABEL_UPDATE_INTERVAL_SEC := 0.25
 var _fps_label_update_timer_sec: float = 0.0
+const PLAYER_STATS_BROADCAST_INTERVAL_SEC := 0.35
+var _player_stats_broadcast_timer_sec: float = 0.0
 
-func _process(_delta):
-	if _fps_label:
-		_fps_label_update_timer_sec += _delta
-		if _fps_label_update_timer_sec < FPS_LABEL_UPDATE_INTERVAL_SEC:
-			return
-		_fps_label_update_timer_sec = 0.0
-		var fps = Engine.get_frames_per_second()
-		var ping_ms = int(MultiplayerUtils.get_ping() * 1000)
-		var interp_delay = int(MultiplayerUtils.get_interpolation_delay() * 1000)
-		var pending = MultiplayerUtils.get_pending_input_count()
-		_fps_label.text = "FPS: %d | MS: %d | Interp: %dms | Pending: %d" % [fps, ping_ms, interp_delay, pending]
+func _process(delta):
+	_update_fps_label(delta)
+	_maybe_broadcast_player_stats(delta)
+
+
+func _update_fps_label(delta: float) -> void:
+	if _fps_label == null:
+		return
+	_fps_label_update_timer_sec += delta
+	if _fps_label_update_timer_sec < FPS_LABEL_UPDATE_INTERVAL_SEC:
+		return
+	_fps_label_update_timer_sec = 0.0
+	var fps = Engine.get_frames_per_second()
+	var ping_ms = int(MultiplayerUtils.get_ping() * 1000)
+	var interp_delay = int(MultiplayerUtils.get_interpolation_delay() * 1000)
+	var pending = MultiplayerUtils.get_pending_input_count()
+	_fps_label.text = "FPS: %d | MS: %d | Interp: %dms | Pending: %d" % [fps, ping_ms, interp_delay, pending]
+
+
+func _maybe_broadcast_player_stats(delta: float) -> void:
+	if not MultiplayerManager.is_socket_open() or MultiplayerManager.session == null or player == null or not is_instance_valid(player):
+		return
+	_player_stats_broadcast_timer_sec += delta
+	if _player_stats_broadcast_timer_sec < PLAYER_STATS_BROADCAST_INTERVAL_SEC:
+		return
+	_player_stats_broadcast_timer_sec = 0.0
+
+	var health = player.get_node_or_null("Health")
+	var hp := int(health.current_health) if health != null and "current_health" in health else 0
+	var hp_max := int(health.max_health) if health != null and "max_health" in health else 0
+	var mana = player.get_node_or_null("Mana")
+	var mp := int(mana.current_mana) if mana != null and "current_mana" in mana else 0
+	var mp_max := int(mana.max_mana) if mana != null and "max_mana" in mana else 0
+	var lvl := int(LevelSystem.get_level(player)) if LevelSystem != null else int(MultiplayerManager.player_level)
+	var uid := str(MultiplayerManager.session.user_id)
+
+	if MultiplayerManager.players.has(uid):
+		MultiplayerManager.players[uid]["level"] = lvl
+		MultiplayerManager.players[uid]["hp"] = hp
+		MultiplayerManager.players[uid]["hp_max"] = hp_max
+		MultiplayerManager.players[uid]["mp"] = mp
+		MultiplayerManager.players[uid]["mp_max"] = mp_max
+
+	MultiplayerManager.send_match_state({
+		"type": "player_stats",
+		"user_id": uid,
+		"level": lvl,
+		"hp": hp,
+		"hp_max": hp_max,
+		"mp": mp,
+		"mp_max": mp_max,
+	})
 	
 func _physics_process(delta):
 	# Interpolate remote players positions in physics process to align with movement timeline
@@ -73,9 +119,12 @@ func _ready():
 	# Initialize mob spawner
 	mob_spawner = MobSpawner.new()
 	mob_spawner.name = "MobSpawner"
+	mob_spawner.add_to_group("mob_spawner")
 	mob_spawner.common_mob_scene = common_mob_scene
 	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
 	mob_spawner.elite_mob_archer_scene = elite_archer_scene
+	# Only the host should generate random mob spawns. Clients receive spawns via match messages.
+	mob_spawner.set_network_spawn_enabled(not MultiplayerManager.is_host)
 	mob_spawner.initialize(self, player)
 	mob_spawner.set_round_manager(round_manager)
 	mob_spawner.mob_spawned.connect(_on_mob_spawned)
@@ -93,11 +142,12 @@ func _ready():
 	if MultiplayerManager.socket:
 		if not MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
 			MultiplayerManager.socket.received_match_state.connect(_on_match_state)
-		if not MultiplayerManager.socket.received_match_presence.is_connected(_on_match_presence):
-			MultiplayerManager.socket.received_match_presence.connect(_on_match_presence)
 		# Listen for player_joined signal to spawn late joiners
 		if not MultiplayerManager.player_joined.is_connected(_on_player_joined):
 			MultiplayerManager.player_joined.connect(_on_player_joined)
+		# Listen for player_left signal to clean up remote nodes/minimap.
+		if not MultiplayerManager.player_left.is_connected(_on_player_left):
+			MultiplayerManager.player_left.connect(_on_player_left)
 		# Register local player for client-side prediction/reconciliation
 		MultiplayerUtils.set_local_player(player)
 		# Send input to authoritative server at 20Hz
@@ -417,11 +467,14 @@ func _on_match_state(match_state):
 	# Op code 2 = Server state snapshot
 	if op_code == MultiplayerUtils.OP_STATE:
 		_handle_server_snapshot(data)
+		# Refresh host role from authoritative snapshots
+		_refresh_authoritative_host_role()
 		return
 	
 	# Op code 3 = Player joined
 	if op_code == MultiplayerUtils.OP_PLAYER_JOIN:
 		_handle_player_join(data)
+		_refresh_authoritative_host_role()
 		return
 	
 	# Op code 4 = Player left
@@ -444,6 +497,12 @@ func _on_match_state(match_state):
 		sender_id = match_state.presence.user_id
 	
 	match data.get("type", ""):
+		"round_start":
+			_handle_round_start(data)
+		"mob_spawn":
+			_handle_mob_spawn(data)
+		"player_stats":
+			_handle_player_stats(sender_id, data)
 		"player_info":
 			# Get user_id from data if sender_id is empty (broadcast echo)
 			var msg_user_id = MultiplayerUtils.extract_user_id_from_data(data)
@@ -544,10 +603,10 @@ func _on_match_state(match_state):
 
 func spawn_players():
 	# Spawn all connected players, filtering out empty keys
-	var fallback_spawn := _get_local_spawn_position()
 	for user_id in MultiplayerManager.players:
 		if not user_id.is_empty():
-			_spawn_player_for_user(user_id, fallback_spawn)
+			# Don't assign a fake shared spawn; wait for authoritative spawn from OP_PLAYER_JOIN / snapshots.
+			_spawn_player_for_user(user_id)
 
 func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 	# Skip empty user_id (broadcast echo)
@@ -647,35 +706,20 @@ func send_attack(pos: Vector2, rotation_angle: float):
 	MultiplayerUtils.send_attack(pos, rotation_angle)
 
 func _on_match_presence(presence_event):
-	# Handle players joining during game
-	for join in presence_event.joins:
-		_debug_log("Player joined match: user_id=%s" % join.user_id.substr(0, 8))
-		# Skip if this is ourselves
-		if join.user_id == MultiplayerManager.session.user_id:
-			continue
-		if not MultiplayerManager.players.has(join.user_id):
-			MultiplayerManager.players[join.user_id] = {"ign": "", "is_host": false, "presence": join, "slime_variant": "blue"}
-			_debug_log("Added to players dict. Total players: %d" % MultiplayerManager.players.size())
-			MultiplayerManager.player_joined.emit(join.user_id, "Player", false)
-		else:
-			MultiplayerManager.players[join.user_id]["presence"] = join
-	
-	# Handle players leaving
-	for leave in presence_event.leaves:
-		var user_id = leave.user_id
-		# Skip if this is ourselves (Nakama sometimes sends our own leave event)
-		if user_id == MultiplayerManager.session.user_id:
-			continue
-		_debug_log("Player left match: %s" % leave.username)
-		if MultiplayerManager.players.has(user_id):
-			MultiplayerManager.players.erase(user_id)
-			MultiplayerManager.player_left.emit(user_id)
-		if MultiplayerUtils.has_remote_player(user_id):
-			var node = MultiplayerUtils.get_remote_players()[user_id].node
-			if is_instance_valid(node):
-				node.queue_free()
-			MultiplayerUtils.unregister_remote_player(user_id)
-			_remove_player_minimap_indicator(user_id)
+	# Presence events are handled centrally in `MultiplayerManager`.
+	# Keeping a second handler here causes double-add/late-remove flakiness with 3-4 players.
+	return
+
+
+func _on_player_left(user_id: String) -> void:
+	if user_id.is_empty():
+		return
+	if MultiplayerUtils.has_remote_player(user_id):
+		var node = MultiplayerUtils.get_remote_player_node(user_id)
+		if is_instance_valid(node):
+			node.queue_free()
+		MultiplayerUtils.unregister_remote_player(user_id)
+		_remove_player_minimap_indicator(user_id)
 
 func _add_player_minimap_indicator(user_id: String, initial_pos: Vector2):
 	var player_info = MultiplayerManager.players.get(user_id, {})
@@ -690,6 +734,26 @@ func _remove_player_minimap_indicator(user_id: String):
 	ui.unregister_remote_player(user_id)
 
 func _on_mob_spawned(mob):
+	# Host replicates mob spawns so every client sees the same wave composition/positions.
+	if _is_authoritative_host() and MultiplayerManager.is_socket_open() and mob != null:
+		var mob_id := str(mob.get_meta("network_mob_id", ""))
+		if mob_id.is_empty():
+			mob_id = "m%d" % _network_mob_seq
+			_network_mob_seq += 1
+			mob.set_meta("network_mob_id", mob_id)
+		if not _network_mobs.has(mob_id):
+			_network_mobs[mob_id] = weakref(mob)
+			var mob_type := str(mob.get_meta("mob_type", "common"))
+			var pos := Vector2.ZERO
+			if mob is Node2D:
+				pos = mob.global_position
+			MultiplayerManager.send_match_state({
+				"type": "mob_spawn",
+				"mob_id": mob_id,
+				"mob_type": mob_type,
+				"round": round_manager.current_round if round_manager != null else 1,
+				"pos": {"x": pos.x, "y": pos.y},
+			})
 	if round_manager != null:
 		round_manager.register_mob(mob)
 	ui.register_slime(mob)
@@ -769,8 +833,91 @@ func _start_round(round_number: int, show_popup: bool) -> void:
 				_starting_round_transition = false
 				return
 
+	# Host drives mob spawning; other clients wait for replicated spawns.
+	if _is_authoritative_host() and MultiplayerManager.is_socket_open():
+		MultiplayerManager.send_match_state({"type": "round_start", "round": round_number})
 	mob_spawner.start_round(round_number)
 	_starting_round_transition = false
+
+
+func _refresh_authoritative_host_role() -> void:
+	if MultiplayerManager.session == null:
+		return
+	var local_id := MultiplayerManager.session.user_id
+	var local_entry: Dictionary = MultiplayerManager.players.get(local_id, {}) if MultiplayerManager.players.get(local_id) is Dictionary else {}
+	var is_auth_host := bool(local_entry.get("is_host", MultiplayerManager.is_host))
+	# Keep legacy boolean in sync for code that still checks it.
+	MultiplayerManager.is_host = is_auth_host
+	if mob_spawner != null:
+		mob_spawner.set_network_spawn_enabled(not is_auth_host)
+
+
+func _is_authoritative_host() -> bool:
+	if MultiplayerManager.session == null:
+		return false
+	var local_id := MultiplayerManager.session.user_id
+	var local_entry: Dictionary = MultiplayerManager.players.get(local_id, {}) if MultiplayerManager.players.get(local_id) is Dictionary else {}
+	return bool(local_entry.get("is_host", MultiplayerManager.is_host))
+
+
+func _handle_round_start(data: Dictionary) -> void:
+	if data == null:
+		return
+	var round_number := int(data.get("round", 1))
+	# Ensure local scaling matches host.
+	round_manager.set_round(round_number)
+	if mob_spawner != null:
+		mob_spawner.begin_network_round(round_number)
+
+
+func _handle_mob_spawn(data: Dictionary) -> void:
+	if data == null or mob_spawner == null:
+		return
+	var mob_id := str(data.get("mob_id", ""))
+	if mob_id.is_empty() or _network_mobs.has(mob_id):
+		return
+	var mob_type := str(data.get("mob_type", "common")).to_lower().strip_edges()
+	var pos_data: Dictionary = data.get("pos", {}) if data.get("pos") is Dictionary else {}
+	var world_pos := Vector2(float(pos_data.get("x", 0.0)), float(pos_data.get("y", 0.0)))
+	var spawned: Node2D = null
+	if mob_type in ["common", "slime"]:
+		spawned = mob_spawner.spawn_common_mob_at(world_pos)
+	elif mob_type in ["lancer", "archer"]:
+		spawned = mob_spawner.spawn_elite_mob_at(mob_type, world_pos)
+	else:
+		spawned = mob_spawner.spawn_mob_by_name_at(mob_type, world_pos)
+	if spawned != null:
+		spawned.set_meta("network_mob_id", mob_id)
+		_network_mobs[mob_id] = weakref(spawned)
+
+
+func _handle_player_stats(sender_id: String, data: Dictionary) -> void:
+	if data == null:
+		return
+	var entry_id := str(data.get("user_id", ""))
+	if entry_id.is_empty():
+		entry_id = sender_id
+	if entry_id.is_empty() or MultiplayerManager.session == null:
+		return
+	# Ignore stats echoes about ourselves from other senders.
+	if entry_id == MultiplayerManager.session.user_id and not sender_id.is_empty() and sender_id != MultiplayerManager.session.user_id:
+		return
+
+	var existing: Dictionary = MultiplayerManager.players.get(entry_id, {}) if MultiplayerManager.players.get(entry_id) is Dictionary else {}
+	if existing.is_empty():
+		existing = {"ign": "", "is_host": false, "presence": null, "slime_variant": "blue"}
+	var lvl := int(data.get("level", existing.get("level", 1)))
+	var hp := int(data.get("hp", existing.get("hp", 0)))
+	var hp_max := int(data.get("hp_max", existing.get("hp_max", 0)))
+	var mp := int(data.get("mp", existing.get("mp", 0)))
+	var mp_max := int(data.get("mp_max", existing.get("mp_max", 0)))
+
+	existing["level"] = lvl
+	existing["hp"] = hp
+	existing["hp_max"] = hp_max
+	existing["mp"] = mp
+	existing["mp_max"] = mp_max
+	MultiplayerManager.players[entry_id] = existing
 
 func _on_player_joined(user_id: String, username: String, _is_host: bool):
 	_debug_log("Player joined signal received for: %s" % username)

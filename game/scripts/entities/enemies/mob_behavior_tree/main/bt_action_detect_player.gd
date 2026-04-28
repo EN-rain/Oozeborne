@@ -11,7 +11,7 @@ func _tick(_delta: float) -> Status:
 
 	# If we already have a target and they're still in range, keep them.
 	# This prevents target swapping when multiple players overlap the area.
-	var current_target := agent.get("player")
+	var current_target: Variant = agent.get("player")
 	if current_target != null and is_instance_valid(current_target):
 		if agent.has_method("is_targetable_player") and agent.is_targetable_player(current_target):
 			if detection_area.overlaps_body(current_target):
