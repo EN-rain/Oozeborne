@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus } from 'lucide-react';
 
-const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 'http://localhost:3000';
+const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
+  (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
 
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem('moon_token')}`

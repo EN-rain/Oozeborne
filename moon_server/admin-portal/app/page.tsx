@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 'http://localhost:3000';
+const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
+  (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
