@@ -44,8 +44,17 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3001,ht
 
 app.use(cors({
   origin(origin, callback) {
-    // Allow non-browser clients (Godot, curl) and allow-listed origins
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow non-browser clients (Godot, curl)
+    if (!origin) return callback(null, true);
+    
+    // Trust any origin on the same host (handles port 3001 vs 3000)
+    const url = new URL(origin);
+    const isSameHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    
+    if (allowedOrigins.includes(origin) || isSameHost || url.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+      return callback(null, true);
+    }
+    
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   methods:          ['GET', 'POST', 'PATCH', 'DELETE'],
