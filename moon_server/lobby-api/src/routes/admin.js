@@ -273,6 +273,31 @@ router.get('/rooms', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── GET /admin/rooms/:room_id/stats — Real-time room telemetry ──────────
+router.get('/rooms/:room_id/stats', async (req, res, next) => {
+  try {
+    const roomId = req.params.room_id;
+    // Attempt to get cached stats from Redis (pushed by game-server)
+    const stats = await redis.get(`room_stats:${roomId}`);
+    if (stats) return res.json(JSON.parse(stats));
+
+    // Fallback: get basic info from registry
+    const keys = await redis.keys(`room:*`);
+    for (const k of keys) {
+      const r = await redis.hGetAll(k);
+      if (r.room_id === roomId) {
+        return res.json({
+          room_id: r.room_id,
+          room_code: k.split(':')[1],
+          players: [], // empty if game-server hasn't pushed stats yet
+          wave: 0
+        });
+      }
+    }
+    res.status(404).json({ error: 'Room stats not found' });
+  } catch (err) { next(err); }
+});
+
 // ─── DELETE /admin/rooms/:room_code — Kill a live room ───────────────────
 router.delete('/rooms/:room_code', async (req, res, next) => {
   try {

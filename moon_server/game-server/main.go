@@ -14,6 +14,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
+)
+
+var (
+	ctx         = context.Background()
+	redisClient *redis.Client
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,6 +120,9 @@ type PlayerVitals struct {
 	DeathState DeathState `json:"death_state"`
 	PingRTT    int        `json:"ping_rtt_ms"`
 	IsAFK      bool       `json:"is_afk"`
+	Kills      int        `json:"kills"`
+	DmgDealt   int        `json:"dmg_dealt"`
+	Gold       int        `json:"gold"`
 }
 
 type PlayerBuild struct {
@@ -287,15 +296,57 @@ func (rm *RoomManager) GetOrCreate(roomID, roomCode string) *Room {
 
 func (r *Room) tickLoop() {
 	ticker := time.NewTicker(TickInterval)
+	statsTicker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
+	defer statsTicker.Stop()
 	for {
 		select {
 		case <-r.tickStop:
 			return
 		case <-ticker.C:
 			r.tick()
+		case <-statsTicker.C:
+			r.syncStats()
 		}
 	}
+}
+
+func (r *Room) syncStats() {
+	if redisClient == nil {
+		return
+	}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	type PStats struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Lvl   int    `json:"lvl"`
+		Kills int    `json:"kills"`
+		Dmg   int    `json:"dmg"`
+		Gold  int    `json:"gold"`
+	}
+	stats := struct {
+		RoomID     string   `json:"room_id"`
+		Wave       int      `json:"wave"`
+		Difficulty string   `json:"difficulty"`
+		Players    []PStats `json:"players"`
+	}{
+		RoomID:     r.RoomID,
+		Wave:       r.WaveNum,
+		Difficulty: "Normal", // adjust based on logic
+		Players:    []PStats{},
+	}
+
+	for _, p := range r.Players {
+		stats.Players = append(stats.Players, PStats{
+			ID: p.UserID, Name: "Player", Lvl: p.Build.Level, 
+			Kills: p.Vitals.Kills, Dmg: p.Vitals.DmgDealt, Gold: p.Vitals.Gold,
+		})
+	}
+
+	data, _ := json.Marshal(stats)
+	redisClient.Set(ctx, "room_stats:"+r.RoomID, data, 10*time.Second)
 }
 
 func (r *Room) tick() {
@@ -663,6 +714,17 @@ func main() {
 		log.Fatal("[FATAL] JWT_SECRET env var is required")
 	}
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "redis:6379"
+	}
+	redisClient = redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+	log.Printf("Connecting to Redis at %s...", redisAddr)
+
+	go listenAdminCommands()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", wsHandler)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -682,5 +744,49 @@ func main() {
 	}
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("Server error: %v", err)
+	}
+}
+
+func listenAdminCommands() {
+	pubsub := redisClient.Subscribe(ctx, "admin_commands")
+	defer pubsub.Close()
+
+	for {
+		msg, err := pubsub.ReceiveMessage(ctx)
+		if err != nil {
+			log.Printf("Redis pubsub error: %v", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		var cmd struct {
+			Cmd    string `json:"cmd"`
+			RoomID string `json:"room_id"`
+			UserID string `json:"user_id"`
+			Value  any    `json:"value"`
+		}
+		if err := json.Unmarshal([]byte(msg.Payload), &cmd); err != nil {
+			continue
+		}
+
+		log.Printf("[ADMIN] Received command: %s for Room: %s", cmd.Cmd, cmd.RoomID)
+
+		switch cmd.Cmd {
+		case "kill_room":
+			room := roomManager.rooms[cmd.RoomID]
+			if room != nil {
+				room.mu.Lock()
+				close(room.tickStop)
+				// Disconnect all players
+				for _, p := range room.Players {
+					p.Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Room terminated by admin"))
+					p.Conn.Close()
+				}
+				room.mu.Unlock()
+				roomManager.mu.Lock()
+				delete(roomManager.rooms, cmd.RoomID)
+				roomManager.mu.Unlock()
+			}
+		}
 	}
 }

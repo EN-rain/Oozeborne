@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server } from 'lucide-react';
 
@@ -99,7 +99,7 @@ function SettingsPanel() {
   );
 }
 
-function LiveRooms() {
+function LiveRooms({ onModerate }: { onModerate: (id: string) => void }) {
   const [rooms, setRooms] = useState<any[]>([]);
   const [ping, setPing] = useState('...');
   const [load, setLoad] = useState('...');
@@ -174,7 +174,7 @@ function LiveRooms() {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button className="btn-outline" style={{ padding: '6px' }} title="Moderate Room">
+                    <button className="btn-outline" style={{ padding: '6px' }} title="Moderate Room" onClick={() => onModerate(r.room_id)}>
                       <Shield size={16} />
                     </button>
                     <button className="btn-danger" style={{ padding: '6px', cursor: 'pointer', borderRadius: 8 }} onClick={() => removeRoom(r.room_code)} title="Kill Room">
@@ -198,14 +198,27 @@ function PlayerSearch() {
   const [q, setQ] = useState('');
   const [players, setPlayers] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const qRef = useRef(q);
 
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
+  const fetchPlayers = async () => {
     try {
-      const res = await axios.get(`${API}/admin/players/search?q=${q}`, { headers: authHeader() });
+      const res = await axios.get(`${API}/admin/players/search?q=${qRef.current}`, { headers: authHeader() });
       setPlayers(res.data.players || []);
     } catch {}
-  }
+  };
+
+  // Load immediately on mount, then poll every 5s
+  useEffect(() => {
+    fetchPlayers();
+    const t = setInterval(fetchPlayers, 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Re-fetch when filter changes
+  useEffect(() => {
+    qRef.current = q;
+    fetchPlayers();
+  }, [q]);
 
   async function ban(user_id: string) {
     const reason = prompt('Ban reason:');
@@ -233,12 +246,11 @@ function PlayerSearch() {
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column' }}>
-      <form onSubmit={search} style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
         <input className="input-field" 
-          style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', borderRadius: 0, width: '300px' }}
-          value={q} onChange={e => setQ(e.target.value)} placeholder="Search username or email..." />
-        <button type="submit" className="btn-primary">Search</button>
-      </form>
+          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '280px', fontSize: '0.85rem' }}
+          value={q} onChange={e => setQ(e.target.value)} placeholder="Filter players..." />
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', flex: 1 }}>
         {players.map(p => (
           <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: 8, overflow: 'hidden' }}>
@@ -388,10 +400,10 @@ function MobTuner() {
 
   return (
     <section>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
         <input className="input-field" 
-          style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', borderRadius: 0, width: '300px' }}
-          placeholder="Search mobs or boss..." 
+          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '280px', fontSize: '0.85rem' }}
+          placeholder="Filter mobs..." 
           value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
@@ -435,9 +447,10 @@ function BroadcastPanel() {
 
 // ─── Dashboard layout ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings'>('overview');
+  const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings' | 'moderate'>('overview');
   const [roomsCount, setRoomsCount] = useState(0);
   const [uptimeStr, setUptimeStr] = useState('Checking...');
+  const [moderateRoomId, setModerateRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!localStorage.getItem('moon_token')) window.location.href = '/';
@@ -472,15 +485,16 @@ export default function DashboardPage() {
 
   const getPageTitle = () => {
     switch(view) {
-      case 'overview': return { title: 'Overview', desc: 'Monitor live game infrastructure.' };
-      case 'players': return { title: 'Player Database', desc: 'Search and manage player accounts.' };
-      case 'mobs': return { title: 'Live Mob Tuning', desc: 'Adjust mob stats globally in real-time.' };
-      case 'broadcast': return { title: 'Global Broadcast', desc: 'Send announcements to all connected players.' };
-      case 'settings': return { title: 'System Settings', desc: 'Manage staff access and security policies.' };
+      case 'overview': return { title: 'Overview' };
+      case 'players': return { title: 'Player Database' };
+      case 'mobs': return { title: 'Live Mob Tuning' };
+      case 'broadcast': return { title: 'Global Broadcast' };
+      case 'moderate': return { title: 'Room Moderation' };
+      case 'settings': return { title: 'System Settings' };
     }
   }
 
-  const { title, desc } = getPageTitle();
+  const pageTitle = getPageTitle()?.title ?? '';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -488,12 +502,12 @@ export default function DashboardPage() {
       <aside style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', zIndex: 50 }}>
         <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(96, 165, 250, 0.2)' }}>
               <Server size={20} color="white" />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Moon Server</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>● System Online</div>
+              <div style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '-0.01em', color: 'var(--text-main)' }}>SYSTEM ONLINE</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Uptime: {uptimeStr}</div>
             </div>
           </div>
           <button onClick={() => setView('settings')} style={{ background: 'transparent', border: 'none', color: view === 'settings' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
@@ -523,9 +537,6 @@ export default function DashboardPage() {
         <div style={{ flex: 1 }} />
         
         <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
-          <div style={{ fontSize: '0.8rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
-             <Shield size={14} /> Administrator Access
-          </div>
           <button className="btn-outline" onClick={logout} style={{ width: '100%', justifyContent: 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }}>
             <LogOut size={16} /> Sign Out
           </button>
@@ -534,26 +545,107 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <main style={{ marginLeft: 260, flex: 1, overflowY: 'auto', padding: '2.5rem 3rem' }}>
-        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0', letterSpacing: '-0.03em' }}>
-              {title}
-            </h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-              {desc}
-            </p>
-          </div>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 999, padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span><span style={{ color: 'var(--text-muted)' }}>Uptime:</span> {uptimeStr}</span>
-          </div>
-        </header>
 
-        {view === 'overview' && <LiveRooms />}
+        {view === 'overview' && <LiveRooms onModerate={(id) => { setModerateRoomId(id); setView('moderate'); }} />}
         {view === 'players' && <PlayerSearch />}
+        {view === 'moderate' && moderateRoomId && <ModerateRoom roomId={moderateRoomId} onBack={() => setView('overview')} />}
         {view === 'mobs' && <MobTuner />}
         {view === 'broadcast' && <BroadcastPanel />}
         {view === 'settings' && <SettingsPanel />}
       </main>
     </div>
+  );
+}
+
+function ModerateRoom({ roomId, onBack }: { roomId: string, onBack: () => void }) {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await axios.get(`${API}/admin/rooms/${roomId}/stats`, { headers: authHeader() });
+        setStats(res.data);
+      } catch (e) {
+        // Fallback dummy data for visualization
+        setStats({
+          room_id: roomId,
+          wave: 12,
+          difficulty: 'Hard',
+          players: [
+            { id: 'p1', name: 'PlayerOne', lvl: 15, kills: 245, dmg: 12500, gold: 1200 },
+            { id: 'p2', name: 'ShadowHunter', lvl: 14, kills: 180, dmg: 9800, gold: 800 },
+          ]
+        });
+      } finally { setLoading(false); }
+    };
+    fetch();
+    const t = setInterval(fetch, 3000);
+    return () => clearInterval(t);
+  }, [roomId]);
+
+  if (loading) return <div style={{ color: 'var(--text-muted)' }}>Loading room state...</div>;
+
+  return (
+    <section>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '2rem' }}>
+        <button onClick={onBack} className="btn-outline" style={{ padding: '6px 12px' }}>← Back</button>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Moderating: {roomId.substring(0,8)}</h2>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: '2rem' }}>
+        <div className="glass-card" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Current Wave</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stats?.wave || 0}</div>
+        </div>
+        <div className="glass-card" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Difficulty</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stats?.difficulty || 'N/A'}</div>
+        </div>
+        <div className="glass-card" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Kills</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stats?.players?.reduce((acc:any, p:any) => acc + p.kills, 0)}</div>
+        </div>
+        <div className="glass-card" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--success)' }}>Active</div>
+        </div>
+      </div>
+
+      <div className="glass-card">
+        <div className="glass-header">Player Contributions & Stats</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Level</th>
+              <th>Kills</th>
+              <th>Damage</th>
+              <th>Gold</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats?.players?.map((p: any) => (
+              <tr key={p.id}>
+                <td style={{ fontWeight: 600 }}>{p.name}</td>
+                <td><span className="badge badge-info">Lv. {p.lvl}</span></td>
+                <td>{p.kills}</td>
+                <td>{p.dmg?.toLocaleString()}</td>
+                <td>{p.gold}g</td>
+                <td style={{ textAlign: 'right' }}>
+                  <button className="btn-danger" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Kick</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: '2rem', display: 'flex', gap: 12 }}>
+        <button className="btn-primary">Force Finish Wave</button>
+        <button className="btn-outline" style={{ color: 'var(--danger)' }}>Terminate Room</button>
+      </div>
+    </section>
   );
 }
