@@ -17,7 +17,6 @@ config/icon="res://assets/icon.svg"
 
 [autoload]
 
-Nakama="*uid://bmf6nk0fuaur8"
 MultiplayerManager="*res://scripts/globals/multiplayer_manager.gd"
 NetworkMessaging="*res://scripts/globals/network_messaging.gd"
 MultiplayerUtils="*res://scripts/globals/multiplayer_utils.gd"
@@ -42,7 +41,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/com.heroiclabs.nakama/plugin.cfg")
+enabled=PackedStringArray()
 
 [global_group]
 

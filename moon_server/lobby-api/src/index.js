@@ -81,6 +81,7 @@ app.use('/profiles', profileRoutes);
 app.use('/admin',    adminLimiter, adminRoutes);    // admin-specific limiter
 app.use('/friends',  friendRoutes);
 app.use('/chat',     chatRoutes);
+app.use('/saves',    require('./routes/saves'));
 
 // ─── Health (no auth required) ────────────────────────────────────────────
 app.get('/health', (_req, res) => {

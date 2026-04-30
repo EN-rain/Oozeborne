@@ -56,13 +56,11 @@ func check_admin_status(user_id: String) -> bool:
 		_admin_level = 2
 		return true
 	
-	# Check session metadata for admin flag
-	if MultiplayerManager.session != null:
-		var meta = MultiplayerManager.session.vars
-		if meta != null and meta.get("is_admin", false):
-			_is_admin = true
-			_admin_level = meta.get("admin_level", 1)
-			return true
+	# Check local auth state for admin status
+	if MultiplayerManager.is_authenticated():
+		# In a real app, you would check a role field from the server response
+		# For now, we trust the manager's internal state or a future role mapping
+		return user_id in _admin_user_ids
 	
 	return false
 
