@@ -16,5 +16,5 @@ ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3001
 
-# Using 'npm start' instead of standalone 'server.js'
-CMD ["npm", "start"]
+# Using npx to ensure the 'next' binary is found correctly
+CMD ["npx", "next", "start", "-p", "3001"]
