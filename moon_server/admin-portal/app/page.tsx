@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import axios from 'axios';
-import { Server } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
@@ -18,8 +17,8 @@ export default function LoginPage() {
     setError('');
     try {
       const res = await axios.post(`${API}/auth/login`, { username, password });
-      if (res.data.role_level < 1) {
-        setError('Access denied: Staff account required.');
+      if (res.data.role_level < 2) {
+        setError('Access denied: Admin account required.');
         return;
       }
       localStorage.setItem('moon_token', res.data.token);
@@ -33,55 +32,59 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: 400, padding: '2.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ background: 'var(--accent-primary)', width: 48, height: 48, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)' }}>
-            <Server size={24} color="white" />
-          </div>
-          <h1 style={{ margin: '0', fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+    <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div className="glass-card" style={{ width: 380, padding: '2.5rem' }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <span style={{ fontSize: '2.5rem' }}>🌙</span>
+          <h1 style={{ margin: '0.5rem 0 0', fontSize: '1.4rem', fontWeight: 700, color: '#e2e8f0' }}>
             Moon Control Center
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: 8 }}>
-            Authorized personnel only
+          <p style={{ color: 'var(--moon-muted)', fontSize: '0.85rem', marginTop: 4 }}>
+            Staff access only
           </p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: 6 }}>Username</label>
-            <input
-              id="username"
-              className="input-field"
-              type="text"
-              placeholder="admin"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: 6 }}>Password</label>
-            <input
-              id="password"
-              className="input-field"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-          </div>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <input
+            id="username"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            required
+            style={inputStyle}
+          />
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            style={inputStyle}
+          />
           {error && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 8, fontSize: '0.85rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-              {error}
-            </div>
+            <p style={{ color: 'var(--moon-danger)', fontSize: '0.85rem', margin: 0 }}>{error}</p>
           )}
-          <button id="login-btn" type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.75rem' }}>
-            {loading ? 'Authenticating...' : 'Sign In'}
+        <button id="login-btn" type="submit" className="btn-primary" disabled={loading}
+            style={{ marginTop: '0.5rem', padding: '10px' }}>
+            {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
       </div>
     </main>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 8,
+  padding: '10px 14px',
+  color: '#e2e8f0',
+  fontSize: '0.95rem',
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+};
