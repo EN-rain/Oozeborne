@@ -62,7 +62,7 @@ func _on_save_round_pressed() -> void:
 	var tree := get_tree()
 	if tree == null:
 		return
-	var session_ok := await MultiplayerManager.ensure_cloud_session()
+	var session_ok := true
 	if not session_ok:
 		if save_round_button != null:
 			save_round_button.text = "Save Failed"

@@ -101,8 +101,8 @@ func _ready():
 	
 	# Listen for match events
 	if MultiplayerManager.socket:
-		if _match_state_router != null and not MultiplayerManager.socket.received_match_state.is_connected(_match_state_router.on_match_state):
-			MultiplayerManager.socket.received_match_state.connect(_match_state_router.on_match_state)
+		if _match_state_router != null and not MultiplayerManager.received_match_state.is_connected(_match_state_router.on_match_state):
+			MultiplayerManager.received_match_state.connect(_match_state_router.on_match_state)
 		# Listen for player_joined signal to spawn late joiners
 		if not MultiplayerManager.player_joined.is_connected(_on_player_joined):
 			MultiplayerManager.player_joined.connect(_on_player_joined)
@@ -181,8 +181,8 @@ func _bind_local_player(target_player: Node) -> void:
 	player = target_player
 	if player == null:
 		return
-	if MultiplayerManager.session != null:
-		player.set_meta("network_user_id", str(MultiplayerManager.session.user_id))
+	if MultiplayerManager.is_authenticated():
+		player.set_meta("network_user_id", str(MultiplayerManager.user_id))
 	else:
 		player.set_meta("network_user_id", "solo")
 	call_deferred("_finalize_local_player_binding", player)
@@ -505,7 +505,7 @@ func _on_match_state(match_state):
 		
 		"pong":
 			# Calculate ping time
-			if data.get("target") == MultiplayerManager.session.user_id:
+			if data.get("target") == MultiplayerManager.user_id:
 				var ping_time = MultiplayerUtils.calculate_ping(data.get("timestamp", 0.0))
 				MultiplayerUtils.set_ping(ping_time)
 		
@@ -559,14 +559,14 @@ func _spawn_player_for_user(user_id: String, initial_pos: Variant = null):
 		return
 	
 	# Never register local player as remote
-	if user_id == MultiplayerManager.session.user_id:
+	if user_id == MultiplayerManager.user_id:
 		return
 	
 	if MultiplayerUtils.has_remote_player(user_id):
 		return  # Already spawned
 	
 	var player_info = MultiplayerManager.players.get(user_id, {})
-	var is_local = (user_id == MultiplayerManager.session.user_id)
+	var is_local = (user_id == MultiplayerManager.user_id)
 	
 	if is_local:
 		# Local player already exists, just update name and IGN
@@ -786,9 +786,9 @@ func _start_round(round_number: int, show_popup: bool) -> void:
 
 
 func _refresh_authoritative_host_role() -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return
-	var local_id := MultiplayerManager.session.user_id
+	var local_id := MultiplayerManager.user_id
 	var local_entry: Dictionary = MultiplayerManager.players.get(local_id, {}) if MultiplayerManager.players.get(local_id) is Dictionary else {}
 	var is_auth_host := bool(local_entry.get("is_host", MultiplayerManager.is_host))
 	# Keep legacy boolean in sync for code that still checks it.
@@ -798,9 +798,9 @@ func _refresh_authoritative_host_role() -> void:
 
 
 func _is_authoritative_host() -> bool:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return false
-	var local_id := MultiplayerManager.session.user_id
+	var local_id := MultiplayerManager.user_id
 	var local_entry: Dictionary = MultiplayerManager.players.get(local_id, {}) if MultiplayerManager.players.get(local_id) is Dictionary else {}
 	return bool(local_entry.get("is_host", MultiplayerManager.is_host))
 
@@ -859,14 +859,14 @@ func _on_subclass_choice_selected(subclass: PlayerClass) -> void:
 		return
 	MultiplayerManager.player_subclass = subclass
 	MultiplayerManager.subclass_choice_made = true
-	if MultiplayerManager.session != null:
-		MultiplayerManager.set_player_subclass(MultiplayerManager.session.user_id, subclass)
+	if MultiplayerManager.is_authenticated():
+		MultiplayerManager.set_player_subclass(MultiplayerManager.user_id, subclass)
 	if is_instance_valid(player) and player.has_method("apply_subclass_modifiers"):
 		player.apply_subclass_modifiers(subclass)
-	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty() and MultiplayerManager.session != null:
+	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty() and MultiplayerManager.is_authenticated():
 		MultiplayerManager.send_match_state({
 			"type": "subclass_selected",
-			"user_id": MultiplayerManager.session.user_id,
+			"user_id": MultiplayerManager.user_id,
 			"subclass_id": ClassManager.get_class_id(subclass)
 		})
 	_clear_subclass_selection_overlay()
@@ -887,7 +887,7 @@ func _apply_authoritative_player_info(user_id: String, ign: String, _is_host_fla
 	if user_id.is_empty() or ign.is_empty():
 		return
 
-	if user_id == MultiplayerManager.session.user_id:
+	if user_id == MultiplayerManager.user_id:
 		player.name = ign
 		if player.has_method("set_ign"):
 			player.set_ign(ign)

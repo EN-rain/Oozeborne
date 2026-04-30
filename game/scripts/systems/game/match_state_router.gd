@@ -99,7 +99,7 @@ func on_match_state(match_state) -> void:
 				MultiplayerUtils.send_pong(match_state.presence.user_id, data.get("timestamp", 0))
 
 		"pong":
-			if data.get("target") == MultiplayerManager.session.user_id:
+			if data.get("target") == MultiplayerManager.user_id:
 				var ping_time = MultiplayerUtils.calculate_ping(data.get("timestamp", 0.0))
 				MultiplayerUtils.set_ping(ping_time)
 
@@ -175,9 +175,9 @@ func _handle_player_stats(sender_id: String, data: Dictionary) -> void:
 	var entry_id := str(data.get("user_id", ""))
 	if entry_id.is_empty():
 		entry_id = sender_id
-	if entry_id.is_empty() or MultiplayerManager.session == null:
+	if entry_id.is_empty() or not MultiplayerManager.is_authenticated():
 		return
-	if entry_id == MultiplayerManager.session.user_id and not sender_id.is_empty() and sender_id != MultiplayerManager.session.user_id:
+	if entry_id == MultiplayerManager.user_id and not sender_id.is_empty() and sender_id != MultiplayerManager.user_id:
 		return
 
 	var existing: Dictionary = MultiplayerManager.players.get(entry_id, {}) if MultiplayerManager.players.get(entry_id) is Dictionary else {}

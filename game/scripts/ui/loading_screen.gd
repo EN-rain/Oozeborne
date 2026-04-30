@@ -40,8 +40,8 @@ func _ready() -> void:
 
 func _setup_signals() -> void:
 	if MultiplayerManager.socket:
-		if not MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-			MultiplayerManager.socket.received_match_state.connect(_on_match_state)
+		if not MultiplayerManager.received_match_state.is_connected(_on_match_state):
+			MultiplayerManager.received_match_state.connect(_on_match_state)
 	if not MultiplayerManager.player_joined.is_connected(_on_player_joined):
 		MultiplayerManager.player_joined.connect(_on_player_joined)
 	if not MultiplayerManager.player_left.is_connected(_on_player_left):
@@ -102,8 +102,8 @@ func _setup_remote_player_displays() -> void:
 	
 	# Reposition local player display
 	var local_index = 0
-	if MultiplayerManager.session != null:
-		local_index = all_players.find(MultiplayerManager.session.user_id)
+	if MultiplayerManager.is_authenticated():
+		local_index = all_players.find(MultiplayerManager.user_id)
 		if local_index < 0:
 			local_index = 0
 	player_display.position = Vector2(spacing * (local_index + 1), get_viewport_rect().size.y - 100)
@@ -112,7 +112,7 @@ func _setup_remote_player_displays() -> void:
 	var _remote_idx = 0
 	for i in range(all_players.size()):
 		var user_id = all_players[i]
-		if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+		if MultiplayerManager.is_authenticated() and user_id == MultiplayerManager.user_id:
 			continue  # Skip local player
 		
 		var player_info = MultiplayerManager.players.get(user_id, {})
@@ -153,7 +153,7 @@ func _start_loading() -> void:
 	_needs_class_selection = MultiplayerManager.player_class == null and not MultiplayerManager.is_socket_open()
 	
 	# Register self as loaded
-	var my_user_id = MultiplayerManager.session.user_id if MultiplayerManager.session else "local"
+	var my_user_id = MultiplayerManager.user_id if MultiplayerManager.is_authenticated() else "local"
 	_players_loaded[my_user_id] = true
 	
 	# Broadcast that we're loaded
@@ -208,7 +208,7 @@ func _broadcast_loaded() -> void:
 	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 		MultiplayerManager.send_match_state({
 			"type": "player_loaded",
-			"user_id": MultiplayerManager.session.user_id if MultiplayerManager.session else "local"
+			"user_id": MultiplayerManager.user_id if MultiplayerManager.is_authenticated() else "local"
 		})
 
 
@@ -227,7 +227,7 @@ func _on_match_state(match_state) -> void:
 		elif msg_type == "player_info":
 			var user_id = str(data.get("user_id", ""))
 			var slime_variant = str(data.get("slime_variant", "blue"))
-			if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+			if MultiplayerManager.is_authenticated() and user_id == MultiplayerManager.user_id:
 				# Local player echo - don't overwrite, just ensure display is using current variant
 				_setup_player_display()
 			else:
@@ -240,7 +240,7 @@ func _on_match_state(match_state) -> void:
 			var user_id = str(data.get("user_id", ""))
 			var slime_variant = str(data.get("slime_variant", "blue"))
 			if not user_id.is_empty():
-				if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+				if MultiplayerManager.is_authenticated() and user_id == MultiplayerManager.user_id:
 					_setup_player_display()
 				else:
 					if MultiplayerManager.players.has(user_id):
@@ -267,7 +267,7 @@ func _on_player_left(_user_id: String) -> void:
 
 func _get_expected_player_count() -> int:
 	var count := MultiplayerManager.players.size()
-	if MultiplayerManager.session != null and not MultiplayerManager.players.has(MultiplayerManager.session.user_id):
+	if MultiplayerManager.is_authenticated() and not MultiplayerManager.players.has(MultiplayerManager.user_id):
 		count += 1
 	return max(1, count)
 
@@ -324,8 +324,8 @@ func _transition_to_next_scene() -> void:
 
 
 func _exit_tree() -> void:
-	if MultiplayerManager.socket and MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-		MultiplayerManager.socket.received_match_state.disconnect(_on_match_state)
+	if MultiplayerManager.socket and MultiplayerManager.received_match_state.is_connected(_on_match_state):
+		MultiplayerManager.received_match_state.disconnect(_on_match_state)
 	if MultiplayerManager.player_joined.is_connected(_on_player_joined):
 		MultiplayerManager.player_joined.disconnect(_on_player_joined)
 	if MultiplayerManager.player_left.is_connected(_on_player_left):

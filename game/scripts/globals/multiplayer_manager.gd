@@ -1,5 +1,14 @@
 extends Node
 
+ 
+class MatchState:
+	var data: String
+	var op_code: int
+	var presence: Presence = null
+
+class Presence:
+	var user_id: String
+
 # --- Custom Networking (Replaces Nakama) ---
 var auth_token: String = ""
 var user_id: String = ""
@@ -13,6 +22,14 @@ var room_code: String = ""
 var is_host: bool = false
 var is_admin: bool = false
 var players: Dictionary = {}  # user_id -> {ign, is_host, slime_variant}
+var player_classes: Dictionary = {} # user_id -> PlayerClass
+var player_subclasses: Dictionary = {} # user_id -> PlayerClass
+var player_slime_variant: String = "blue"
+var player_class: PlayerClass = null
+var player_subclass: PlayerClass = null
+var subclass_choice_made: bool = false
+var player_level: int = 1
+var match_phase: String = "lobby"
 
 # Configuration
 const SERVER_CONFIG_FILE = "server_config.cfg"
@@ -25,6 +42,7 @@ signal player_left(user_id: String)
 signal match_joined()
 signal auth_state_changed(is_authenticated: bool, username: String, email: String)
 signal connection_lost()
+signal received_match_state(match_state: Dictionary)
 
 func _ready():
 	_load_config()
@@ -78,9 +96,15 @@ func restore_saved_session():
 	return {"success": false}
 
 func login_with_email(p_email, p_password):
-	# Our custom backend uses 'username' for the unique identifier in /auth/login
-	# But the UI sends email. We will use the prefix as username or check both.
-	var body = JSON.stringify({"username": p_email, "password": p_password})
+	var uname = p_email
+	# Normalize username/email if it's not a full email (to match normalized DB usernames)
+	# However, if it's a full email, we should probably keep it as is since the DB email column isn't normalized
+	if not "@" in uname:
+		var regex = RegEx.new()
+		regex.compile("[^a-zA-Z0-9_]")
+		uname = regex.sub(uname, "_", true)
+		
+	var body = JSON.stringify({"username": uname, "password": p_password})
 	var result = await _http_request("/auth/login", HTTPClient.METHOD_POST, body)
 	if result.has("token"):
 		auth_token = result.token
@@ -90,10 +114,25 @@ func login_with_email(p_email, p_password):
 		_save_session(result)
 		auth_state_changed.emit(true, username, p_email)
 		return {"success": true}
-	return {"success": false, "error": result.get("error", "Login failed")}
+	
+	var error_msg = "Login failed"
+	if result.has("error"):
+		error_msg = result.error
+	elif result.has("errors") and result.errors is Array:
+		error_msg = ", ".join(result.errors)
+		
+	return {"success": false, "error": error_msg}
 
 func register_with_email(p_email, p_password, p_username = ""):
 	var uname = p_username if not p_username.is_empty() else p_email.split("@")[0]
+	# Normalize username to meet API requirements (alphanumeric and underscores only)
+	var regex = RegEx.new()
+	regex.compile("[^a-zA-Z0-9_]")
+	uname = regex.sub(uname, "_", true)
+	
+	if uname.length() < 3:
+		uname += "_usr"
+		
 	var body = JSON.stringify({"username": uname, "email": p_email, "password": p_password})
 	var result = await _http_request("/auth/register", HTTPClient.METHOD_POST, body)
 	if result.has("token"):
@@ -104,7 +143,14 @@ func register_with_email(p_email, p_password, p_username = ""):
 		_save_session(result)
 		auth_state_changed.emit(true, username, p_email)
 		return {"success": true}
-	return {"success": false, "error": result.get("error", "Registration failed")}
+	
+	var error_msg = "Registration failed"
+	if result.has("error"):
+		error_msg = result.error
+	elif result.has("errors") and result.errors is Array:
+		error_msg = ", ".join(result.errors)
+	
+	return {"success": false, "error": error_msg}
 
 # --- Room Methods ---
 
@@ -119,6 +165,31 @@ func create_room(title = "Moon Room"):
 		return room_code
 	return ""
 
+func logout():
+	clear_session()
+
+func disconnect_server():
+	socket.close()
+	match_id = ""
+	room_code = ""
+	is_host = false
+	players.clear()
+
+func get_server_endpoint_summary() -> String:
+	return _base_url
+
+func get_last_room_error() -> String:
+	return ""
+
+func resolve_player_scene() -> PackedScene:
+	var variant_path = SlimePaletteRegistry.get_scene_path(player_slime_variant)
+	if variant_path.is_empty():
+		return null
+	return load(variant_path) as PackedScene
+
+func is_socket_open() -> bool:
+	return socket.get_ready_state() == WebSocketPeer.STATE_OPEN
+
 func join_room(p_room_code):
 	var body = JSON.stringify({"room_code": p_room_code})
 	var result = await _http_request("/rooms/join", HTTPClient.METHOD_POST, body)
@@ -131,6 +202,23 @@ func join_room(p_room_code):
 	return false
 
 # --- Internal Helpers ---
+
+func connect_to_server(_p_room_code: String) -> bool:
+	# In our custom system, we don't need a separate connect call before creating/joining
+	# but we return true to satisfy the UI flow.
+	return true
+
+func get_player_class(p_user_id: String):
+	return player_classes.get(p_user_id, null)
+
+func set_player_class(p_user_id: String, p_class: PlayerClass):
+	player_classes[p_user_id] = p_class
+
+func get_player_subclass(p_user_id: String):
+	return player_subclasses.get(p_user_id, null)
+
+func set_player_subclass(p_user_id: String, p_subclass: PlayerClass):
+	player_subclasses[p_user_id] = p_subclass
 
 func _save_session(data):
 	var file = FileAccess.open(TOKEN_SAVE_PATH, FileAccess.WRITE)
@@ -145,9 +233,17 @@ func _http_request(path: String, method: int, body: String = ""):
 	
 	http.request(_base_url + path, headers, method, body)
 	var response = await http.request_completed
-	var json = JSON.parse_string(response[3].get_string_from_utf8())
+	var status_code = response[1]
+	var response_body = response[3].get_string_from_utf8()
 	http.queue_free()
-	return json if json != null else {}
+	
+	var json = JSON.parse_string(response_body)
+	if json == null:
+		if status_code >= 400:
+			return {"error": "Server error (%d): %s" % [status_code, response_body.substr(0, 100)]}
+		return {}
+		
+	return json
 
 func _connect_to_game_server(url: String):
 	socket.connect_to_url(url)
@@ -157,6 +253,15 @@ func _on_data_received(data_str: String):
 	var data = JSON.parse_string(data_str)
 	if data == null: return
 	
+	# Emit raw match state for compatibility
+	var ms = MatchState.new()
+	ms.data = data_str
+	ms.op_code = data.get("op_code", 0)
+	if data.has("user_id"):
+		ms.presence = Presence.new()
+		ms.presence.user_id = data.get("user_id", "")
+	received_match_state.emit(ms)
+
 	match data.get("type"):
 		"player_joined":
 			var pid = data.user_id

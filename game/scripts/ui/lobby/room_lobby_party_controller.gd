@@ -58,12 +58,12 @@ func setup(refs: Dictionary, title_controller: Node, carousel_controller: Node, 
 
 
 func bootstrap_party_entries() -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		refresh_party_cards()
 		return
 
 	# Ensure local player is in MultiplayerManager.players with current slime_variant
-	var local_id = MultiplayerManager.session.user_id
+	var local_id = MultiplayerManager.user_id
 	if not MultiplayerManager.players.has(local_id):
 		MultiplayerManager.players[local_id] = {
 			"ign": MultiplayerManager.player_ign,
@@ -75,14 +75,14 @@ func bootstrap_party_entries() -> void:
 		MultiplayerManager.players[local_id]["slime_variant"] = MultiplayerManager.player_slime_variant
 
 	add_player_entry(
-		MultiplayerManager.session.user_id,
+		MultiplayerManager.user_id,
 		MultiplayerManager.player_ign + " (You)",
 		CROWN_EMOJI if MultiplayerManager.is_host else "",
 		MultiplayerManager.is_host
 	)
 
 	for user_id in MultiplayerManager.players:
-		if user_id == MultiplayerManager.session.user_id:
+		if user_id == MultiplayerManager.user_id:
 			continue
 		var info = MultiplayerManager.players[user_id]
 		var is_host_flag := bool(info.get("is_host", false))
@@ -214,10 +214,10 @@ func on_select_class_pressed() -> void:
 			previous_class_name = _selected_class.display_name
 		_selected_class = null
 		MultiplayerManager.player_class = null
-		if MultiplayerManager.session != null:
-			MultiplayerManager.player_classes.erase(MultiplayerManager.session.user_id)
-			if _player_entries.has(MultiplayerManager.session.user_id):
-				_player_entries[MultiplayerManager.session.user_id]["selected_class"] = ""
+		if MultiplayerManager.is_authenticated():
+			MultiplayerManager.player_classes.erase(MultiplayerManager.user_id)
+			if _player_entries.has(MultiplayerManager.user_id):
+				_player_entries[MultiplayerManager.user_id]["selected_class"] = ""
 		refresh_party_cards()
 		_set_class_selection_locked(false)
 		refresh_start_button_state()
@@ -226,7 +226,7 @@ func on_select_class_pressed() -> void:
 			add_chat_message(system_sender_name, change_class_hint_format % _get_local_player_chat_name(), change_class_hint_color)
 			MultiplayerManager.send_match_state({
 				"type": "class_selected",
-				"user_id": MultiplayerManager.session.user_id,
+				"user_id": MultiplayerManager.user_id,
 				"class_name": "",
 				"slime_variant": MultiplayerManager.player_slime_variant
 			})
@@ -241,24 +241,24 @@ func on_select_class_pressed() -> void:
 	if _selected_class != null:
 		_selected_class.player_scene = MultiplayerManager.resolve_player_scene()
 		MultiplayerManager.player_class = _selected_class
-		if MultiplayerManager.session != null:
-			MultiplayerManager.set_player_class(MultiplayerManager.session.user_id, _selected_class)
+		if MultiplayerManager.is_authenticated():
+			MultiplayerManager.set_player_class(MultiplayerManager.user_id, _selected_class)
 		# Set slime variant based on carousel preview for this class
 		if _carousel_controller != null and _carousel_controller.has_method("_get_preview_variant_for_class"):
 			MultiplayerManager.player_slime_variant = _carousel_controller._get_preview_variant_for_class(active_class)
 			# Also update in players dictionary for party card display
-			if MultiplayerManager.session != null and MultiplayerManager.players.has(MultiplayerManager.session.user_id):
-				MultiplayerManager.players[MultiplayerManager.session.user_id]["slime_variant"] = MultiplayerManager.player_slime_variant
+			if MultiplayerManager.is_authenticated() and MultiplayerManager.players.has(MultiplayerManager.user_id):
+				MultiplayerManager.players[MultiplayerManager.user_id]["slime_variant"] = MultiplayerManager.player_slime_variant
 		# Update local player entry with selected class
-		if MultiplayerManager.session != null and _player_entries.has(MultiplayerManager.session.user_id):
-			_player_entries[MultiplayerManager.session.user_id]["selected_class"] = active_class
+		if MultiplayerManager.is_authenticated() and _player_entries.has(MultiplayerManager.user_id):
+			_player_entries[MultiplayerManager.user_id]["selected_class"] = active_class
 			refresh_party_cards()
 		_set_class_selection_locked(true)
 		refresh_start_button_state()
 		if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 			MultiplayerManager.send_match_state({
 				"type": "class_selected",
-				"user_id": MultiplayerManager.session.user_id,
+				"user_id": MultiplayerManager.user_id,
 				"class_name": active_class,
 				"slime_variant": MultiplayerManager.player_slime_variant
 			})
@@ -288,8 +288,8 @@ func _is_class_taken_by_other_player(class_display_name: String) -> bool:
 		return false
 	var normalized_target := class_display_name.to_lower().strip_edges()
 	var local_user_id := ""
-	if MultiplayerManager.session != null:
-		local_user_id = MultiplayerManager.session.user_id
+	if MultiplayerManager.is_authenticated():
+		local_user_id = MultiplayerManager.user_id
 
 	# Prefer authoritative lobby entries (what the UI actually shows).
 	for user_id in _player_entries.keys():
@@ -335,7 +335,7 @@ func handle_snapshot_players(players: Array) -> void:
 		var user_id := str(player_data.get("user_id", ""))
 		var ign := str(player_data.get("ign", ""))
 		var is_host_flag := bool(player_data.get("is_host", false))
-		if user_id.is_empty() or user_id == MultiplayerManager.session.user_id:
+		if user_id.is_empty() or user_id == MultiplayerManager.user_id:
 			continue
 		if MultiplayerManager.players.has(user_id):
 			MultiplayerManager.players[user_id]["ign"] = ign
@@ -364,7 +364,7 @@ func handle_player_info_state(data: Dictionary) -> void:
 
 
 func handle_remote_class_selected(sender_id: String, selected_name: String, slime_variant: String = "") -> void:
-	if sender_id.is_empty() or sender_id == MultiplayerManager.session.user_id:
+	if sender_id.is_empty() or sender_id == MultiplayerManager.user_id:
 		return
 	if selected_name.is_empty():
 		# Remote player cleared their class selection
@@ -401,7 +401,7 @@ func _get_local_player_chat_name() -> String:
 
 
 func _get_player_chat_name(user_id: String) -> String:
-	if MultiplayerManager.session != null and user_id == MultiplayerManager.session.user_id:
+	if MultiplayerManager.is_authenticated() and user_id == MultiplayerManager.user_id:
 		return _get_local_player_chat_name()
 	if _player_entries.has(user_id):
 		var entry: Dictionary = _player_entries[user_id]

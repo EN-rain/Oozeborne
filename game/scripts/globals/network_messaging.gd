@@ -23,9 +23,9 @@ func now_sec() -> float:
 
 ## Check if sender is the local player
 func is_local_player(sender_id: String) -> bool:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return false
-	return sender_id == MultiplayerManager.session.user_id
+	return sender_id == MultiplayerManager.user_id
 
 
 ## Extract sender_id from match state
@@ -80,11 +80,11 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false,
 
 ## Send attack event to server for validation and broadcast
 func send_attack(pos: Vector2, rotation_angle: float, attack_seq: int = 0) -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return
 	MultiplayerManager.send_match_state({
 		"type": "player_attack",
-		"user_id": MultiplayerManager.session.user_id,
+		"user_id": MultiplayerManager.user_id,
 		"attack_x": pos.x,
 		"attack_y": pos.y,
 		"attack_rotation": rotation_angle,
@@ -94,11 +94,11 @@ func send_attack(pos: Vector2, rotation_angle: float, attack_seq: int = 0) -> vo
 
 ## Send player info when joining a match
 func send_player_info(ign: String, is_host: bool) -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return
 	MultiplayerManager.send_match_state({
 		"type": "player_info",
-		"user_id": MultiplayerManager.session.user_id,
+		"user_id": MultiplayerManager.user_id,
 		"ign": ign,
 		"is_host": is_host,
 		"slime_variant": MultiplayerManager.player_slime_variant
@@ -124,11 +124,11 @@ func send_pong(target_user_id: String, timestamp: float) -> void:
 
 
 func send_skill_stat_update(stats: Dictionary) -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return
 	MultiplayerManager.send_match_state({
 		"type": "skill_stat_update",
-		"user_id": MultiplayerManager.session.user_id,
+		"user_id": MultiplayerManager.user_id,
 		"stats": stats,
 	})
 

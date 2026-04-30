@@ -49,8 +49,8 @@ func _setup_signals() -> void:
 
 
 func _check_admin_status() -> void:
-	if MultiplayerManager.session != null:
-		AdminManager.check_admin_status(MultiplayerManager.session.user_id)
+	if MultiplayerManager.is_authenticated():
+		AdminManager.check_admin_status(MultiplayerManager.user_id)
 	
 	# Sync admin status to MultiplayerManager so chat commands can check it
 	MultiplayerManager.is_admin = AdminManager.is_admin()
@@ -93,7 +93,7 @@ func _refresh_players_list() -> void:
 		var display_text := ign
 		if is_host:
 			display_text += " [HOST]"
-		if user_id == MultiplayerManager.session.user_id:
+		if user_id == MultiplayerManager.user_id:
 			display_text += " (You)"
 		players_list.add_item(display_text)
 		players_list.set_item_metadata(players_list.item_count - 1, user_id)

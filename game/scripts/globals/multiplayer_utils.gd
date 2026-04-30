@@ -230,18 +230,18 @@ func extract_user_id_from_data(data: Dictionary) -> String:
 
 ## Check if sender is the local player
 func is_local_player(sender_id: String) -> bool:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return false
-	return sender_id == MultiplayerManager.session.user_id
+	return sender_id == MultiplayerManager.user_id
 
 
 ## Send attack event to all other players
 func send_attack(pos: Vector2, rotation_angle: float) -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return  # Not in multiplayer
 	MultiplayerManager.send_match_state({
 		"type": "player_attack",
-		"user_id": MultiplayerManager.session.user_id,
+		"user_id": MultiplayerManager.user_id,
 		"pos": {"x": pos.x, "y": pos.y},
 		"rot": rotation_angle
 	})
@@ -249,7 +249,7 @@ func send_attack(pos: Vector2, rotation_angle: float) -> void:
 
 ## Send player info when joining a match
 func send_player_info(ign: String, is_host: bool) -> void:
-	if MultiplayerManager.session == null:
+	if not MultiplayerManager.is_authenticated():
 		return  # Not in multiplayer
 	# Include speed stats so server uses per-player values instead of hardcoded constants
 	var player_speed := 100.0
@@ -262,7 +262,7 @@ func send_player_info(ign: String, is_host: bool) -> void:
 			player_dash_speed = float(local_node.dash_speed)
 	MultiplayerManager.send_match_state({
 		"type": "player_info",
-		"user_id": MultiplayerManager.session.user_id,
+		"user_id": MultiplayerManager.user_id,
 		"ign": ign,
 		"is_host": is_host,
 		"slime_variant": MultiplayerManager.player_slime_variant,

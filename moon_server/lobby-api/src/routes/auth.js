@@ -44,10 +44,10 @@ router.post('/login', loginRules, validate, async (req, res, next) => {
       return res.status(400).json({ error: 'username and password required' });
 
     const { rows } = await db.query(
-      `SELECT p.user_id, p.username, p.password_hash, r.role_level
+      `SELECT p.user_id, p.username, p.password_hash, COALESCE(r.role_level, 0) as role_level
        FROM players p
-       JOIN user_roles r ON r.user_id = p.user_id
-       WHERE p.username = $1`,
+       LEFT JOIN user_roles r ON r.user_id = p.user_id
+       WHERE LOWER(p.username) = LOWER($1) OR LOWER(p.email) = LOWER($1)`,
       [username]
     );
     const player = rows[0];

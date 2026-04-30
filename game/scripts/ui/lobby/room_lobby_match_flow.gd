@@ -46,11 +46,11 @@ func enter_lobby() -> void:
 		MultiplayerManager.match_phase_changed.connect(_on_match_phase_changed)
 
 	if MultiplayerManager.socket:
-		if not MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-			MultiplayerManager.socket.received_match_state.connect(_on_match_state)
+		if not MultiplayerManager.received_match_state.is_connected(_on_match_state):
+			MultiplayerManager.received_match_state.connect(_on_match_state)
 		MultiplayerManager.send_match_state({
 			"type": "player_info",
-			"user_id": MultiplayerManager.session.user_id,
+			"user_id": MultiplayerManager.user_id,
 			"ign": MultiplayerManager.player_ign,
 			"is_host": MultiplayerManager.is_host,
 			"slime_variant": MultiplayerManager.player_slime_variant
@@ -66,8 +66,8 @@ func cleanup() -> void:
 		MultiplayerManager.player_left.disconnect(_on_player_left_signal)
 	if MultiplayerManager.match_phase_changed.is_connected(_on_match_phase_changed):
 		MultiplayerManager.match_phase_changed.disconnect(_on_match_phase_changed)
-	if MultiplayerManager.socket and MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-		MultiplayerManager.socket.received_match_state.disconnect(_on_match_state)
+	if MultiplayerManager.socket and MultiplayerManager.received_match_state.is_connected(_on_match_state):
+		MultiplayerManager.received_match_state.disconnect(_on_match_state)
 
 
 func show_join_game_ui() -> void:
@@ -78,8 +78,8 @@ func show_join_game_ui() -> void:
 		_start_button.visible = true
 		_start_button.disabled = false
 	_party_controller.bootstrap_party_entries()
-	if MultiplayerManager.socket and not MultiplayerManager.socket.received_match_state.is_connected(_on_match_state):
-		MultiplayerManager.socket.received_match_state.connect(_on_match_state)
+	if MultiplayerManager.socket and not MultiplayerManager.received_match_state.is_connected(_on_match_state):
+		MultiplayerManager.received_match_state.connect(_on_match_state)
 
 
 func on_start_pressed() -> void:
@@ -178,7 +178,7 @@ func _on_match_state(match_state) -> void:
 			# Send our own info
 			MultiplayerManager.send_match_state({
 				"type": "player_info",
-				"user_id": MultiplayerManager.session.user_id,
+				"user_id": MultiplayerManager.user_id,
 				"ign": MultiplayerManager.player_ign,
 				"is_host": MultiplayerManager.is_host,
 				"slime_variant": MultiplayerManager.player_slime_variant
@@ -186,7 +186,7 @@ func _on_match_state(match_state) -> void:
 			# If host, also send info for all other known players
 			if MultiplayerManager.is_host:
 				for user_id in MultiplayerManager.players:
-					if user_id != MultiplayerManager.session.user_id:
+					if user_id != MultiplayerManager.user_id:
 						var info = MultiplayerManager.players[user_id]
 						var ign = str(info.get("ign", ""))
 						if not ign.is_empty():
@@ -237,14 +237,14 @@ func _handle_admin_action(data: Dictionary) -> void:
 
 	match action:
 		"kicked":
-			if target_id == MultiplayerManager.session.user_id:
+			if target_id == MultiplayerManager.user_id:
 				_party_controller.add_chat_message("SYSTEM", "You were kicked from the lobby.", Color(0.9, 0.3, 0.3))
 				await get_tree().create_timer(2.0).timeout
 				if not main_menu_scene_path.is_empty():
 					get_tree().change_scene_to_file(main_menu_scene_path)
 		"host_changed":
 			var new_host_id := str(data.get("new_host_id", ""))
-			MultiplayerManager.is_host = (new_host_id == MultiplayerManager.session.user_id)
+			MultiplayerManager.is_host = (new_host_id == MultiplayerManager.user_id)
 			_party_controller.add_chat_message("SYSTEM", "Host has been changed.", Color(0.9, 0.7, 0.3))
 		"lobby_closed":
 			var reason := str(data.get("reason", "Admin closed lobby"))
@@ -253,7 +253,7 @@ func _handle_admin_action(data: Dictionary) -> void:
 			if not main_menu_scene_path.is_empty():
 				get_tree().change_scene_to_file(main_menu_scene_path)
 		"teleport":
-			if target_id == MultiplayerManager.session.user_id:
+			if target_id == MultiplayerManager.user_id:
 				var x: float = data.get("x", 400.0)
 				var y: float = data.get("y", 300.0)
 				# Handle teleport in game if needed

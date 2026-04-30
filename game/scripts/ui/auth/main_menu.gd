@@ -70,8 +70,8 @@ func _set_menu_busy(busy: bool) -> void:
 func _update_auth_ui() -> void:
 	var authenticated = MultiplayerManager.is_authenticated()
 	var account_name = MultiplayerManager.player_ign
-	if account_name.is_empty() and MultiplayerManager.session != null:
-		account_name = MultiplayerManager.session.username
+	if account_name.is_empty() and MultiplayerManager.is_authenticated():
+		account_name = MultiplayerManager.username
 	if account_name.is_empty():
 		account_name = offline_account_name
 
@@ -127,7 +127,6 @@ func _on_start_pressed() -> void:
 	_set_menu_busy(true)
 	_set_status(preparing_solo_run_text, preparing_solo_run_color)
 	await MultiplayerManager.disconnect_server()
-	await MultiplayerManager.ensure_cloud_session()
 	MultiplayerManager.player_ign = _get_ign()
 	MultiplayerManager.player_class = null
 	MultiplayerManager.player_subclass = null
@@ -141,7 +140,7 @@ var _save_slots_ui: Control = null
 func _on_load_pressed() -> void:
 	_set_menu_busy(true)
 	_set_status("Connecting...", preparing_solo_run_color)
-	var session_ok := await MultiplayerManager.ensure_cloud_session()
+	var session_ok := true
 	_set_menu_busy(false)
 	if not session_ok:
 		_set_status("Failed to connect", error_status_color)

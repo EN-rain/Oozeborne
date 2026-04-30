@@ -60,7 +60,7 @@ func _send_enemy_hit(enemy: Node2D, damage: int) -> void:
 	_hit_seq += 1
 	MultiplayerManager.send_match_state({
 		"type": "enemy_hit",
-		"user_id": MultiplayerManager.session.user_id if MultiplayerManager.session else "",
+		"user_id": MultiplayerManager.user_id if MultiplayerManager.is_authenticated() else "",
 		"enemy_x": enemy.global_position.x,
 		"enemy_y": enemy.global_position.y,
 		"damage": damage,

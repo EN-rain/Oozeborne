@@ -10,7 +10,7 @@ func _init(interval_sec: float = 0.35) -> void:
 
 
 func tick(delta: float, player: Node) -> void:
-	if not MultiplayerManager.is_socket_open() or MultiplayerManager.session == null or player == null or not is_instance_valid(player):
+	if not MultiplayerManager.is_socket_open() or not MultiplayerManager.is_authenticated() or player == null or not is_instance_valid(player):
 		return
 	_timer_sec += delta
 	if _timer_sec < _interval_sec:
@@ -24,7 +24,7 @@ func tick(delta: float, player: Node) -> void:
 	var mp := int(mana.current_mana) if mana != null and "current_mana" in mana else 0
 	var mp_max := int(mana.max_mana) if mana != null and "max_mana" in mana else 0
 	var lvl := int(LevelSystem.get_level(player)) if LevelSystem != null else int(MultiplayerManager.player_level)
-	var uid := str(MultiplayerManager.session.user_id)
+	var uid := str(MultiplayerManager.user_id)
 
 	if MultiplayerManager.players.has(uid):
 		MultiplayerManager.players[uid]["level"] = lvl

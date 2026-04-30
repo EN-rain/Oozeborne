@@ -207,8 +207,8 @@ func _resolve_coin_user_id(user_id: String = "") -> String:
 	var trimmed_user_id := user_id.strip_edges()
 	if not trimmed_user_id.is_empty():
 		return trimmed_user_id
-	if MultiplayerManager != null and MultiplayerManager.session != null:
-		var session_user_id := str(MultiplayerManager.session.user_id)
+	if MultiplayerManager != null and MultiplayerManager.is_authenticated():
+		var session_user_id := str(MultiplayerManager.user_id)
 		if not session_user_id.is_empty():
 			return session_user_id
 	return "solo"

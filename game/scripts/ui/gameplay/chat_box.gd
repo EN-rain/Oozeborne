@@ -201,7 +201,7 @@ func _kick_player(player_name: String) -> void:
 	if target_id.is_empty():
 		_add_system_message("Player '%s' not found" % player_name)
 		return
-	if target_id == MultiplayerManager.session.user_id:
+	if target_id == MultiplayerManager.user_id:
 		_add_system_message("You can't kick yourself")
 		return
 	# Send kick request via match state
