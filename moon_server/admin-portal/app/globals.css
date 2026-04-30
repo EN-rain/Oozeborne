@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --terminal-bg:      #05070a;
+  --terminal-green:   #00ff41;
+  --terminal-dim:     #003b00;
+  --terminal-border:  #008f11;
+  --terminal-cursor:  #00ff41;
+  --moon-danger:      #ff3131;
+  --moon-success:     #00ff41;
+  --moon-warn:        #f59e0b;
+}
+
+@font-face {
+  font-family: 'Terminal';
+  src: local('Courier New'), local('Courier'), monospace;
+}
+
+body {
+  background-color: var(--terminal-bg);
+  color: var(--terminal-green);
+  font-family: 'Terminal', monospace;
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden; /* We'll use a scrolling container */
+}
+
+/* CRT Scanlines effect */
+body::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.06),
+    rgba(0, 255, 0, 0.02),
+    rgba(0, 0, 255, 0.06)
+  );
+  z-index: 100;
+  background-size: 100% 4px, 3px 100%;
+  pointer-events: none;
+}
+
+/* CRT Flicker */
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.9; }
+  15% { opacity: 0.95; }
+  25% { opacity: 0.95; }
+  30% { opacity: 0.9; }
+  100% { opacity: 1; }
+}
+
+main {
+  animation: flicker 0.15s infinite;
+}
+
+.terminal-card {
+  border: 1px solid var(--terminal-border);
+  background: rgba(0, 20, 0, 0.3);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 10px rgba(0, 143, 17, 0.2);
+}
+
+.terminal-header {
+  background: var(--terminal-border);
+  color: var(--terminal-bg);
+  padding: 2px 8px;
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--terminal-border);
+  color: var(--terminal-green);
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+}
+
+.terminal-btn {
+  background: transparent;
+  border: 1px solid var(--terminal-green);
+  color: var(--terminal-green);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.terminal-btn:hover {
+  background: var(--terminal-green);
+  color: var(--terminal-bg);
+}
+
+.terminal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badge-online  { color: var(--terminal-green); border: 1px solid var(--terminal-green); padding: 0 4px; font-size: 0.75rem; }
+.badge-banned  { color: var(--moon-danger); border: 1px solid var(--moon-danger); padding: 0 4px; font-size: 0.75rem; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-dim);
+  border: 1px solid var(--terminal-border);
+}

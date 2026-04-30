@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: moon_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moonpass}
+      POSTGRES_DB: ${POSTGRES_DB:-moondb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - moon_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: moon_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - moon_net
+
+  adminer:
+    image: adminer:latest
+    container_name: moon_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - moon_net
+    depends_on:
+      - postgres
+
+  lobby-api:
+    build:
+      context: ./lobby-api
+      dockerfile: Dockerfile
+    container_name: moon_lobby_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_ADDR: redis:6379
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./lobby-api:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - moon_net
+
+  game-server:
+    build:
+      context: ./game-server
+      dockerfile: Dockerfile
+    container_name: moon_game_server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_ADDR: redis:6379
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./game-server:/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - moon_net
+
+  admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+    container_name: moon_admin_portal
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NEXT_PUBLIC_LOBBY_API_URL: http://localhost:3000
+      NEXT_PUBLIC_GAME_SERVER_URL: ws://localhost:8080
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./admin-portal:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - lobby-api
+    networks:
+      - moon_net
+
+volumes:
+  postgres_data:
+
+networks:
+  moon_net:
+    driver: bridge

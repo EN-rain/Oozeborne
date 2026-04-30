@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+.next/
+dist/
+build/
+
+# Env
+.env
+
+# Go binaries
+game-server/moon-game-server
+
+# DB data (local volumes are managed by Docker)
+postgres_data/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
