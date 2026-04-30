@@ -328,17 +328,15 @@ function PlayerSearch() {
   );
 }
 
-function MobTuner() {
-  const mobs = ['slime', 'skeleton', 'boss'];
-  const [selected, setSelected] = useState('slime');
+function MobCard({ mobType }: { mobType: string }) {
   const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
   const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Fetch current stats when mob is selected
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await axios.get(`${API}/admin/mobs/${selected}`, { headers: authHeader() });
+        const res = await axios.get(`${API}/admin/mobs/${mobType}`, { headers: authHeader() });
         if (res.data.mob) {
           setStats({
             health: res.data.mob.health || '',
@@ -347,51 +345,78 @@ function MobTuner() {
             xp_reward: res.data.mob.xp_reward || ''
           });
         }
-      } catch (e) {
-        setStats({ health: '', speed: '', damage: '', xp_reward: '' });
-      }
+      } catch (e) {}
     }
     fetchStats();
-  }, [selected]);
+  }, [mobType]);
 
   async function save() {
+    setLoading(true);
     try {
-      await axios.patch(`${API}/admin/mobs/${selected}`,
+      await axios.patch(`${API}/admin/mobs/${mobType}`,
         { health: +stats.health || undefined, speed: +stats.speed || undefined,
           damage: +stats.damage || undefined, xp_reward: +stats.xp_reward || undefined },
         { headers: authHeader() }
       );
-      setMsg('Parameters updated globally.');
-    } catch { setMsg('Failed to update.'); }
+      setMsg('Updated');
+    } catch { setMsg('Error'); }
+    setLoading(false);
     setTimeout(() => setMsg(''), 3000);
   }
 
   return (
-    <section className="glass-card">
-      <div className="glass-header">
-        <Crosshair size={18} className="text-accent-primary" /> Live Mob Tuning
+    <div className="glass-card" style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: mobType === 'boss' ? 'var(--danger)' : 'var(--accent-primary)', textTransform: 'capitalize' }}>{mobType}</h3>
+        <span style={{ fontSize: '0.75rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>{msg}</span>
       </div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <select className="input-field" style={{ width: '100%', maxWidth: 300 }} value={selected} onChange={(e) => setSelected(e.target.value)}>
-          {mobs.map(m => (
-            <option key={m} value={m}>
-              {m.charAt(0).toUpperCase() + m.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '1.5rem' }}>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
         {(['health','speed','damage','xp_reward'] as const).map(field => (
           <div key={field}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>{field.replace('_', ' ')}</label>
-            <input className="input-field" type="number" placeholder="Leave blank to keep current"
+            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>{field.replace('_', ' ')}</label>
+            <input className="input-field" type="number" style={{ padding: '6px 10px', fontSize: '0.85rem' }}
               value={stats[field]} onChange={e => setStats(s => ({ ...s, [field]: e.target.value }))} />
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '0.85rem', color: msg.includes('Failed') ? 'var(--danger)' : 'var(--success)' }}>{msg}</span>
-        <button className="btn-primary" onClick={save}>Push Configuration</button>
+      
+      <button className="btn-primary" style={{ width: '100%', padding: '8px', fontSize: '0.85rem' }} onClick={save} disabled={loading}>
+        {loading ? 'Saving...' : 'Push Configuration'}
+      </button>
+    </div>
+  );
+}
+
+function MobTuner() {
+  const mobs = ['slime', 'skeleton', 'boss', 'bat', 'ghost', 'golem']; // Added more based on typical game mobs
+  const [search, setSearch] = useState('');
+  
+  const filteredMobs = mobs.filter(m => m.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <section>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Crosshair size={18} className="text-accent-primary" />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Live Mob Tuning</h2>
+        </div>
+        <div style={{ position: 'relative', width: 300 }}>
+          <input className="input-field" placeholder="Search mobs or boss..." 
+            value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.5rem' }} />
+          <Users size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
+        {filteredMobs.map(m => (
+          <MobCard key={m} mobType={m} />
+        ))}
+        {filteredMobs.length === 0 && (
+          <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+            No mobs found matching "{search}"
+          </div>
+        )}
       </div>
     </section>
   );
