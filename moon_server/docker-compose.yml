@@ -51,9 +51,6 @@ services:
       PORT: 3000
     ports:
       - "3000:3000"
-    volumes:
-      - ./lobby-api:/app
-      - /app/node_modules
     depends_on:
       - postgres
       - redis
@@ -74,8 +71,6 @@ services:
       PORT: 8080
     ports:
       - "8080:8080"
-    volumes:
-      - ./game-server:/app
     depends_on:
       - postgres
       - redis
@@ -90,14 +85,10 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      NEXT_PUBLIC_LOBBY_API_URL: http://localhost:3000
-      NEXT_PUBLIC_GAME_SERVER_URL: ws://localhost:8080
+      NEXT_PUBLIC_LOBBY_API_URL: http://35.247.150.45:3000
+      NEXT_PUBLIC_GAME_SERVER_URL: ws://35.247.150.45:8080
     ports:
       - "3001:3001"
-    volumes:
-      - ./admin-portal:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - lobby-api
     networks:
