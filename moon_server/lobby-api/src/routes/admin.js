@@ -175,6 +175,48 @@ router.patch('/account/password', requireSuperAdmin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── SuperAdmin: List all Staff ───────────────────────────────────────────
+router.get('/staff', requireSuperAdmin, async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT p.user_id, p.username, p.email, r.role_level
+       FROM players p
+       JOIN user_roles r ON r.user_id = p.user_id
+       WHERE r.role_level > 0
+       ORDER BY r.role_level DESC`
+    );
+    res.json({ staff: rows });
+  } catch (err) { next(err); }
+});
+
+// ─── SuperAdmin: Create new Staff ─────────────────────────────────────────
+router.post('/staff', requireSuperAdmin, async (req, res, next) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { username, password, role_level = 1 } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+    
+    const userId = uuidv4();
+    const hash = await bcrypt.hash(password, 12);
+    
+    await db.query(`INSERT INTO players (user_id, username, password_hash) VALUES ($1, $2, $3)`, [userId, username, hash]);
+    await db.query(`INSERT INTO user_roles (user_id, role_level) VALUES ($1, $2)`, [userId, role_level]);
+    await db.query(`INSERT INTO profiles (user_id, display_name) VALUES ($1, $2)`, [userId, username]);
+    
+    await logAction(db, req.user.user_id, 'staff_create', userId, { username, role_level });
+    res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ─── SuperAdmin: Delete Staff ──────────────────────────────────────────────
+router.delete('/staff/:user_id', requireSuperAdmin, async (req, res, next) => {
+  try {
+    await db.query(`DELETE FROM players WHERE user_id = $1`, [req.params.user_id]);
+    await logAction(db, req.user.user_id, 'staff_delete', req.params.user_id, {});
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // ─── GET /admin/rooms — Live room list ───────────────────────────────────
 router.get('/rooms', async (req, res, next) => {
   try {

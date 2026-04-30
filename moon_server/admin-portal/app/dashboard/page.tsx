@@ -1,6 +1,6 @@
-'use client';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 'http://localhost:3000';
 
@@ -9,6 +9,93 @@ const authHeader = () => ({
 });
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SettingsPanel() {
+  const [staff, setStaff] = useState<any[]>([]);
+  const [newAdmin, setNewAdmin] = useState({ user: '', pass: '', level: 1 });
+  const [loading, setLoading] = useState(false);
+
+  const fetchStaff = async () => {
+    try {
+      const res = await axios.get(`${API}/admin/staff`, { headers: authHeader() });
+      setStaff(res.data.staff || []);
+    } catch {}
+  };
+
+  useEffect(() => { fetchStaff(); }, []);
+
+  async function addStaff() {
+    if (!newAdmin.user || !newAdmin.pass) return;
+    setLoading(true);
+    try {
+      await axios.post(`${API}/admin/staff`, 
+        { username: newAdmin.user, password: newAdmin.pass, role_level: +newAdmin.level }, 
+        { headers: authHeader() }
+      );
+      setNewAdmin({ user: '', pass: '', level: 1 });
+      fetchStaff();
+    } catch (e: any) { alert(e.response?.data?.error || 'Failed to add admin'); }
+    finally { setLoading(false); }
+  }
+
+  async function deleteStaff(id: string) {
+    if (!confirm('Permanently remove this staff member?')) return;
+    try {
+      await axios.delete(`${API}/admin/staff/${id}`, { headers: authHeader() });
+      fetchStaff();
+    } catch {}
+  }
+
+  return (
+    <section className="terminal-card">
+      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Settings size={16} /> SYSTEM_STAFF_MANAGEMENT
+      </div>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <h4 style={{ fontSize: '0.7rem', color: 'var(--terminal-dim)', marginBottom: 8 }}>CREATE_NEW_ADMIN</h4>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className="terminal-input" placeholder="USERNAME" 
+            value={newAdmin.user} onChange={e => setNewAdmin({...newAdmin, user: e.target.value})} />
+          <input className="terminal-input" placeholder="PASSWORD" type="password"
+            value={newAdmin.pass} onChange={e => setNewAdmin({...newAdmin, pass: e.target.value})} />
+          <select className="terminal-input" style={{ width: 100 }}
+            value={newAdmin.level} onChange={e => setNewAdmin({...newAdmin, level: +e.target.value})}>
+            <option value={1}>ADMIN</option>
+            <option value={2}>SUPER</option>
+          </select>
+          <button className="terminal-btn" onClick={addStaff} disabled={loading}><Plus size={14} /></button>
+        </div>
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <thead>
+          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--terminal-border)' }}>
+            <th style={th}>USER</th>
+            <th style={th}>LEVEL</th>
+            <th style={th}>OPS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {staff.map(s => (
+            <tr key={s.user_id} style={{ borderBottom: '1px dashed var(--terminal-dim)' }}>
+              <td style={td}>{s.username}</td>
+              <td style={td}>
+                {s.role_level === 2 ? <span style={{ color: 'var(--terminal-green)' }}>SUPER</span> : 'STAFF'}
+              </td>
+              <td style={td}>
+                <button className="terminal-btn" style={{ color: 'var(--moon-danger)', padding: '2px 4px' }} 
+                  onClick={() => deleteStaff(s.user_id)}>
+                  <Trash2 size={12} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
 
 function LiveRooms() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -26,7 +113,9 @@ function LiveRooms() {
 
   return (
     <section className="terminal-card">
-      <div className="terminal-header">Active_Rooms</div>
+      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Wifi size={16} /> Active_Rooms
+      </div>
       {rooms.length === 0 && <p style={{ color: 'var(--terminal-dim)' }}>[ NO ACTIVE SESSIONS ]</p>}
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
         <thead>
@@ -101,7 +190,9 @@ function PlayerSearch() {
 
   return (
     <section className="terminal-card">
-      <div className="terminal-header">Player_Database</div>
+      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Users size={16} /> Player_Database
+      </div>
       <form onSubmit={search} style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
         <span style={{ marginRight: 4 }}>{'>'}</span>
         <input className="terminal-input" value={q} onChange={e => setQ(e.target.value)}
@@ -150,7 +241,9 @@ function MobTuner() {
 
   return (
     <section className="terminal-card">
-      <div className="terminal-header">Mob_Parameters</div>
+      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Crosshair size={16} /> Mob_Parameters
+      </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
         {mobs.map(m => (
           <button key={m} 
@@ -195,7 +288,9 @@ function BroadcastPanel() {
   }
   return (
     <section className="terminal-card">
-      <div className="terminal-header">Global_Broadcast</div>
+      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Activity size={16} /> Global_Broadcast
+      </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <span style={{ marginRight: 4 }}>{'>'}</span>
         <input className="terminal-input" value={msg} onChange={e => setMsg(e.target.value)}
@@ -209,6 +304,7 @@ function BroadcastPanel() {
 // ─── Dashboard layout ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [booting, setBooting] = useState(true);
+  const [view, setView] = useState<'status' | 'settings'>('status');
 
   useEffect(() => {
     if (!localStorage.getItem('moon_token')) window.location.href = '/';
@@ -243,36 +339,47 @@ export default function DashboardPage() {
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {['SYSTEM_STATUS','ACTIVE_ROOMS','PLAYER_SEARCH','MOB_TUNER','NETWORK_LOGS'].map(item => (
-            <div key={item} className="terminal-btn" style={{ textAlign: 'left', fontSize: '0.8rem' }}>
-              {'>'} {item}
-            </div>
-          ))}
+          <button className={`terminal-btn ${view === 'status' ? 'active' : ''}`} 
+            onClick={() => setView('status')} style={{ textAlign: 'left', fontSize: '0.8rem' }}>
+            <Activity size={14} style={{ marginRight: 8 }} /> SYSTEM_STATUS
+          </button>
+          <button className={`terminal-btn ${view === 'settings' ? 'active' : ''}`}
+            onClick={() => setView('settings')} style={{ textAlign: 'left', fontSize: '0.8rem' }}>
+            <Settings size={14} style={{ marginRight: 8 }} /> SYSTEM_SETTINGS
+          </button>
         </nav>
 
         <div style={{ flex: 1 }} />
         
         <div style={{ padding: '1rem 0', borderTop: '1px solid var(--terminal-border)' }}>
-          <div style={{ fontSize: '0.7rem', marginBottom: 8 }}>USER: ADMIN_01</div>
-          <button className="terminal-btn" onClick={logout} style={{ width: '100%', fontSize: '0.8rem' }}>
-            LOGOUT_SYSTEM
+          <div style={{ fontSize: '0.7rem', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+             <Shield size={12} /> AUTH: SUPER_ADMIN
+          </div>
+          <button className="terminal-btn" onClick={logout} style={{ width: '100%', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <LogOut size={14} /> LOGOUT_SYSTEM
           </button>
         </div>
       </aside>
 
-      {/* Main content with its own scrollable area */}
+      {/* Main content */}
       <main style={{ flex: 1, overflowY: 'auto', paddingRight: '1rem' }}>
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>SYSTEM_DASHBOARD</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{view === 'status' ? 'SYSTEM_DASHBOARD' : 'SECURITY_VAULT'}</h1>
           <div style={{ fontSize: '0.8rem' }}>Uptime: 99.9% | Servers: 04</div>
         </div>
 
-        <LiveRooms />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <PlayerSearch />
-          <MobTuner />
-        </div>
-        <BroadcastPanel />
+        {view === 'status' ? (
+          <>
+            <LiveRooms />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <PlayerSearch />
+              <MobTuner />
+            </div>
+            <BroadcastPanel />
+          </>
+        ) : (
+          <SettingsPanel />
+        )}
         
         <footer style={{ marginTop: '2rem', fontSize: '0.7rem', color: 'var(--terminal-dim)', textAlign: 'center' }}>
           (c) 2026 MOON_INDUSTRIES // ALL RIGHTS RESERVED
@@ -282,6 +389,5 @@ export default function DashboardPage() {
   );
 }
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
 const th: React.CSSProperties = { padding: '8px', fontWeight: 600, fontSize: '0.75rem', color: 'var(--terminal-dim)' };
 const td: React.CSSProperties = { padding: '8px', fontSize: '0.85rem' };
