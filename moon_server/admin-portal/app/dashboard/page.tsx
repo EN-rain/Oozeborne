@@ -101,10 +101,22 @@ function SettingsPanel() {
 
 function LiveRooms() {
   const [rooms, setRooms] = useState<any[]>([]);
+  const [ping, setPing] = useState('...');
+  const [load, setLoad] = useState('...');
+
   useEffect(() => {
     const fetch = async () => {
       try {
+        const start = Date.now();
         const res = await axios.get(`${API}/admin/rooms`, { headers: authHeader() });
+        const latency = Date.now() - start;
+        setPing(`${latency}ms`);
+        
+        if (res.data.load_avg !== undefined) {
+          const loadAvg = res.data.load_avg;
+          setLoad(loadAvg < 1 ? 'Optimal' : loadAvg < 3 ? 'Moderate' : 'Heavy');
+        }
+        
         setRooms(res.data.rooms || []);
       } catch {}
     };
@@ -122,11 +134,11 @@ function LiveRooms() {
         </div>
         <div className="glass-card" style={{ background: 'rgba(0,0,0,0.2)' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Server Load</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>Optimal</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: load === 'Optimal' ? 'var(--success)' : load === 'Moderate' ? '#eab308' : 'var(--danger)' }}>{load}</div>
         </div>
         <div className="glass-card" style={{ background: 'rgba(0,0,0,0.2)' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ping</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>24ms</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ping}</div>
         </div>
       </div>
 

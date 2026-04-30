@@ -241,7 +241,9 @@ router.get('/rooms', async (req, res, next) => {
     res.json({ 
       rooms, 
       process_uptime: process.uptime(),
-      system_uptime: os.uptime() 
+      system_uptime: os.uptime(),
+      load_avg: os.loadavg()[0],
+      memory_usage: process.memoryUsage().heapUsed / 1024 / 1024
     });
   } catch (err) { next(err); }
 });
