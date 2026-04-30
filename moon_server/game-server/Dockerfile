@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /build
 COPY go.mod go.sum* ./
 RUN go mod download
@@ -6,7 +6,7 @@ COPY . .
 RUN go mod tidy
 RUN go build -o moon-game-server ./main.go
 
-FROM alpine:3.19
+FROM alpine:3.21
 WORKDIR /app
 COPY --from=builder /build/moon-game-server .
 EXPOSE 8080
