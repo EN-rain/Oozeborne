@@ -235,6 +235,26 @@ function MobTuner() {
   const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
   const [msg, setMsg] = useState('');
 
+  // Fetch current stats when mob is selected
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await axios.get(`${API}/admin/mobs/${selected}`, { headers: authHeader() });
+        if (res.data.mob) {
+          setStats({
+            health: res.data.mob.health || '',
+            speed: res.data.mob.speed || '',
+            damage: res.data.mob.damage || '',
+            xp_reward: res.data.mob.xp_reward || ''
+          });
+        }
+      } catch (e) {
+        setStats({ health: '', speed: '', damage: '', xp_reward: '' });
+      }
+    }
+    fetchStats();
+  }, [selected]);
+
   async function save() {
     try {
       await axios.patch(`${API}/admin/mobs/${selected}`,
@@ -252,15 +272,14 @@ function MobTuner() {
       <div className="glass-header">
         <Crosshair size={18} className="text-accent-primary" /> Live Mob Tuning
       </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: 6, borderRadius: 8 }}>
-        {mobs.map(m => (
-          <button key={m} 
-            className={`btn-outline ${selected === m ? 'active' : ''}`}
-            onClick={() => setSelected(m)}
-            style={{ flex: 1, justifyContent: 'center', border: 'none' }}>
-            {m.charAt(0).toUpperCase() + m.slice(1)}
-          </button>
-        ))}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <select className="input-field" style={{ width: '100%', maxWidth: 300 }} value={selected} onChange={(e) => setSelected(e.target.value)}>
+          {mobs.map(m => (
+            <option key={m} value={m}>
+              {m.charAt(0).toUpperCase() + m.slice(1)}
+            </option>
+          ))}
+        </select>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '1.5rem' }}>
         {(['health','speed','damage','xp_reward'] as const).map(field => (
@@ -305,10 +324,22 @@ function BroadcastPanel() {
 
 // ─── Dashboard layout ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [view, setView] = useState<'status' | 'settings'>('status');
+  const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings'>('overview');
+  const [roomsCount, setRoomsCount] = useState(0);
 
   useEffect(() => {
     if (!localStorage.getItem('moon_token')) window.location.href = '/';
+    
+    // Fetch quick stats for sidebar
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API}/admin/rooms`, { headers: authHeader() });
+        setRoomsCount(res.data.rooms?.length || 0);
+      } catch {}
+    };
+    fetchStats();
+    const t = setInterval(fetchStats, 5000);
+    return () => clearInterval(t);
   }, []);
 
   function logout() {
@@ -317,10 +348,22 @@ export default function DashboardPage() {
     window.location.href = '/';
   }
 
+  const getPageTitle = () => {
+    switch(view) {
+      case 'overview': return { title: 'Overview', desc: 'Monitor live game infrastructure.' };
+      case 'players': return { title: 'Player Database', desc: 'Search and manage player accounts.' };
+      case 'mobs': return { title: 'Live Mob Tuning', desc: 'Adjust mob stats globally in real-time.' };
+      case 'broadcast': return { title: 'Global Broadcast', desc: 'Send announcements to all connected players.' };
+      case 'settings': return { title: 'System Settings', desc: 'Manage staff access and security policies.' };
+    }
+  }
+
+  const { title, desc } = getPageTitle();
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
-      <aside style={{ width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
+      <aside style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', zIndex: 50 }}>
         <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Server size={20} color="white" />
@@ -332,10 +375,23 @@ export default function DashboardPage() {
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button className={`btn-outline ${view === 'status' ? 'active' : ''}`} 
-            onClick={() => setView('status')} style={{ border: 'none', justifyContent: 'flex-start' }}>
-            <Activity size={18} /> Dashboard
+          <button className={`btn-outline ${view === 'overview' ? 'active' : ''}`} 
+            onClick={() => setView('overview')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Activity size={18} /> Overview
           </button>
+          <button className={`btn-outline ${view === 'players' ? 'active' : ''}`} 
+            onClick={() => setView('players')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Users size={18} /> Player Database
+          </button>
+          <button className={`btn-outline ${view === 'mobs' ? 'active' : ''}`} 
+            onClick={() => setView('mobs')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Crosshair size={18} /> Live Mob Tuning
+          </button>
+          <button className={`btn-outline ${view === 'broadcast' ? 'active' : ''}`} 
+            onClick={() => setView('broadcast')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Wifi size={18} /> Global Broadcast
+          </button>
+          <div style={{ height: 16 }} />
           <button className={`btn-outline ${view === 'settings' ? 'active' : ''}`}
             onClick={() => setView('settings')} style={{ border: 'none', justifyContent: 'flex-start' }}>
             <Settings size={18} /> Settings
@@ -344,6 +400,23 @@ export default function DashboardPage() {
 
         <div style={{ flex: 1 }} />
         
+        {/* Server Stats Widget */}
+        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 8, marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, fontWeight: 600 }}>Live Stats</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: '0.85rem' }}>Active Rooms:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-primary)' }}>{roomsCount}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: '0.85rem' }}>Server Load:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>Optimal</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.85rem' }}>Ping:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>24ms</span>
+          </div>
+        </div>
+
         <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
           <div style={{ fontSize: '0.8rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
              <Shield size={14} /> Administrator Access
@@ -355,35 +428,26 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '2.5rem 3rem' }}>
+      <main style={{ marginLeft: 260, flex: 1, overflowY: 'auto', padding: '2.5rem 3rem' }}>
         <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0', letterSpacing: '-0.03em' }}>
-              {view === 'status' ? 'Overview' : 'System Settings'}
+              {title}
             </h1>
             <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-              {view === 'status' ? 'Monitor and manage live game infrastructure.' : 'Manage staff access and security policies.'}
+              {desc}
             </p>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 999, padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', gap: 12, alignItems: 'center' }}>
             <span><span style={{ color: 'var(--text-muted)' }}>Uptime:</span> 99.9%</span>
-            <div style={{ width: 1, height: 12, background: 'var(--border-light)' }} />
-            <span><span style={{ color: 'var(--text-muted)' }}>Nodes:</span> 04 Active</span>
           </div>
         </header>
 
-        {view === 'status' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <LiveRooms />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
-              <PlayerSearch />
-              <MobTuner />
-            </div>
-            <BroadcastPanel />
-          </div>
-        ) : (
-          <SettingsPanel />
-        )}
+        {view === 'overview' && <LiveRooms />}
+        {view === 'players' && <PlayerSearch />}
+        {view === 'mobs' && <MobTuner />}
+        {view === 'broadcast' && <BroadcastPanel />}
+        {view === 'settings' && <SettingsPanel />}
       </main>
     </div>
   );

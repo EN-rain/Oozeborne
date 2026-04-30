@@ -124,6 +124,17 @@ router.post('/spawn_mob', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── GET /admin/mobs/:mob_type — Fetch current mob stats ─────────────────────
+router.get('/mobs/:mob_type', async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT health, speed, damage, xp_reward FROM mob_configs WHERE mob_type = $1`,
+      [req.params.mob_type]
+    );
+    res.json({ mob: rows[0] || null });
+  } catch (err) { next(err); }
+});
+
 // ─── PATCH /admin/mobs/:mob_type — Live mob stat tuning ──────────────────
 router.patch('/mobs/:mob_type', async (req, res, next) => {
   try {
