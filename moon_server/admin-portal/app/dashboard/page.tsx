@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus } from 'lucide-react';
+import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
@@ -49,50 +49,55 @@ function SettingsPanel() {
   }
 
   return (
-    <section className="terminal-card">
-      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Settings size={16} /> SYSTEM_STAFF_MANAGEMENT
+    <section className="glass-card">
+      <div className="glass-header">
+        <Settings size={18} className="text-accent-primary" /> Staff Management
       </div>
       
       <div style={{ marginBottom: '2rem' }}>
-        <h4 style={{ fontSize: '0.7rem', color: 'var(--terminal-dim)', marginBottom: 8 }}>CREATE_NEW_ADMIN</h4>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="terminal-input" placeholder="USERNAME" 
+        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500 }}>ADD NEW ADMINISTRATOR</h4>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <input className="input-field" placeholder="Username" 
             value={newAdmin.user} onChange={e => setNewAdmin({...newAdmin, user: e.target.value})} />
-          <input className="terminal-input" placeholder="PASSWORD" type="password"
+          <input className="input-field" placeholder="Password" type="password"
             value={newAdmin.pass} onChange={e => setNewAdmin({...newAdmin, pass: e.target.value})} />
-          <select className="terminal-input" style={{ width: 100 }}
+          <select className="input-field" style={{ width: 120 }}
             value={newAdmin.level} onChange={e => setNewAdmin({...newAdmin, level: +e.target.value})}>
-            <option value={1}>ADMIN</option>
-            <option value={2}>SUPER</option>
+            <option value={1}>Admin</option>
+            <option value={2}>Super</option>
           </select>
-          <button className="terminal-btn" onClick={addStaff} disabled={loading}><Plus size={14} /></button>
+          <button className="btn-primary" onClick={addStaff} disabled={loading}><Plus size={16} /> Add</button>
         </div>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+      <table>
         <thead>
-          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--terminal-border)' }}>
-            <th style={th}>USER</th>
-            <th style={th}>LEVEL</th>
-            <th style={th}>OPS</th>
+          <tr>
+            <th>User</th>
+            <th>Role Level</th>
+            <th style={{ width: 80, textAlign: 'center' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {staff.map(s => (
-            <tr key={s.user_id} style={{ borderBottom: '1px dashed var(--terminal-dim)' }}>
-              <td style={td}>{s.username}</td>
-              <td style={td}>
-                {s.role_level === 2 ? <span style={{ color: 'var(--terminal-green)' }}>SUPER</span> : 'STAFF'}
+            <tr key={s.user_id}>
+              <td style={{ fontWeight: 500 }}>{s.username}</td>
+              <td>
+                {s.role_level === 2 
+                  ? <span className="badge badge-success">SuperAdmin</span> 
+                  : <span className="badge badge-info">Admin</span>}
               </td>
-              <td style={td}>
-                <button className="terminal-btn" style={{ color: 'var(--moon-danger)', padding: '2px 4px' }} 
+              <td style={{ textAlign: 'center' }}>
+                <button className="btn-danger" style={{ padding: '4px 8px', borderRadius: 6, cursor: 'pointer' }} 
                   onClick={() => deleteStaff(s.user_id)}>
-                  <Trash2 size={12} />
+                  <Trash2 size={14} />
                 </button>
               </td>
             </tr>
           ))}
+          {staff.length === 0 && (
+            <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No staff members found.</td></tr>
+          )}
         </tbody>
       </table>
     </section>
@@ -114,33 +119,37 @@ function LiveRooms() {
   }, []);
 
   return (
-    <section className="terminal-card">
-      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Wifi size={16} /> Active_Rooms
+    <section className="glass-card">
+      <div className="glass-header">
+        <Wifi size={18} style={{ color: 'var(--success)' }} /> Live Multiplayer Sessions
       </div>
-      {rooms.length === 0 && <p style={{ color: 'var(--terminal-dim)' }}>[ NO ACTIVE SESSIONS ]</p>}
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-        <thead>
-          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--terminal-border)' }}>
-            <th style={th}>CODE</th>
-            <th style={th}>TITLE</th>
-            <th style={th}>PLAYERS</th>
-            <th style={th}>OPS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rooms.map(r => (
-            <tr key={r.room_id} style={{ borderBottom: '1px dashed var(--terminal-dim)' }}>
-              <td style={td}>{r.room_code}</td>
-              <td style={td}>{r.title}</td>
-              <td style={td}>{r.player_count}/{r.max_players}</td>
-              <td style={td}>
-                <SpawnMobBtn room_id={r.room_id} />
-              </td>
+      {rooms.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '1rem' }}>No active rooms currently hosted.</p>}
+      {rooms.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Room Code</th>
+              <th>Host/Title</th>
+              <th>Players</th>
+              <th>Quick Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rooms.map(r => (
+              <tr key={r.room_id}>
+                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{r.room_code}</td>
+                <td>{r.title}</td>
+                <td>
+                  <span className="badge badge-info">{r.player_count} / {r.max_players}</span>
+                </td>
+                <td>
+                  <SpawnMobBtn room_id={r.room_id} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
   );
 }
@@ -155,17 +164,16 @@ function SpawnMobBtn({ room_id }: { room_id: string }) {
     } finally { setBusy(false); }
   }
   return (
-    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-      <select value={mob} onChange={e => setMob(e.target.value)} 
-        style={{ background: 'transparent', color: 'var(--terminal-green)', border: '1px solid var(--terminal-dim)', outline: 'none' }}>
-        <option value="slime">SLIME</option>
-        <option value="skeleton">SKELETON</option>
-        <option value="boss">BOSS</option>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <select className="input-field" style={{ padding: '4px 8px', width: 'auto' }} value={mob} onChange={e => setMob(e.target.value)}>
+        <option value="slime">Slime</option>
+        <option value="skeleton">Skeleton</option>
+        <option value="boss">Boss</option>
       </select>
-      <button className="terminal-btn" onClick={spawn} disabled={busy} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
-        EXE_SPAWN
+      <button className="btn-outline" onClick={spawn} disabled={busy} style={{ padding: '4px 8px' }}>
+        Spawn
       </button>
-    </span>
+    </div>
   );
 }
 
@@ -191,30 +199,28 @@ function PlayerSearch() {
   }
 
   return (
-    <section className="terminal-card">
-      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Users size={16} /> Player_Database
+    <section className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="glass-header">
+        <Users size={18} className="text-accent-primary" /> Player Database
       </div>
-      <form onSubmit={search} style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
-        <span style={{ marginRight: 4 }}>{'>'}</span>
-        <input className="terminal-input" value={q} onChange={e => setQ(e.target.value)}
-          placeholder="SEARCH_QUERY..." />
-        <button type="submit" className="terminal-btn">SEARCH</button>
+      <form onSubmit={search} style={{ display: 'flex', gap: 12, marginBottom: '1.5rem' }}>
+        <input className="input-field" value={q} onChange={e => setQ(e.target.value)} placeholder="Search username or email..." />
+        <button type="submit" className="btn-primary">Search</button>
       </form>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', flex: 1 }}>
         {players.map(p => (
-          <div key={p.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--terminal-dim)' }}>
+          <div key={p.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 8 }}>
             <div>
-              <span style={{ color: 'var(--terminal-dim)' }}>ID:</span> {p.username} | 
-              <span style={{ marginLeft: 8 }}>{p.display_name}</span>
-              <span style={{ marginLeft: 8 }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{p.username}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                {p.display_name}
                 {p.active_bans > 0
-                  ? <span className="badge-banned">BANNED</span>
-                  : <span className="badge-online">ACTIVE</span>}
-              </span>
+                  ? <span className="badge badge-danger">Banned</span>
+                  : <span className="badge badge-success">Active</span>}
+              </div>
             </div>
-            <button className="terminal-btn" style={{ color: 'var(--moon-danger)', borderColor: 'var(--moon-danger)', fontSize: '0.7rem' }} onClick={() => ban(p.user_id)}>
-              TERMINATE
+            <button className="btn-danger" style={{ padding: '6px 12px', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => ban(p.user_id)}>
+              Ban
             </button>
           </div>
         ))}
@@ -236,44 +242,39 @@ function MobTuner() {
           damage: +stats.damage || undefined, xp_reward: +stats.xp_reward || undefined },
         { headers: authHeader() }
       );
-      setMsg('>>> PARAMETERS UPDATED SUCCESSFULLY');
-    } catch { setMsg('!!! UPDATE FAILED'); }
+      setMsg('Parameters updated globally.');
+    } catch { setMsg('Failed to update.'); }
     setTimeout(() => setMsg(''), 3000);
   }
 
   return (
-    <section className="terminal-card">
-      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Crosshair size={16} /> Mob_Parameters
+    <section className="glass-card">
+      <div className="glass-header">
+        <Crosshair size={18} className="text-accent-primary" /> Live Mob Tuning
       </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: 6, borderRadius: 8 }}>
         {mobs.map(m => (
           <button key={m} 
+            className={`btn-outline ${selected === m ? 'active' : ''}`}
             onClick={() => setSelected(m)}
-            style={{ 
-              background: selected === m ? 'var(--terminal-green)' : 'transparent',
-              color: selected === m ? 'var(--terminal-bg)' : 'var(--terminal-green)',
-              border: '1px solid var(--terminal-green)',
-              padding: '2px 8px',
-              fontSize: '0.8rem',
-              cursor: 'pointer'
-            }}>
-            {m.toUpperCase()}
+            style={{ flex: 1, justifyContent: 'center', border: 'none' }}>
+            {m.charAt(0).toUpperCase() + m.slice(1)}
           </button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '1.5rem' }}>
         {(['health','speed','damage','xp_reward'] as const).map(field => (
-          <div key={field} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ fontSize: '0.7rem', width: 80 }}>{field.toUpperCase()}:</label>
-            <input className="terminal-input" type="number"
-              value={stats[field]} onChange={e => setStats(s => ({ ...s, [field]: e.target.value }))}
-              style={{ width: '100%' }} />
+          <div key={field}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>{field.replace('_', ' ')}</label>
+            <input className="input-field" type="number" placeholder="Leave blank to keep current"
+              value={stats[field]} onChange={e => setStats(s => ({ ...s, [field]: e.target.value }))} />
           </div>
         ))}
       </div>
-      {msg && <p style={{ color: msg.includes('!!!') ? 'var(--moon-danger)' : 'var(--terminal-green)', marginBottom: 8 }}>{msg}</p>}
-      <button className="terminal-btn" onClick={save}>PUSH_CONFIG</button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '0.85rem', color: msg.includes('Failed') ? 'var(--danger)' : 'var(--success)' }}>{msg}</span>
+        <button className="btn-primary" onClick={save}>Push Configuration</button>
+      </div>
     </section>
   );
 }
@@ -289,15 +290,14 @@ function BroadcastPanel() {
     } catch {}
   }
   return (
-    <section className="terminal-card">
-      <div className="terminal-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Activity size={16} /> Global_Broadcast
+    <section className="glass-card">
+      <div className="glass-header">
+        <Activity size={18} className="text-accent-primary" /> Global Server Broadcast
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <span style={{ marginRight: 4 }}>{'>'}</span>
-        <input className="terminal-input" value={msg} onChange={e => setMsg(e.target.value)}
-          placeholder="ENTER_ANNOUNCEMENT..." />
-        <button className="terminal-btn" onClick={send}>SEND</button>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <input className="input-field" value={msg} onChange={e => setMsg(e.target.value)}
+          placeholder="Enter a message to broadcast to all connected players..." />
+        <button className="btn-primary" onClick={send}>Send Broadcast</button>
       </div>
     </section>
   );
@@ -305,13 +305,10 @@ function BroadcastPanel() {
 
 // ─── Dashboard layout ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [booting, setBooting] = useState(true);
   const [view, setView] = useState<'status' | 'settings'>('status');
 
   useEffect(() => {
     if (!localStorage.getItem('moon_token')) window.location.href = '/';
-    const timer = setTimeout(() => setBooting(false), 1000);
-    return () => clearTimeout(timer);
   }, []);
 
   function logout() {
@@ -320,76 +317,74 @@ export default function DashboardPage() {
     window.location.href = '/';
   }
 
-  if (booting) {
-    return (
-      <div style={{ padding: '2rem', color: 'var(--terminal-green)' }}>
-        <div>MOON_OS v1.0.4 - SYSTEM BOOT...</div>
-        <div>LOADING MODULES: LOBBY_SERVICE, PLAYER_MANAGER, MOB_TUNER...</div>
-        <div>[ OK ] AUTH_CHECK</div>
-        <div>[ OK ] CONNECT_TO_LOBBY_API</div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', padding: '1rem', gap: '1rem' }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
-      <aside style={{ width: 240, borderRight: '1px solid var(--terminal-border)', paddingRight: '1rem', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--terminal-border)', paddingBottom: '1rem' }}>
-          <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>MOON_CONTROL_CTR</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--terminal-dim)' }}>SECURE_CONNECTION: ESTABLISHED</div>
+      <aside style={{ width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
+        <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Server size={20} color="white" />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Moon Server</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>● System Online</div>
+          </div>
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button className={`terminal-btn ${view === 'status' ? 'active' : ''}`} 
-            onClick={() => setView('status')} style={{ textAlign: 'left', fontSize: '0.8rem' }}>
-            <Activity size={14} style={{ marginRight: 8 }} /> SYSTEM_STATUS
+          <button className={`btn-outline ${view === 'status' ? 'active' : ''}`} 
+            onClick={() => setView('status')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Activity size={18} /> Dashboard
           </button>
-          <button className={`terminal-btn ${view === 'settings' ? 'active' : ''}`}
-            onClick={() => setView('settings')} style={{ textAlign: 'left', fontSize: '0.8rem' }}>
-            <Settings size={14} style={{ marginRight: 8 }} /> SYSTEM_SETTINGS
+          <button className={`btn-outline ${view === 'settings' ? 'active' : ''}`}
+            onClick={() => setView('settings')} style={{ border: 'none', justifyContent: 'flex-start' }}>
+            <Settings size={18} /> Settings
           </button>
         </nav>
 
         <div style={{ flex: 1 }} />
         
-        <div style={{ padding: '1rem 0', borderTop: '1px solid var(--terminal-border)' }}>
-          <div style={{ fontSize: '0.7rem', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-             <Shield size={12} /> AUTH: SUPER_ADMIN
+        <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
+          <div style={{ fontSize: '0.8rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+             <Shield size={14} /> Administrator Access
           </div>
-          <button className="terminal-btn" onClick={logout} style={{ width: '100%', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <LogOut size={14} /> LOGOUT_SYSTEM
+          <button className="btn-outline" onClick={logout} style={{ width: '100%', justifyContent: 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }}>
+            <LogOut size={16} /> Sign Out
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingRight: '1rem' }}>
-        <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{view === 'status' ? 'SYSTEM_DASHBOARD' : 'SECURITY_VAULT'}</h1>
-          <div style={{ fontSize: '0.8rem' }}>Uptime: 99.9% | Servers: 04</div>
-        </div>
+      <main style={{ flex: 1, overflowY: 'auto', padding: '2.5rem 3rem' }}>
+        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0', letterSpacing: '-0.03em' }}>
+              {view === 'status' ? 'Overview' : 'System Settings'}
+            </h1>
+            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
+              {view === 'status' ? 'Monitor and manage live game infrastructure.' : 'Manage staff access and security policies.'}
+            </p>
+          </div>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 999, padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', gap: 12, alignItems: 'center' }}>
+            <span><span style={{ color: 'var(--text-muted)' }}>Uptime:</span> 99.9%</span>
+            <div style={{ width: 1, height: 12, background: 'var(--border-light)' }} />
+            <span><span style={{ color: 'var(--text-muted)' }}>Nodes:</span> 04 Active</span>
+          </div>
+        </header>
 
         {view === 'status' ? (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <LiveRooms />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
               <PlayerSearch />
               <MobTuner />
             </div>
             <BroadcastPanel />
-          </>
+          </div>
         ) : (
           <SettingsPanel />
         )}
-        
-        <footer style={{ marginTop: '2rem', fontSize: '0.7rem', color: 'var(--terminal-dim)', textAlign: 'center' }}>
-          (c) 2026 MOON_INDUSTRIES // ALL RIGHTS RESERVED
-        </footer>
       </main>
     </div>
   );
 }
-
-const th: React.CSSProperties = { padding: '8px', fontWeight: 600, fontSize: '0.75rem', color: 'var(--terminal-dim)' };
-const td: React.CSSProperties = { padding: '8px', fontSize: '0.85rem' };
