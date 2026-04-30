@@ -338,6 +338,7 @@ function BroadcastPanel() {
 export default function DashboardPage() {
   const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings'>('overview');
   const [roomsCount, setRoomsCount] = useState(0);
+  const [uptimeStr, setUptimeStr] = useState('Checking...');
 
   useEffect(() => {
     if (!localStorage.getItem('moon_token')) window.location.href = '/';
@@ -347,6 +348,16 @@ export default function DashboardPage() {
       try {
         const res = await axios.get(`${API}/admin/rooms`, { headers: authHeader() });
         setRoomsCount(res.data.rooms?.length || 0);
+        
+        if (res.data.process_uptime) {
+          const up = res.data.process_uptime;
+          const d = Math.floor(up / 86400);
+          const h = Math.floor((up % 86400) / 3600);
+          const m = Math.floor((up % 3600) / 60);
+          if (d > 0) setUptimeStr(`${d}d ${h}h`);
+          else if (h > 0) setUptimeStr(`${h}h ${m}m`);
+          else setUptimeStr(`${m}m`);
+        }
       } catch {}
     };
     fetchStats();
@@ -376,14 +387,19 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
       <aside style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', zIndex: 50 }}>
-        <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Server size={20} color="white" />
+        <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Server size={20} color="white" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Moon Server</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>● System Online</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>Moon Server</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>● System Online</div>
-          </div>
+          <button onClick={() => setView('settings')} style={{ background: 'transparent', border: 'none', color: view === 'settings' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
+            <Settings size={18} />
+          </button>
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -402,11 +418,6 @@ export default function DashboardPage() {
           <button className={`btn-outline ${view === 'broadcast' ? 'active' : ''}`} 
             onClick={() => setView('broadcast')} style={{ border: 'none', justifyContent: 'flex-start' }}>
             <Wifi size={18} /> Global Broadcast
-          </button>
-          <div style={{ height: 16 }} />
-          <button className={`btn-outline ${view === 'settings' ? 'active' : ''}`}
-            onClick={() => setView('settings')} style={{ border: 'none', justifyContent: 'flex-start' }}>
-            <Settings size={18} /> Settings
           </button>
         </nav>
 
@@ -434,7 +445,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 999, padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span><span style={{ color: 'var(--text-muted)' }}>Uptime:</span> 99.9%</span>
+            <span><span style={{ color: 'var(--text-muted)' }}>Uptime:</span> {uptimeStr}</span>
           </div>
         </header>
 

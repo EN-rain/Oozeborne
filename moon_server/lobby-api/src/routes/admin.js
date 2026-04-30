@@ -237,7 +237,12 @@ router.get('/rooms', async (req, res, next) => {
       const r = await redis.hGetAll(key);
       if (r?.room_id) rooms.push(r);
     }
-    res.json({ rooms });
+    const os = require('os');
+    res.json({ 
+      rooms, 
+      process_uptime: process.uptime(),
+      system_uptime: os.uptime() 
+    });
   } catch (err) { next(err); }
 });
 
