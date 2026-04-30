@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus } from 'lucide-react';
