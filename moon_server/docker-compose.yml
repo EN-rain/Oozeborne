@@ -49,6 +49,7 @@ services:
       DB_PORT: 5432
       REDIS_ADDR: redis:6379
       PORT: 3000
+      GAME_SERVER_WS_URL: ws://35.247.150.45:8080
     ports:
       - "3000:3000"
     depends_on:

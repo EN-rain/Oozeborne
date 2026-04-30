@@ -273,6 +273,24 @@ router.get('/rooms', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── DELETE /admin/rooms/:room_code — Kill a live room ───────────────────
+router.delete('/rooms/:room_code', async (req, res, next) => {
+  try {
+    const code = req.params.room_code;
+    const room = await redis.hGetAll(`room:${code}`);
+    if (!room || !room.room_id) return res.status(404).json({ error: 'Room not found' });
+
+    await redis.del(`room:${code}`);
+    // Also notify game-server to kill the room if active
+    await redis.publish('admin_commands', JSON.stringify({
+      cmd: 'kill_room', room_id: room.room_id, by: req.user.user_id,
+    }));
+
+    await logAction(db, req.user.user_id, 'kill_room', null, { room_code: code, room_id: room.room_id });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // ─── Utility: write audit log ────────────────────────────────────────────
 async function logAction(db, admin_id, action_type, target_id, payload) {
   await db.query(

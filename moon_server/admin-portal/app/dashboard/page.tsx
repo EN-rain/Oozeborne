@@ -125,6 +125,13 @@ function LiveRooms() {
     return () => clearInterval(t);
   }, []);
 
+  async function removeRoom(code: string) {
+    if (!confirm('Force close this lobby?')) return;
+    try {
+      await axios.delete(`${API}/admin/rooms/${code}`, { headers: authHeader() });
+    } catch {}
+  }
+
   return (
     <section>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: '2rem' }}>
@@ -154,7 +161,7 @@ function LiveRooms() {
               <th>Room Code</th>
               <th>Host/Title</th>
               <th>Players</th>
-              <th>Quick Actions</th>
+              <th style={{ textAlign: 'right' }}>Moderate</th>
             </tr>
           </thead>
           <tbody>
@@ -165,8 +172,15 @@ function LiveRooms() {
                 <td>
                   <span className="badge badge-info">{r.player_count} / {r.max_players}</span>
                 </td>
-                <td>
-                  <SpawnMobBtn room_id={r.room_id} />
+                <td style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button className="btn-outline" style={{ padding: '6px' }} title="Moderate Room">
+                      <Shield size={16} />
+                    </button>
+                    <button className="btn-danger" style={{ padding: '6px', cursor: 'pointer', borderRadius: 8 }} onClick={() => removeRoom(r.room_code)} title="Kill Room">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -178,28 +192,7 @@ function LiveRooms() {
   );
 }
 
-function SpawnMobBtn({ room_id }: { room_id: string }) {
-  const [mob, setMob] = useState('slime');
-  const [busy, setBusy] = useState(false);
-  async function spawn() {
-    setBusy(true);
-    try {
-      await axios.post(`${API}/admin/spawn_mob`, { room_id, mob_type: mob, count: 1 }, { headers: authHeader() });
-    } finally { setBusy(false); }
-  }
-  return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <select className="input-field" style={{ padding: '4px 8px', width: 'auto' }} value={mob} onChange={e => setMob(e.target.value)}>
-        <option value="slime">Slime</option>
-        <option value="skeleton">Skeleton</option>
-        <option value="boss">Boss</option>
-      </select>
-      <button className="btn-outline" onClick={spawn} disabled={busy} style={{ padding: '4px 8px' }}>
-        Spawn
-      </button>
-    </div>
-  );
-}
+
 
 function PlayerSearch() {
   const [q, setQ] = useState('');
@@ -239,12 +232,11 @@ function PlayerSearch() {
   }
 
   return (
-    <section className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
-      <div className="glass-header">
-        <Users size={18} className="text-accent-primary" /> Player Database
-      </div>
-      <form onSubmit={search} style={{ display: 'flex', gap: 12, marginBottom: '1.5rem' }}>
-        <input className="input-field" value={q} onChange={e => setQ(e.target.value)} placeholder="Search username or email..." />
+    <section style={{ display: 'flex', flexDirection: 'column' }}>
+      <form onSubmit={search} style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', justifyContent: 'flex-end' }}>
+        <input className="input-field" 
+          style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', borderRadius: 0, width: '300px' }}
+          value={q} onChange={e => setQ(e.target.value)} placeholder="Search username or email..." />
         <button type="submit" className="btn-primary">Search</button>
       </form>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', flex: 1 }}>
@@ -396,16 +388,11 @@ function MobTuner() {
 
   return (
     <section>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Crosshair size={18} className="text-accent-primary" />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Live Mob Tuning</h2>
-        </div>
-        <div style={{ position: 'relative', width: 300 }}>
-          <input className="input-field" placeholder="Search mobs or boss..." 
-            value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.5rem' }} />
-          <Users size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+        <input className="input-field" 
+          style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', borderRadius: 0, width: '300px' }}
+          placeholder="Search mobs or boss..." 
+          value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', paddingRight: '0.5rem' }}>

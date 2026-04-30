@@ -19,6 +19,7 @@ var account_email: String = ""
 var socket: WebSocketPeer = WebSocketPeer.new()
 var match_id: String = ""
 var room_code: String = ""
+var lobby_name: String = ""
 var is_host: bool = false
 var is_admin: bool = false
 var players: Dictionary = {}  # user_id -> {ign, is_host, slime_variant}
@@ -42,7 +43,7 @@ signal player_left(user_id: String)
 signal match_joined()
 signal auth_state_changed(is_authenticated: bool, username: String, email: String)
 signal connection_lost()
-signal received_match_state(match_state: Dictionary)
+signal received_match_state(match_state)
 
 func _ready():
 	_load_config()
@@ -246,7 +247,10 @@ func _http_request(path: String, method: int, body: String = ""):
 	return json
 
 func _connect_to_game_server(url: String):
-	socket.connect_to_url(url)
+	var ws_url = url
+	if not auth_token.is_empty():
+		ws_url += "&token=" + auth_token
+	socket.connect_to_url(ws_url)
 	match_joined.emit()
 
 func _on_data_received(data_str: String):
