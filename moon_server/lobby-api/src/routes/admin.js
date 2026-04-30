@@ -124,6 +124,31 @@ router.post('/spawn_mob', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── POST /admin/player_action — God Mode Live Manipulation ──────────────
+router.post('/player_action', async (req, res, next) => {
+  try {
+    const { user_id, action, payload } = req.body;
+    await redis.publish('admin_commands', JSON.stringify({
+      cmd: 'player_action', target_user_id: user_id, action, payload, by: req.user.user_id,
+    }));
+    await logAction(db, req.user.user_id, 'player_action', user_id, { action, payload });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ─── POST /admin/players/:user_id/wipe — Reset Account Progression ───────
+router.post('/players/:user_id/wipe', async (req, res, next) => {
+  try {
+    const uid = req.params.user_id;
+    await db.query(
+      `UPDATE progression SET level=1, xp=0, coins=0 WHERE user_id = $1`,
+      [uid]
+    );
+    await logAction(db, req.user.user_id, 'wipe_account', uid, {});
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // ─── GET /admin/mobs/:mob_type — Fetch current mob stats ─────────────────────
 router.get('/mobs/:mob_type', async (req, res, next) => {
   try {

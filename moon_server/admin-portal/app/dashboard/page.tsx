@@ -204,6 +204,7 @@ function SpawnMobBtn({ room_id }: { room_id: string }) {
 function PlayerSearch() {
   const [q, setQ] = useState('');
   const [players, setPlayers] = useState<any[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
@@ -222,6 +223,21 @@ function PlayerSearch() {
     } catch (e: any) { alert(e.response?.data?.error || 'Failed'); }
   }
 
+  async function wipe(user_id: string) {
+    if (!confirm('WARNING: This will permanently reset this player\\'s level, xp, and coins to zero. Are you sure?')) return;
+    try {
+      await axios.post(`${API}/admin/players/${user_id}/wipe`, {}, { headers: authHeader() });
+      alert('Cloud save wiped.');
+    } catch (e: any) { alert('Failed'); }
+  }
+
+  async function sendAction(user_id: string, action: string, payload: any) {
+    try {
+      await axios.post(`${API}/admin/player_action`, { user_id, action, payload }, { headers: authHeader() });
+      alert(`${action} command sent to live servers.`);
+    } catch (e: any) { alert('Failed to send command.'); }
+  }
+
   return (
     <section className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="glass-header">
@@ -233,19 +249,78 @@ function PlayerSearch() {
       </form>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', flex: 1 }}>
         {players.map(p => (
-          <div key={p.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 8 }}>
-            <div>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>{p.username}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
-                {p.display_name}
-                {p.active_bans > 0
-                  ? <span className="badge badge-danger">Banned</span>
-                  : <span className="badge badge-success">Active</span>}
+          <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', cursor: 'pointer' }} onClick={() => setExpandedId(expandedId === p.user_id ? null : p.user_id)}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {p.username}
+                  {p.active_bans > 0
+                    ? <span className="badge badge-danger">Banned</span>
+                    : <span className="badge badge-success">Active</span>}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  ID: <span style={{ fontFamily: 'monospace' }}>{p.user_id.substring(0,8)}</span> | Display: {p.display_name}
+                </div>
               </div>
+              <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                {expandedId === p.user_id ? 'Close' : 'God Mode'}
+              </button>
             </div>
-            <button className="btn-danger" style={{ padding: '6px 12px', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => ban(p.user_id)}>
-              Ban
-            </button>
+            
+            {expandedId === p.user_id && (
+              <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.4)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                {/* Live Manipulation */}
+                <div>
+                  <h4 style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Live Manipulation</h4>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input id={`item-${p.user_id}`} className="input-field" placeholder="Item ID (e.g. coins)" style={{ flex: 1, padding: '4px 8px' }} />
+                    <input id={`amt-${p.user_id}`} className="input-field" type="number" placeholder="Amount" defaultValue={100} style={{ width: 80, padding: '4px 8px' }} />
+                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
+                      const elId = document.getElementById(`item-${p.user_id}`) as HTMLInputElement;
+                      const elAmt = document.getElementById(`amt-${p.user_id}`) as HTMLInputElement;
+                      if(elId.value) sendAction(p.user_id, 'give_item', { item_id: elId.value, amount: parseInt(elAmt.value) });
+                    }}>Give</button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <select id={`stat-${p.user_id}`} className="input-field" style={{ flex: 1, padding: '4px 8px' }}>
+                      <option value="max_health">Max Health</option>
+                      <option value="move_speed">Move Speed</option>
+                      <option value="damage_multiplier">Damage Mult</option>
+                    </select>
+                    <input id={`val-${p.user_id}`} className="input-field" type="number" placeholder="Value" defaultValue={500} style={{ width: 80, padding: '4px 8px' }} />
+                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
+                      const elSt = document.getElementById(`stat-${p.user_id}`) as HTMLSelectElement;
+                      const elV = document.getElementById(`val-${p.user_id}`) as HTMLInputElement;
+                      if(elV.value) sendAction(p.user_id, 'set_stat', { stat: elSt.value, value: parseFloat(elV.value) });
+                    }}>Set</button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input id={`x-${p.user_id}`} className="input-field" type="number" placeholder="X Coord" defaultValue={0} style={{ flex: 1, padding: '4px 8px' }} />
+                    <input id={`y-${p.user_id}`} className="input-field" type="number" placeholder="Y Coord" defaultValue={0} style={{ flex: 1, padding: '4px 8px' }} />
+                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
+                      const elX = document.getElementById(`x-${p.user_id}`) as HTMLInputElement;
+                      const elY = document.getElementById(`y-${p.user_id}`) as HTMLInputElement;
+                      sendAction(p.user_id, 'teleport', { x: parseFloat(elX.value), y: parseFloat(elY.value) });
+                    }}>Teleport</button>
+                  </div>
+                </div>
+
+                {/* Moderation */}
+                <div>
+                  <h4 style={{ fontSize: '0.8rem', color: 'var(--danger)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moderation & Data</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <button className="btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', justifyContent: 'center' }} onClick={() => ban(p.user_id)}>
+                      Ban Player (Kicks & Disables Login)
+                    </button>
+                    <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', justifyContent: 'center' }} onClick={() => wipe(p.user_id)}>
+                      Wipe Cloud Save (Reset Lvl/Coins)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
