@@ -224,7 +224,7 @@ function PlayerSearch() {
   }
 
   async function wipe(user_id: string) {
-    if (!confirm('WARNING: This will permanently reset this player\\'s level, xp, and coins to zero. Are you sure?')) return;
+    if (!confirm("WARNING: This will permanently reset this player's level, xp, and coins to zero. Are you sure?")) return;
     try {
       await axios.post(`${API}/admin/players/${user_id}/wipe`, {}, { headers: authHeader() });
       alert('Cloud save wiped.');
