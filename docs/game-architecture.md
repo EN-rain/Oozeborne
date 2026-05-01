@@ -2,7 +2,7 @@
 
 ## Project Bootstrap
 
-The Godot project is defined in [project.godot](c:\Users\LENOVO\Desktop\proxy\game\project.godot:1).
+The Godot project is defined in `game/project.godot`.
 
 Important runtime settings:
 
@@ -12,200 +12,220 @@ Important runtime settings:
 - physics tick rate: `120`
 - physics interpolation: enabled
 
+---
+
 ## Autoload Singletons
 
-Defined in [project.godot](c:\Users\LENOVO\Desktop\proxy\game\project.godot:13).
+Defined in `game/project.godot`.
 
-- `MultiplayerManager`: Nakama auth, session, socket, room, selected class state
-- `RemotePlayerManager`: remote player helper singleton
-- `ClientPrediction`: prediction singleton
-- `NetworkMessaging`: helper wrapper around match-state sending
-- `MultiplayerUtils`: op codes, interpolation, reconciliation, ping, input loop
-- `StatusEffectManager`: tracks active status effects by entity id
-- `LevelSystem`: player XP, levels, stat scaling
-- `DamageNumbers`: floating combat text manager
-- `CoinManager`: coin total and coin events
-- `ShopManager`: item purchase state and shop data
+| Singleton | Responsibility |
+|---|---|
+| `MultiplayerManager` | JWT auth, session restore, WebSocket lifecycle, room state, selected class |
+| `MultiplayerUtils` | Op codes, interpolation buffers, reconciliation, ping, input send loop |
+| `NetworkMessaging` | Helper wrapper around match-state message sending |
+| `ClassManager` | Loads and caches all 5 main classes and 18 subclasses |
+| `SkillRegistry` | Loads all skill `.tres` resources from `resources/skills/` |
+| `StatusEffectManager` | Tracks active status effects per entity |
+| `LevelSystem` | Player XP, levels, and stat scaling |
+| `DamageNumbers` | Floating combat text manager |
+| `CoinManager` | Coin total and coin drop events |
+| `ShopManager` | Item purchase state and shop data (loaded from `shop_items.json`) |
+| `AdminManager` | Handles admin commands from Moon Control Center |
 
-These are the real backbone of the client; most scene scripts rely on them directly.
+These are the real backbone of the client — most scene scripts rely on them directly.
+
+---
 
 ## Scene Flow
 
 ### Auth
 
-[auth_menu.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\auth_menu.gd:1) is the first user-facing scene.
+`auth_menu.gd` is the first user-facing scene.
 
 It:
-
-- attempts to restore an encrypted saved Nakama session
-- allows email login
-- allows email registration
+- attempts to restore a stored JWT from `user://auth_session.json`
+- allows email login via `POST /auth/login`
+- allows email registration via `POST /auth/register`
 - routes to the main menu on success
 
 ### Main Menu
 
-[main_menu.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\main_menu.gd:1) provides three practical paths:
+`main_menu.gd` provides three practical paths:
 
-- local/offline start into gameplay
-- host multiplayer room
-- join multiplayer room by room code
+- **Local/offline** — direct jump into gameplay (no network)
+- **Host multiplayer room** — calls `POST /rooms/create`, then `room_lobby.tscn`
+- **Join multiplayer room** — resolves room code via `POST /rooms/join`, then `room_lobby.tscn`
 
-It also supports logout and quit.
+Also supports logout and quit.
 
 ### Room Lobby
 
-[room_lobby.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\room_lobby.gd:1) is the heaviest UI scene in the project.
+`room_lobby.gd` is the heaviest UI scene in the project.
 
 It manages:
-
 - player list and host controls
 - lobby title editing
-- class carousel
-- subclass/party/stats panels through `RoomLobbyView`
+- class carousel (5 main classes)
+- subclass/party/stats panels via `RoomLobbyView`
 - chat UI widgets
-- class selection broadcast
-- slime preview assignment per class
-- start-game transition
+- class selection broadcast to all lobby members
+- slime preview assignment per class (palette shader)
+- start-game transition (host-gated)
 
-[room_lobby_view.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\room_lobby_view.gd:1) is a helper object that owns:
-
+`room_lobby_view.gd` owns:
 - party-card rendering
 - class-order display data
 - panel formatting for stats and subclass descriptions
-- hardcoded display content for class cards and talents
 
 ### Main Match
 
-[main.gd](c:\Users\LENOVO\Desktop\proxy\game\src\systems\game\main.gd:1) orchestrates gameplay.
+`main.gd` orchestrates in-match gameplay.
 
 It is responsible for:
-
 - replacing the placeholder local player with the selected class scene
 - setting initial local spawn position
-- wiring Nakama match signals
-- spawning remote players
-- starting input send loop
-- handling authoritative snapshots
-- handling legacy JSON match messages
-- initializing mob spawning
+- opening WebSocket to `game-server` and wiring match signals
+- spawning remote players from `OP_PLAYER_JOIN` messages
+- starting the input send loop
+- applying authoritative snapshots from `OP_STATE`
+- initialising mob spawning (client-side visuals driven by `OP_MOB_SPAWN`)
 - showing FPS/ping/interpolation debug text
+
+---
 
 ## Player Model
 
-The player controller is [player.gd](c:\Users\LENOVO\Desktop\proxy\game\src\entities\player\player.gd:1).
+The player controller is `game/scripts/entities/player/player.gd`.
 
-It currently contains:
-
+It contains:
 - local-only movement and attack input
 - dash logic and cooldown
 - damage, hit stun, and knockback
 - slash spawn for basic attack
 - sprite animation switching
-- class modifier application
+- class modifier application on spawn
 
-Notable runtime behavior:
-
+Notable runtime behaviour:
 - local players use `move_and_slide()`
-- remote players do not run local physics and are updated by multiplayer interpolation instead
+- remote players are updated by `MultiplayerUtils` interpolation — no local physics
 - the same script is reused for local and remote player instances
+
+---
 
 ## Class and Progression Data
 
-### Classes
+### Main Classes and Subclasses
 
-[player_class.gd](c:\Users\LENOVO\Desktop\proxy\game\src\resources\player_class.gd:1) is the base resource for classes.
+`ClassManager` loads all 5 main classes and 18 subclasses at startup.
 
-A `PlayerClass` contains:
+| Main Class | Subclasses |
+|---|---|
+| Tank | Guardian, Berserker, Paladin |
+| DPS | Assassin, Ranger, Mage, Samurai |
+| Support | Cleric, Bard, Alchemist, Necromancer |
+| Hybrid | Spellblade, Shadow Knight, Monk |
+| Controller | Chronomancer, Warden, Hexbinder, Stormcaller |
 
-- display metadata
+Class scripts live in `game/scripts/resources/classes/{role}/`.
+
+`player_class.gd` is the base resource. A `PlayerClass` contains:
+- display metadata (name, description, icon)
 - stat multipliers
 - active/passive ability descriptors
 - passive bonus values
-- `player_scene` to instantiate for this class
-- starting-level and starting-item fields
+- `player_scene` — the scene to instantiate for this class
 
-Concrete class resources live in:
+### Skills
 
-- `src/resources/classes/tank/`
-- `src/resources/classes/dps/`
-- `src/resources/classes/support/`
-- `src/resources/classes/hybrid/`
+`SkillRegistry` walks `game/resources/skills/` at startup and loads all `.tres` skill definitions.
+
+Skills are organised by `main_class/subclass/` folder. Each skill has:
+- `skill_id`, `display_name`, `description_template`
+- `skill_type`: `PASSIVE`, `SPECIAL`, or `ACTIVE`
+- `icon`: Texture2D
 
 ### Levels and Stats
 
-[player_stats.gd](c:\Users\LENOVO\Desktop\proxy\game\src\resources\player_stats.gd:1) defines:
+`player_stats.gd` defines:
+- base health, speed, dash speed, dash cooldown, attack damage, crit chance, mana, regen
+- per-level scaling for every stat
+- XP curve (base × scaling^(level−1))
+- min/max caps
 
-- base health, speed, dash, and damage
-- per-level scaling
-- XP curve
-
-[level_system.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\level_system.gd:1) applies those stats at runtime.
-
-It:
-
-- registers players by instance id
+`level_system.gd` applies those stats at runtime:
+- registers players by instance ID
 - tracks XP and next-level thresholds
 - handles multi-level-up loops
 - writes scaled stats back to player nodes and health components
 
+---
+
+## Enemies / Mobs
+
+Five mob types exist in `game/scenes/entities/enemies/`:
+
+| Scene | Type | Role |
+|---|---|---|
+| `blue_slime.tscn` | `slime` | Common — basic melee |
+| `blue_slime.tscn` | `common` | Common — basic melee variant |
+| `plagued_lancer.tscn` | `lancer` | Elite — charge attack |
+| `archer.tscn` | `archer` | Elite — ranged |
+| `void_warden.tscn` | `warden` | Elite — area denial |
+| *(boss scene)* | `boss` | Boss — high HP, wave boss |
+
+`mob_spawner.gd` handles:
+- spawning common and elite enemies at off-screen positions
+- enforcing min distance from player
+- tracking active mob counts per category
+- `spawn_mob_by_name()` for admin remote-spawn
+
+`mob_scene_registry.gd` maps mob type strings to `PackedScene` references.
+
+Mob stats (HP, speed, damage, XP reward) are **live-tunable** from the Admin Portal via `admin/mobs/:mob_type`.
+
+---
+
 ## Status Effects
 
-[status_effect_manager.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\status_effect_manager.gd:1) stores effects by entity id and effect name.
+`status_effect_manager.gd` stores effects by entity ID and effect name.
 
-Status effect implementation is component-style:
-
-- `src/components/status_effect.gd`
-- `src/components/buffs/*.gd`
-- `src/components/debuffs/*.gd`
+Status effect components:
+- `components/status_effect.gd` — base
+- `components/buffs/*.gd`
+- `components/debuffs/*.gd`
 
 The manager:
-
 - ticks all effects every frame
 - refreshes duplicates instead of stacking same-name effects
 - removes expired effects and frees their nodes
 
+---
+
 ## Economy and Shop
 
-The shop UI is [shop_ui.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\shop_ui.gd:1).
+Items are defined in `game/resources/data/shop_items.json` with four categories:
 
-It consumes data from `ShopManager` and `CoinManager`, and organizes items into:
+| Category | Examples |
+|---|---|
+| Consumables | Health Potion (small/large), Shield Potion, Speed Potion, Iron Skin Potion |
+| Permanent Upgrades | Max HP +10/+25, Attack +5, Speed +5%, Crit +5%, Lifesteal +3% |
+| Equipment | Iron Sword, Swift Boots, Warrior's Ring, Assassin's Dagger |
+| Special | Revive Stone, XP Tome, Gold Booster, Magnet Ring |
 
-- consumables
-- upgrades
-- equipment
-- special
+`ShopManager` loads items from JSON at startup. `CoinManager` tracks coin totals.
 
-The system is UI-driven and resource-based rather than inventory-heavy at this stage.
+The shop UI is driven by `ShopManager` and `CoinManager` and is presented during the Upgrade Phase between waves.
 
-## Enemy/Mob Side
-
-The main enemy spawn coordinator is [mob_spawner.gd](c:\Users\LENOVO\Desktop\proxy\game\src\systems\game\mob_spawner.gd:1).
-
-It:
-
-- spawns common and elite enemies
-- enforces min distance from player
-- keeps separate common/elite caps
-- respawns mobs after delays until total spawn budgets are exhausted
-
-Enemy scripts currently present:
-
-- `blue_slime.gd`
-- `archer.gd`
-- `plagued_lancer.gd`
-- `bt_enemy.gd`
+---
 
 ## Slime Player Presentation
 
-The player visuals are currently centered on slime scenes:
-
-- [slime_color.gdshader](c:\Users\LENOVO\Desktop\proxy\game\assets\shaders\slime_color.gdshader:1)
+Player visuals use slime scenes:
+- `game/assets/shaders/slime_color.gdshader`
 - `game/assets/sprites/Player/Slime/`
 - `game/scenes/entities/player/slime_*.tscn`
 
-Current implementation details:
-
-- shared generated base frames for `idle`, `walk`, and `dash`
-- one scene per color variant
-- shader overrides for body colors, outline, iris, and eye highlight
+One scene per colour variant, sharing:
+- generated base frames for `idle`, `walk`, and `dash`
+- shader parameters for body colours, outline, iris, and eye highlight
 - lobby previews use the same shader path for visual consistency

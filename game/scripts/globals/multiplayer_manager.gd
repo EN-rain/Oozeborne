@@ -9,7 +9,7 @@ class MatchState:
 class Presence:
 	var user_id: String
 
-# --- Custom Networking (Replaces Nakama) ---
+# --- Custom Networking ---
 var auth_token: String = ""
 var user_id: String = ""
 var username: String = ""

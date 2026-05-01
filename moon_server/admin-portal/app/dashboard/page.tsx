@@ -245,9 +245,9 @@ function PlayerSearch() {
                 <td>{p.email || 'N/A'}</td>
                 <td>{p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A'}</td>
                 <td>
-                  {p.active_bans > 0
-                    ? <span className="badge badge-danger">Banned</span>
-                    : <span className="badge badge-success">Active</span>}
+                  {p.is_online
+                    ? <span className="badge badge-success">Online</span>
+                    : <span className="badge" style={{ background: 'rgba(148,163,184,0.1)', color: 'var(--text-muted)', border: '1px solid rgba(148,163,184,0.2)' }}>Offline</span>}
                 </td>
               </tr>
             ))}
@@ -260,6 +260,58 @@ function PlayerSearch() {
     </section>
   );
 }
+
+// ─── Tuning Panel ────────────────────────────────────────────────────────────
+
+const CLASS_TREE: Record<string, string[]> = {
+  tank:       ['guardian', 'berserker', 'paladin'],
+  dps:        ['assassin', 'ranger', 'mage', 'samurai'],
+  support:    ['cleric', 'bard', 'alchemist', 'necromancer'],
+  hybrid:     ['spellblade', 'shadow_knight', 'monk'],
+  controller: ['chronomancer', 'warden', 'hexbinder', 'stormcaller'],
+};
+
+const CLASS_COLOR: Record<string, string> = {
+  tank: '#ef4444', dps: '#f97316', support: '#10b981',
+  hybrid: '#a855f7', controller: '#3b82f6',
+};
+
+const ITEM_CATEGORIES = [
+  { key: 'consumables', label: 'Consumables', color: '#10b981' },
+  { key: 'upgrades',    label: 'Upgrades',    color: '#6366f1' },
+  { key: 'equipment',   label: 'Equipment',   color: '#f59e0b' },
+  { key: 'special',     label: 'Special',     color: '#ec4899' },
+];
+
+const ITEMS_DATA: Record<string, { item_id: string; display_name: string; description: string; price: number; stat_type?: string; stat_value?: number; instant_heal?: number; duration?: number }[]> = {
+  consumables: [
+    { item_id: 'health_potion_small', display_name: 'Health Potion', description: 'Restores health.', price: 8, instant_heal: 50 },
+    { item_id: 'health_potion_large', display_name: 'Large Health Potion', description: 'Restores significant health.', price: 20, instant_heal: 100 },
+    { item_id: 'shield_potion', display_name: 'Shield Potion', description: 'Temporary defense boost.', price: 25, stat_type: 'DEFENSE', stat_value: 50, duration: 30 },
+    { item_id: 'speed_potion', display_name: 'Speed Potion', description: 'Temporary speed boost.', price: 15, stat_type: 'SPEED', stat_value: 30, duration: 60 },
+    { item_id: 'iron_skin_potion', display_name: 'Iron Skin Potion', description: 'Knockback immunity.', price: 35 },
+  ],
+  upgrades: [
+    { item_id: 'max_hp_10', display_name: 'Max HP +10', description: 'Permanent HP increase.', price: 40, stat_type: 'MAX_HP', stat_value: 10 },
+    { item_id: 'max_hp_25', display_name: 'Max HP +25', description: 'Permanent HP increase.', price: 85, stat_type: 'MAX_HP', stat_value: 25 },
+    { item_id: 'attack_5', display_name: 'Attack +5', description: 'Permanent damage increase.', price: 50, stat_type: 'ATTACK', stat_value: 5 },
+    { item_id: 'speed_5', display_name: 'Speed +5%', description: 'Permanent speed increase.', price: 35, stat_type: 'SPEED', stat_value: 5 },
+    { item_id: 'crit_5', display_name: 'Crit Chance +5%', description: 'Permanent crit increase.', price: 70, stat_type: 'CRIT_CHANCE', stat_value: 5 },
+    { item_id: 'lifesteal_3', display_name: 'Lifesteal +3%', description: 'Permanent lifesteal.', price: 90, stat_type: 'LIFESTEAL', stat_value: 3 },
+  ],
+  equipment: [
+    { item_id: 'iron_sword', display_name: 'Iron Sword', description: 'Increases damage.', price: 65, stat_type: 'ATTACK', stat_value: 10 },
+    { item_id: 'swift_boots', display_name: 'Swift Boots', description: 'Increases speed.', price: 50, stat_type: 'SPEED', stat_value: 15 },
+    { item_id: 'warrior_ring', display_name: "Warrior's Ring", description: 'Boosts damage.', price: 100, stat_type: 'ATTACK', stat_value: 15 },
+    { item_id: 'assassin_dagger', display_name: "Assassin's Dagger", description: 'Boosts crit.', price: 85, stat_type: 'CRIT_CHANCE', stat_value: 10 },
+  ],
+  special: [
+    { item_id: 'revive_stone', display_name: 'Revive Stone', description: 'Auto-revive on death.', price: 180 },
+    { item_id: 'xp_tome', display_name: 'XP Tome', description: 'Instantly gain 50 XP.', price: 25 },
+    { item_id: 'gold_booster', display_name: 'Gold Booster', description: 'Permanent coin drop boost.', price: 130, stat_type: 'COIN_BOOST', stat_value: 25 },
+    { item_id: 'magnet_ring', display_name: 'Magnet Ring', description: 'Increases coin range.', price: 45 },
+  ],
+};
 
 function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }) {
   const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
@@ -335,48 +387,194 @@ function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }
   );
 }
 
-function MobTuner() {
-  const mobs = ['slime', 'skeleton', 'boss', 'bat', 'ghost', 'golem']; 
+// ─── Enemies Tab ─────────────────────────────────────────────────────────────
+function EnemiesTab() {
+  const mobs = ['slime', 'common', 'lancer', 'archer', 'warden', 'boss'];
   const [search, setSearch] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  
   const filteredMobs = mobs.filter(m => m.toLowerCase().includes(search.toLowerCase()));
-
   const toggleEdit = () => {
-    if (isEditing) {
-      // Trigger save on all cards
-      window.dispatchEvent(new CustomEvent('moon-save-mobs'));
-    }
+    if (isEditing) window.dispatchEvent(new CustomEvent('moon-save-mobs'));
     setIsEditing(!isEditing);
   };
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
+        <button className="btn-outline" onClick={toggleEdit}
+          style={{ background: isEditing ? 'var(--accent-primary)' : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none', whiteSpace: 'nowrap' }}>
+          {isEditing ? <Check size={16} /> : <Edit3 size={16} />}
+          {isEditing ? 'Confirm' : 'Edit'}
+        </button>
+        <input className="input-field"
+          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '260px', fontSize: '0.85rem' }}
+          placeholder="Filter enemies..." value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
+        {filteredMobs.map(m => <MobCard key={m} mobType={m} isEditing={isEditing} />)}
+        {filteredMobs.length === 0 && <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No enemies found matching "{search}"</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Items Tab ────────────────────────────────────────────────────────────────
+function ItemsTab() {
+  const [search, setSearch] = useState('');
+  return (
+    <div>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <input className="input-field"
+          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '260px', fontSize: '0.85rem' }}
+          placeholder="Filter items..." value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
+      {ITEM_CATEGORIES.map(cat => {
+        const items = (ITEMS_DATA[cat.key] || []).filter(i =>
+          i.display_name.toLowerCase().includes(search.toLowerCase()) || i.item_id.includes(search.toLowerCase())
+        );
+        if (items.length === 0) return null;
+        return (
+          <div key={cat.key} style={{ marginBottom: '1.5rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: cat.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{cat.label}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              {items.map(item => (
+                <div key={item.item_id} className="glass-card" style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.2)' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 4, color: 'var(--text-main)' }}>{item.display_name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 8 }}>{item.description}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>💰 {item.price}g</span>
+                    {item.stat_type && <span style={{ color: cat.color, fontWeight: 600 }}>{item.stat_type.replace('_',' ')}{item.stat_value !== undefined ? ` +${item.stat_value}` : ''}</span>}
+                    {item.instant_heal && <span style={{ color: '#10b981', fontWeight: 600 }}>+{item.instant_heal} HP</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Classes Tab ──────────────────────────────────────────────────────────────
+function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; mainClassId: string; onBack: () => void }) {
+  const color = CLASS_COLOR[mainClassId] || 'var(--accent-primary)';
+  const statFields = ['base_max_health','base_speed','base_attack_damage','base_crit_chance','base_max_mana','health_per_level','damage_per_level'];
+  const [stats, setStats] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const skills = [
+    { name: 'Passive', desc: 'Class passive ability — increases core stats over time.' },
+    { name: 'Special', desc: 'Unique active ability — cooldown-based signature skill.' },
+    { name: 'Skill 1', desc: 'First skill tree branch — early specialisation.' },
+    { name: 'Skill 2', desc: 'Second skill tree branch — mid-game power spike.' },
+  ];
 
   return (
-    <section>
-      <div style={{ marginBottom: '1rem' }}>
-        <button className="btn-outline" onClick={toggleEdit} 
-          style={{ background: isEditing ? 'var(--accent-primary)' : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none' }}>
-          {isEditing ? <Check size={16} /> : <Edit3 size={16} />}
-          {isEditing ? 'Confirm Changes' : 'Edit Parameters'}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
+        <button onClick={onBack} className="btn-outline" style={{ padding: '6px 12px' }}>← Back</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{mainClassId}</span>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, textTransform: 'capitalize', margin: 0, color }}>{classId.replace('_',' ')}</h2>
+        </div>
+        <div style={{ flex: 1 }} />
+        <button className="btn-outline" onClick={() => setIsEditing(e => !e)}
+          style={{ background: isEditing ? color : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none' }}>
+          {isEditing ? <><Check size={15} /> Save</> : <><Edit3 size={15} /> Edit</>}
         </button>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
-        <input className="input-field" 
-          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '280px', fontSize: '0.85rem' }}
-          placeholder="Filter mobs..." 
-          value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
-        {filteredMobs.map(m => (
-          <MobCard key={m} mobType={m} isEditing={isEditing} />
-        ))}
-        {filteredMobs.length === 0 && (
-          <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            No mobs found matching "{search}"
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="glass-card">
+          <div className="glass-header" style={{ color }}><Activity size={16} /> Base Stats</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {statFields.map(f => (
+              <div key={f}>
+                <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>{f.replace(/_/g,' ')}</label>
+                <input className="input-field" type="number" disabled={!isEditing}
+                  style={{ padding: '4px 8px', fontSize: '0.8rem', height: '30px', background: isEditing ? 'var(--bg-input)' : 'transparent', borderColor: isEditing ? 'var(--border-light)' : 'transparent' }}
+                  value={stats[f] ?? ''} onChange={e => setStats(s => ({ ...s, [f]: e.target.value }))} />
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
+        <div className="glass-card">
+          <div className="glass-header" style={{ color }}><Shield size={16} /> Skills</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {skills.map(sk => (
+              <div key={sk.name} style={{ padding: '0.6rem', background: 'rgba(0,0,0,0.2)', borderRadius: 8, borderLeft: `3px solid ${color}` }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 3 }}>{sk.name}</div>
+                {isEditing
+                  ? <input className="input-field" defaultValue={sk.desc} style={{ fontSize: '0.75rem', padding: '3px 6px', height: '28px' }} />
+                  : <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{sk.desc}</div>
+                }
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ClassesTab() {
+  const [selected, setSelected] = useState<{ classId: string; mainId: string } | null>(null);
+  if (selected) return <ClassDetailPage classId={selected.classId} mainClassId={selected.mainId} onBack={() => setSelected(null)} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {Object.entries(CLASS_TREE).map(([mainId, subs]) => {
+        const color = CLASS_COLOR[mainId];
+        return (
+          <div key={mainId}>
+            <button onClick={() => setSelected({ classId: mainId, mainId })}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', marginBottom: '0.75rem', padding: 0 }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'capitalize', color }}>{mainId}</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>main class</span>
+            </button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingLeft: 22 }}>
+              {subs.map(sub => (
+                <button key={sub} onClick={() => setSelected({ classId: sub, mainId })}
+                  style={{ padding: '6px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', border: `1px solid ${color}22`, background: `${color}11`, color, textTransform: 'capitalize', transition: 'all 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.background = `${color}25`)}
+                  onMouseOut={e => (e.currentTarget.style.background = `${color}11`)}>
+                  {sub.replace('_',' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main Tuning Panel ────────────────────────────────────────────────────────
+function MobTuner() {
+  const [tab, setTab] = useState<'enemies'|'items'|'classes'>('enemies');
+  const tabs: { key: 'enemies'|'items'|'classes'; label: string }[] = [
+    { key: 'enemies', label: 'Enemies' },
+    { key: 'items',   label: 'Items' },
+    { key: 'classes', label: 'Classes' },
+  ];
+  return (
+    <section>
+      <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: 0 }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{ padding: '8px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+              color: tab === t.key ? 'var(--accent-primary)' : 'var(--text-muted)',
+              borderBottom: tab === t.key ? '2px solid var(--accent-primary)' : '2px solid transparent',
+              marginBottom: -1, transition: 'all 0.15s' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'enemies' && <EnemiesTab />}
+      {tab === 'items'   && <ItemsTab />}
+      {tab === 'classes' && <ClassesTab />}
     </section>
   );
 }
@@ -548,7 +746,7 @@ export default function DashboardPage() {
           </button>
           <button className={`btn-outline ${view === 'mobs' ? 'active' : ''}`} 
             onClick={() => setView('mobs')} style={{ border: 'none', justifyContent: 'flex-start' }}>
-            <Crosshair size={18} /> Live Mob Tuning
+            <Crosshair size={18} /> Tuning
           </button>
           <button className={`btn-outline ${view === 'broadcast' ? 'active' : ''}`} 
             onClick={() => setView('broadcast')} style={{ border: 'none', justifyContent: 'flex-start' }}>

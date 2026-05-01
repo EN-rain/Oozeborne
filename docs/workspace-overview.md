@@ -2,35 +2,38 @@
 
 ## Repository Shape
 
-Top level:
+```
+proxy/
+├── game/              # Godot 4.6 client
+├── moon_server/       # Custom authoritative backend
+├── docs/              # Architecture documentation
+└── tools/             # Dev utilities
+```
 
-- `game/`
-- `main_server/`
-- `exports/`
+This is a single workspace with a Godot client and the Moon Server backend kept in the same repo.
 
-This is a single workspace with a Godot client and a Nakama backend kept in the same repo.
+---
 
 ## `game/`
 
-The client project is a Godot 4.6 game configured by [project.godot](c:\Users\LENOVO\Desktop\proxy\game\project.godot:1).
+The client project is a Godot 4.6 game configured by [project.godot](../game/project.godot).
 
 Main directories:
 
-- `addons/`: plugins, including the Nakama addon and Godot MCP plugin
+- `addons/`: Godot plugins (Godot MCP plugin, etc.)
 - `assets/`: art, shaders, imported textures, and generated slime assets
-- `resources/`: engine resources outside `src/`
+- `resources/`: engine resources — class definitions, skill trees, shop item data
 - `scenes/`: `.tscn` scene graph definitions
-- `src/`: GDScript source
-- `codegen/`: generated support files
-- `ai/`: AI-related project content
+- `scripts/`: GDScript source
+- `codegen/`: legacy tool (no longer used)
 
 ### Most Important Client Subtrees
 
-`game/src/`:
+`game/scripts/`:
 
-- `globals/`: autoload managers
+- `globals/`: autoload singletons (ClassManager, ShopManager, LevelSystem, etc.)
 - `systems/game/`: main match orchestration and mob spawner
-- `entities/`: player, enemies, projectiles, items
+- `entities/`: player, enemies (archer, lancer, warden, slime, boss), projectiles, items
 - `components/`: health and status effect primitives
 - `resources/`: class, stats, and shop data models
 - `ui/`: auth, menu, lobby, shop, pause, death
@@ -39,54 +42,87 @@ Main directories:
 
 - `ui/`: menu flow and room lobby scenes
 - `levels/`: gameplay map scenes
-- `entities/player/`: current slime player scene variants
-- `entities/enemies/`: enemy scenes
+- `entities/player/`: slime player scene variants
+- `entities/enemies/`: archer, lancer, warden, void warden scenes
 - `effects/`: damage number and particle scenes
 
-## `main_server/`
+`game/resources/`:
 
-This folder is the Nakama server side.
+- `data/shop_items.json`: all shop item definitions (consumables, upgrades, equipment, special)
+- `skills/`: skill `.tres` resources organised by `main_class/subclass/`
 
-Files present:
+---
 
-- [docker-compose.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.yml:1)
-- [docker-compose.prod.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.prod.yml:1)
-- [README.md](c:\Users\LENOVO\Desktop\proxy\main_server\README.md:1)
-- [modules/lobby.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\lobby.lua:1)
-- [modules/rpc_registry.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\rpc_registry.lua:1)
+## `moon_server/`
 
-The server codebase is small and focused:
+The full custom backend stack. Replaces all third-party game backend services.
 
-- one authoritative match handler
-- one RPC registry for room creation/join/deletion
-- dockerized CockroachDB + Nakama runtime
+| Service | Language | Port | Description |
+|---|---|---|---|
+| `game-server` | Go | `8080` | Authoritative 20Hz WebSocket simulation |
+| `lobby-api` | Node.js | `3000` | REST API — auth, rooms, profiles, admin |
+| `admin-portal` | Next.js | `3001` | Moon Control Center |
+| `postgres` | — | `5432` | Persistent player data |
+| `redis` | — | `6379` | Session state, room registry, pub/sub |
+| `adminer` | — | `8081` | Database browser (dev only) |
 
-## `exports/`
+Key files:
 
-This folder holds export-side config templates. It is supporting infrastructure, not the game runtime.
+- `docker-compose.yml`: full local stack definition
+- `.env.example`: environment variable template
+- `db/migrations/001_init.sql`: full Postgres schema and seed data
+
+### `lobby-api/src/routes/`
+
+- `auth.js`: `/auth/register`, `/auth/login`
+- `rooms.js`: `/rooms/create`, `/rooms/join`
+- `profiles.js`: `/profiles/me`
+- `friends.js`: `/friends/request`, `/friends/list`
+- `chat.js`: `/chat/global`, `/chat/friend`
+- `admin.js`: `/admin/*` (requires Admin role)
+
+### `game-server/`
+
+Go service implementing:
+- WebSocket room session management
+- 20Hz authoritative tick loop
+- Player input validation and movement simulation
+- Mob state tracking and wave management
+- Delta snapshot broadcast
+
+---
+
+## `docs/`
+
+Architecture documentation for the current implementation.
+
+---
 
 ## Global Runtime Summary
 
-The user path through the system is:
+The player path through the system:
 
-1. `auth_menu.tscn`
-2. `main_menu.tscn`
-3. `room_lobby.tscn` for hosted/joined multiplayer, or direct jump into gameplay for local start
-4. `main.tscn` for the actual match
+1. `auth_menu.tscn` — JWT login/register via `lobby-api`
+2. `main_menu.tscn` — host or join multiplayer room, or start local
+3. `room_lobby.tscn` — class selection, party display, host controls
+4. `main.tscn` — actual match, connected to `game-server` via WebSocket
 
 On the server side:
 
-1. client calls RPC to create or join a room by room code
-2. Nakama starts or locates a `lobby` authoritative match
-3. clients join the match socket
-4. the Lua match loop receives input op codes and broadcasts authoritative snapshots
+1. Client POSTs to `lobby-api` to create or join a room by room code
+2. `lobby-api` registers room in Redis, returns `ws_url` pointing to `game-server`
+3. Client opens WebSocket to `game-server` with JWT auth
+4. `game-server` runs the authoritative 20Hz loop: input → simulate → broadcast snapshots
+5. Clients interpolate remote players from server snapshots
 
-## Current Asset/Art Organization
+---
 
-The newest art pipeline work is concentrated in:
+## Current Asset/Art Organisation
 
-- [slime_color.gdshader](c:\Users\LENOVO\Desktop\proxy\game\assets\shaders\slime_color.gdshader:1)
+The player presentation layer uses slime scenes:
+
+- `game/assets/shaders/slime_color.gdshader`
 - `game/assets/sprites/Player/Slime/`
 - `game/scenes/entities/player/slime_*.tscn`
 
-The slime system is currently the main player presentation layer used by class scenes.
+The slime system is the main player presentation layer used by all class scenes.

@@ -1,6 +1,6 @@
 # Moon Server
 
-> Authoritative game backend for the 4-player co-op survivors game. Replaces Nakama.
+> Authoritative game backend for the 4-player co-op survivors game.
 
 ---
 

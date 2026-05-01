@@ -2,193 +2,178 @@
 
 ## Overview
 
-The client uses Nakama for:
+The client connects to two Moon Server services:
 
-- email authentication
-- persistent session restore
-- room creation and room-code join
-- websocket match communication
-- authoritative movement snapshots
+- **`lobby-api`** (REST, port 3000): authentication, room create/join, profiles
+- **`game-server`** (WebSocket, port 8080): authoritative 20Hz real-time simulation
 
 The multiplayer implementation is split across:
 
-- [multiplayer_manager.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\multiplayer_manager.gd:1)
-- [multiplayer_utils.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\multiplayer_utils.gd:1)
-- [network_messaging.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\network_messaging.gd:1)
-- [room_lobby.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\room_lobby.gd:1)
-- [main.gd](c:\Users\LENOVO\Desktop\proxy\game\src\systems\game\main.gd:1)
+- [multiplayer_manager.gd](../game/scripts/globals/multiplayer_manager.gd)
+- [multiplayer_utils.gd](../game/scripts/globals/multiplayer_utils.gd)
+- [network_messaging.gd](../game/scripts/globals/network_messaging.gd)
+
+---
 
 ## Server Config Resolution
 
 `MultiplayerManager` resolves server connection details from:
 
 - built-in defaults
-- `server_config.cfg`
+- `server_config.cfg` (overrides for exported builds)
 
-Default client assumptions in code:
+Default client assumptions:
 
-- host: `127.0.0.1`
-- port: `7350`
-- scheme: `https`
-- server key: `defaultkey`
+| Setting | Default |
+|---|---|
+| Lobby API host | `127.0.0.1:3000` |
+| Game Server WS | `ws://127.0.0.1:8080` |
 
-That means exported builds depend on the external `server_config.cfg` being correct.
+Exported builds should point `server_config.cfg` at the production URLs.
+
+---
 
 ## Authentication Flow
 
-The auth path is:
+1. `auth_menu.gd` checks for a stored JWT in `user://auth_session.json`
+2. If valid (not expired), `MultiplayerManager.restore_saved_session()` restores it
+3. If not, user logs in or registers via `POST /auth/login` or `POST /auth/register`
+4. JWT is stored locally using encrypted file access
 
-1. `auth_menu.gd` checks saved session
-2. if available, `MultiplayerManager.restore_saved_session()` restores or refreshes it
-3. if not, the user logs in or registers through email/password
-4. session data is stored in `user://auth_session.json` using encrypted file access
+`MultiplayerManager` emits `auth_state_changed` on every transition.
 
-`MultiplayerManager` also emits `auth_state_changed`.
+---
 
 ## Room Flow
 
 From `main_menu.gd`:
 
-- host path:
-  - disconnect any old socket
-  - connect to server
-  - call room creation
-  - switch to `room_lobby.tscn`
-- join path:
-  - disconnect any old socket
-  - connect to server
-  - join by room code
-  - switch to `room_lobby.tscn`
+**Host path:**
+1. `POST /rooms/create` → receives `{ room_code, ws_url }`
+2. Store room code, switch to `room_lobby.tscn`
+3. Open WebSocket to `ws_url` with JWT
+
+**Join path:**
+1. `POST /rooms/join` with room code → receives `{ room_id, ws_url }`
+2. Switch to `room_lobby.tscn`
+3. Open WebSocket to `ws_url` with JWT
+
+---
 
 ## Lobby Responsibilities
 
-[room_lobby.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\room_lobby.gd:1) owns both UI and multiplayer behavior.
+`room_lobby.gd` owns both UI and match-entry behaviour.
 
-It currently handles:
+It handles:
 
-- populating and refreshing player list state
-- sending `player_info`
-- receiving match state in the lobby
-- local class selection
-- broadcasting selected class name
-- host-only `start_game`
-- chat box widgets
-- lobby title editing broadcast
-- slime preview assignment for main classes
+- populating and refreshing player list
+- sending `player_info` (class, subclass, slime variant)
+- receiving match state in the lobby phase
+- local class selection and subclass browsing
+- broadcasting selected class name to all lobby members
+- host-only `start_game` control
+- lobby title editing and chat widgets
+- slime preview assignment per class via shader
 
-The current lobby also assigns a random slime variant per displayed class and applies it to the preview sprites through the slime shader.
+---
 
 ## Match Transport Model
 
-The game uses op codes defined in [multiplayer_utils.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\multiplayer_utils.gd:1):
+Op codes are defined in `multiplayer_utils.gd`:
 
-- `1`: input
-- `2`: authoritative state snapshot
-- `3`: player join
-- `4`: player leave
-- `5`: start game
+### Client → Server
 
-The design is authoritative:
+| Code | Name | Payload |
+|---|---|---|
+| 1 | OP_INPUT | `seq`, `move_x`, `move_y`, `attack`, `dash`, `rotation` |
+| 2 | OP_START_GAME | host only |
+| 3 | OP_UPGRADE_SELECT | `item_id`, `slot_index` |
+| 4 | OP_PLAYER_READY | toggle |
+| 5 | OP_VOTE_KICK | `target_user_id` |
 
-- client sends input
-- server simulates movement
-- server broadcasts snapshots
-- client interpolates remote players
-- client reconciles local player against server sequence ids
+### Server → Client
+
+| Code | Name | Payload |
+|---|---|---|
+| 10 | OP_STATE | `tick`, `wave_num`, `player_vitals`, `mob_states` |
+| 11 | OP_SYNC_ALL | full world dump on join/reconnect |
+| 12 | OP_PLAYER_JOIN | `user_id`, `class`, `position` |
+| 13 | OP_PLAYER_LEAVE | `user_id` |
+| 14 | OP_WAVE_START | `wave_num`, `mob_count` |
+| 15 | OP_WAVE_END | `wave_num` |
+| 16 | OP_MOB_SPAWN | `mob_id`, `type`, `position` |
+| 17 | OP_MOB_DIE | `mob_id`, `killer_id` |
+| 18 | OP_GAME_OVER | results + rewards |
+| 19 | OP_PLAYER_RECONNECTING | `user_id`, `grace_ms` |
+| 20 | OP_VOTE_STATUS | kick vote tally |
+
+The design is fully authoritative:
+
+- Client sends input at 20Hz
+- Server simulates movement, validates, and applies
+- Server broadcasts delta snapshots back to all clients
+- Client interpolates remote players from snapshot data
+- Client reconciles local player against server sequence IDs
+
+---
 
 ## Client-Side Prediction and Interpolation
 
 `MultiplayerUtils` tracks:
 
-- `_remote_players`
-- `_pending_inputs`
-- local player weak ref
-- ping/jitter/interpolation delay
+- `_remote_players` — remote player state buffers
+- `_pending_inputs` — unacknowledged local inputs
+- local player weak reference
+- ping / jitter / interpolation delay
 
 It provides:
 
 - remote player registration
-- target update buffering
-- interpolation with delayed render timeline
+- target update buffering with interpolation delay
+- smooth interpolated playback of remote positions
 - attack/dash state carry-over for remote visuals
-- input loop at 20 Hz
+- input send loop at 20Hz
 - pending input replay after authoritative snapshots
 
 Remote players are visually driven from server-facing state, not local input.
 
-## Main Match Responsibilities
+---
 
-[main.gd](c:\Users\LENOVO\Desktop\proxy\game\src\systems\game\main.gd:1) still contains a lot of networking logic directly.
+## Disconnect Handling
 
-It currently:
+- **15-second grace period** on disconnect — player stays in world (frozen)
+- All teammates receive `OP_PLAYER_RECONNECTING` with countdown
+- If player reconnects within 15s, receives `OP_SYNC_ALL` and resumes
+- If grace period expires, `OP_PLAYER_LEAVE` is broadcast and mob scaling adjusts
 
-- connects to `received_match_state`
-- connects to `received_match_presence`
-- listens to `MultiplayerManager.player_joined`
-- spawns remote players from manager state
-- handles server snapshots
-- handles legacy JSON messages like `player_info`, `player_attack`, `ping`, `pong`
+---
 
-This means networking ownership is not fully centralized yet.
+## Death States
 
-## Current Implementation Boundaries
+| State | Behaviour |
+|---|---|
+| `ALIVE` | Normal gameplay |
+| `DOWNED` | 15-second revive window for teammates |
+| `DEAD` | Spectate until wave end, then respawn |
 
-### `MultiplayerManager`
+Game over occurs when all 4 players are `DEAD` simultaneously.
 
-Owns:
+---
 
-- Nakama client/session/socket lifecycle
-- room code and match id
-- player dictionary
-- match phase
-- selected local class and subclass
-- stored remote `PlayerClass` values by user id
+## Practical Implementation Notes
 
-### `MultiplayerUtils`
+1. `MultiplayerManager` owns the JWT, room code, and WebSocket lifecycle.
+2. `MultiplayerUtils` owns op codes, interpolation buffers, and reconciliation.
+3. `room_lobby.gd` owns lobby UI and class selection broadcast.
+4. `main.gd` owns in-match scene orchestration and snapshot application.
 
-Owns:
-
-- op codes
-- interpolation buffers
-- reconciliation state
-- ping/jitter data
-- input send loop
-
-### `room_lobby.gd`
-
-Owns:
-
-- lobby scene UI
-- class select broadcast
-- slime preview rendering
-- host start button behavior
-
-### `main.gd`
-
-Owns:
-
-- in-match scene state
-- remote spawn orchestration
-- snapshot application
-- gameplay scene transition behavior
-
-## Practical Risks In Current Code
-
-The current codebase has several multiplayer overlap points worth documenting:
-
-1. Presence handling exists in both `MultiplayerManager` and `main.gd`.
-2. Lobby-selected slime scene overrides are not fully authoritative unless explicitly transmitted.
-3. Client prediction and class-based movement modifiers must stay in sync.
-4. Some network behavior is still split between op-code snapshots and older JSON message paths.
-
-These are implementation realities, not just theoretical concerns.
+---
 
 ## Recommended Reading Order For Multiplayer Changes
 
-If changing multiplayer behavior, read in this order:
-
-1. [multiplayer_manager.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\multiplayer_manager.gd:1)
-2. [multiplayer_utils.gd](c:\Users\LENOVO\Desktop\proxy\game\src\globals\multiplayer_utils.gd:1)
-3. [room_lobby.gd](c:\Users\LENOVO\Desktop\proxy\game\src\ui\room_lobby.gd:1)
-4. [main.gd](c:\Users\LENOVO\Desktop\proxy\game\src\systems\game\main.gd:1)
-5. [main_server/modules/lobby.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\lobby.lua:1)
+1. [multiplayer_manager.gd](../game/scripts/globals/multiplayer_manager.gd)
+2. [multiplayer_utils.gd](../game/scripts/globals/multiplayer_utils.gd)
+3. [network_messaging.gd](../game/scripts/globals/network_messaging.gd)
+4. [room_lobby.gd](../game/scripts/ui/room_lobby.gd) *(if it exists)*
+5. [main.gd](../game/scripts/systems/game/main.gd) *(if it exists)*
+6. `moon_server/game-server/` — Go authoritative server source

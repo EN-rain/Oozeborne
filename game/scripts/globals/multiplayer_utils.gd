@@ -1,5 +1,5 @@
 extends Node
-## MultiplayerUtils - Reusable multiplayer functions for Nakama-based games
+## MultiplayerUtils - Reusable multiplayer functions for this game
 ## Autoload this script to access multiplayer utilities from any scene
 ## Op codes for authoritative match
 const OP_MESSAGE = NetworkMessaging.OP_MESSAGE

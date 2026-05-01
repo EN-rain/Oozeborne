@@ -1,66 +1,91 @@
-# New Game
+# Oozeborne
 
-A Godot 4.6 multiplayer game with Nakama backend.
+A Godot 4.6 multiplayer 4-player co-op survivors game backed by **Moon Server** — a fully custom, containerised game backend.
+
+## Quick Start (Remote Server)
+
+```bash
 cd ~/Oozeborne
 git reset --hard
 git pull
 cd moon_server
-
-# 1. Rebuild the portal to load the new CSS and React components
 docker compose build --no-cache admin-portal
-
-# 2. Restart the portal
 docker compose up -d admin-portal
-
+```
 
 ## Project Structure
 
 ```
 proxy/
 ├── game/              # Godot 4.6 client
-│   ├── src/           # GDScript source
+│   ├── scripts/       # GDScript source
 │   ├── scenes/        # Scene definitions
 │   ├── assets/        # Art, shaders, textures
-│   └── resources/     # Engine resources
-├── main_server/       # Nakama server config
-│   ├── modules/       # Lua match handlers
+│   ├── resources/     # Class, skill, and item data
+│   └── codegen/       # Legacy codegen tool (unused)
+├── moon_server/       # Custom authoritative backend
+│   ├── game-server/   # Go — 20Hz WebSocket simulation
+│   ├── lobby-api/     # Node.js — REST API (auth, rooms, admin)
+│   ├── admin-portal/  # Next.js — Moon Control Center
+│   ├── db/            # Postgres migrations
 │   └── docker-compose.yml
-├── exports/           # Export config templates
-└── docs/              # Architecture documentation
+├── docs/              # Architecture documentation
+└── tools/             # Dev utilities
 ```
 
-## Quick Start
+## Quick Start (Local Dev)
 
-### 1. Start the Server
+### 1. Copy the environment file
 ```bash
-cd main_server
-docker-compose up -d
+cd moon_server
+cp .env.example .env
 ```
 
-### 2. Access Nakama Console
-- **URL**: http://localhost:7351
-- **Username**: admin
-- **Password**: password
+### 2. Start the full stack
+```bash
+docker compose up --build
+```
 
-### 3. Run the Game
+### 3. Verify services are healthy
+```
+http://localhost:3000/health   → Lobby API
+http://localhost:8080/health   → Game Server
+http://localhost:3001          → Moon Control Center (Admin Portal)
+http://localhost:8081          → Adminer (DB browser)
+```
+
+### 4. Default Admin Credentials
+- **URL**: `http://localhost:3001`
+- **Username**: `admin`
+- **Password**: `admin`
+
+> ⚠️ Change the password immediately after first login via Admin Portal → Staff Management.
+
+### 5. Run the Game
 1. Open `game/project.godot` in Godot 4.6
 2. Press F5 to run
 
-### Server Ports
-| Port | Purpose |
-|------|---------|
-| 7350 | Client API (game connections) |
-| 7351 | Web Console (admin panel) |
-| 7349 | GRPC API |
+## Server Ports
+
+| Port | Service | Purpose |
+|------|---------|---------|
+| 3000 | lobby-api | REST API — auth, rooms, profiles, admin |
+| 8080 | game-server | Authoritative 20Hz WebSocket simulation |
+| 3001 | admin-portal | Moon Control Center |
+| 5432 | postgres | Persistent player data |
+| 6379 | redis | Session state, room registry, pub/sub |
+| 8081 | adminer | Database browser (dev only) |
 
 ## Features
 
-- Email-authenticated players
-- Room-based multiplayer with authoritative server
-- Lobby system with class selection
+- Email-authenticated players via JWT
+- Room-based multiplayer with authoritative 20Hz server
+- Lobby system with class selection and slime variant previews
+- 5 main classes with 18 subclasses and full skill trees
 - Player progression via `LevelSystem`
-- Status effects, shop, coins
+- Status effects, shop, coins, and upgrade phases
 - Slime player variants with palette swap shader
+- Live mob tuning and admin portal with real-time monitoring
 
 ## Documentation
 
@@ -72,24 +97,36 @@ docker-compose up -d
 ## Server Commands
 
 ```bash
-# Start
-docker-compose up -d
+# Start full stack
+docker compose up --build
+
+# Start in background
+docker compose up -d
 
 # Stop
-docker-compose down
+docker compose down
 
-# View logs
-docker-compose logs -f nakama
+# View all logs
+docker compose logs -f
 
-# Reset database
-docker-compose down -v && docker-compose up -d
+# View specific service logs
+docker compose logs -f lobby-api
+docker compose logs -f game-server
+
+# Reset database (destroys all data)
+docker compose down -v && docker compose up --build
+
+# Rebuild a specific service
+docker compose build --no-cache admin-portal
+docker compose up -d admin-portal
 ```
 
 ## Requirements
 
 - Godot 4.6
 - Docker & Docker Compose
-- (Optional) Go for codegen tool
+- (Optional) Go toolchain for local game-server development
+- (Optional) Node.js for local lobby-api development
 
 ## License
 

@@ -25,7 +25,12 @@ router.get('/players/search', async (req, res, next) => {
        LIMIT 50`,
       [q]
     );
-    res.json({ players: rows });
+    // Check online presence in Redis for each player
+    const players = await Promise.all(rows.map(async (row) => {
+      const online = await redis.exists(`presence:${row.user_id}`);
+      return { ...row, is_online: online === 1 };
+    }));
+    res.json({ players });
   } catch (err) { next(err); }
 });
 

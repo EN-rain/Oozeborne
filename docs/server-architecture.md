@@ -2,148 +2,198 @@
 
 ## Stack
 
-The backend is a Nakama + CockroachDB setup under `main_server/`.
+The backend is the **Moon Server** — a fully custom, containerised game backend running under `moon_server/`.
 
-Primary server files:
+| Service | Language | Purpose |
+|---|---|---|
+| `game-server` | Go | Authoritative 20Hz WebSocket simulation |
+| `lobby-api` | Node.js | REST API — auth, rooms, profiles, admin |
+| `admin-portal` | Next.js | Moon Control Center |
+| `postgres` | — | Persistent player data |
+| `redis` | — | Session state, room registry, pub/sub |
+| `adminer` | — | Database browser (dev only) |
 
-- [docker-compose.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.yml:1)
-- [docker-compose.prod.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.prod.yml:1)
-- [README.md](c:\Users\LENOVO\Desktop\proxy\main_server\README.md:1)
-- [modules/lobby.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\lobby.lua:1)
-- [modules/rpc_registry.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\rpc_registry.lua:1)
+All services are defined in `moon_server/docker-compose.yml`.
 
-## Compose Modes
-
-### Development
-
-[docker-compose.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.yml:1) is the local/dev stack.
-
-Characteristics:
-
-- local CockroachDB + Nakama
-- hardcoded console credentials
-- hardcoded `defaultkey` for socket/runtime
-- ports exposed directly
-
-### Production
-
-[docker-compose.prod.yml](c:\Users\LENOVO\Desktop\proxy\main_server\docker-compose.prod.yml:1) is the deployment stack.
-
-Characteristics:
-
-- env-driven console and runtime credentials
-- public `7350` and `7351`
-- local-only CockroachDB port binding
-- `modules/` mounted read-only into Nakama
-- logs volume mounted
+---
 
 ## Ports
 
-Current documented port usage:
+| Port | Service | Purpose |
+|------|---------|---------|
+| 3000 | lobby-api | REST API for all client/admin calls |
+| 8080 | game-server | Authoritative WebSocket simulation |
+| 3001 | admin-portal | Moon Control Center |
+| 5432 | postgres | Persistent data storage |
+| 6379 | redis | Session, rooms, pub/sub |
+| 8081 | adminer | DB browser (dev only) |
 
-- `7350`: public HTTP/game API
-- `7351`: Nakama web console
-- `7349`: gRPC/internal service port
+---
 
-The repo’s own README correctly treats `7351` as admin-only and `7350` as the player-facing port.
+## Docker Compose Modes
 
-## Console Credentials
+### Development (default)
 
-The repo currently defines:
+`docker-compose.yml` is the local/dev stack.
 
-- dev compose: `admin / password`
-- prod compose fallback: `admin / changeme`
+Characteristics:
+- All services on the same Docker network
+- Hot-reload enabled for `lobby-api` (nodemon) and `game-server` (air)
+- `adminer` included for database inspection
+- Environment loaded from `.env`
 
-In production, the running values depend on the container environment at creation time, not just the file on disk.
+### Production (GCP Later)
 
-## Lua Runtime Modules
+To be deployed on GCP:
+- `lobby-api` → Cloud Run
+- `game-server` → GCE VM or Managed Instance Group
+- `redis` → Memorystore
+- `postgres` → Cloud SQL
+- Images pushed from the same Dockerfiles used locally (environment parity)
 
-### `rpc_registry.lua`
+---
 
-[rpc_registry.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\rpc_registry.lua:1) provides room registry RPCs.
+## Postgres Schema
 
-It uses an in-memory `room_registry` table and registers:
+Database schema is defined in `db/migrations/001_init.sql`.
 
-- `create_room`
-- `join_room`
-- `delete_room`
+### Key tables
 
-Behavior:
+| Table | Purpose |
+|---|---|
+| `players` | user_id, email, username, created_at |
+| `profiles` | display_name, cosmetics, class unlocks |
+| `user_roles` | role_level (0 = player, 1 = admin, 2 = superadmin) |
+| `progression` | level, xp, coins |
+| `bans` | ban records with expiry |
+| `mob_configs` | Live-tunable mob stats (hp, speed, damage, xp_reward) |
+| `wave_configs` | Wave definitions — mob weights, count, duration |
+| `match_sessions` | Per-match metadata |
+| `match_results` | Per-player match outcomes |
+| `staff_logs` | Audit log for every admin action |
+| `friends` | Friend requests and accepted pairs |
+| `chat_messages` | Global and DM chat history |
 
-- `create_room` creates an authoritative match with handler name `lobby`
-- room code maps to Nakama `match_id`
-- `join_room` resolves room code to stored `match_id`
-- registry is in-memory only, so it lasts only while the server process stays alive
+---
 
-That means room discovery is not persisted across server restarts.
+## Redis Usage
 
-### `lobby.lua`
+Redis keys used at runtime:
 
-[lobby.lua](c:\Users\LENOVO\Desktop\proxy\main_server\modules\lobby.lua:1) is the authoritative match handler.
+| Key Pattern | Purpose |
+|---|---|
+| `session:{token}` | JWT session validation |
+| `room:{room_code}` | Room → game-server WS URL mapping |
+| `presence:{user_id}` | Online/offline indicator (TTL-based) |
+| `room_members:{room_id}` | Live player list per room |
+| `config_updates` | Pub/sub channel for live mob stat updates from admin portal |
+| `global_chat` | Pub/sub channel for global chat broadcast |
+| `user_messages:{user_id}` | Pub/sub channel for DMs |
 
-Important characteristics:
+---
 
-- fixed tick rate: `20`
-- world bounds: `0..800` x `0..600`
-- fixed spawn points near map center
-- player radius and overlap blocking logic
-- host-gated `start_game`
+## Lobby API — Routes
 
-State stored per player:
+### Auth
+- `POST /auth/register` — email/password registration, returns JWT
+- `POST /auth/login` — returns JWT
+- `POST /auth/logout` — invalidates session in Redis
 
-- position
-- velocity
-- facing
-- ign
-- host flag
-- input sequence
-- attack flag
-- dash flag
-- attack rotation
+### Rooms
+- `POST /rooms/create` — creates room code, stores in Redis, returns `{ room_code, ws_url }`
+- `POST /rooms/join` — resolves room code to `{ room_id, ws_url }`
 
-## Server Match Behavior
+### Profiles
+- `GET /profiles/me` — current player profile + progression
 
-At a high level:
+### Admin
+- `GET /admin/players/search?q=` — search players (returns `is_online` from Redis)
+- `PATCH /admin/players/:id/ban` — ban a player
+- `POST /admin/players/:id/kick` — kick from active room
+- `GET /admin/mobs/:mob_type` — get mob stats
+- `PATCH /admin/mobs/:mob_type` — update mob stats (live)
+- `POST /admin/broadcast` — send global message to all clients
 
-1. `match_init` seeds host player state if host data is provided
-2. `match_join_attempt` ensures the joining player has state and a spawn point
-3. `match_join` broadcasts `OP_PLAYER_JOIN`
-4. `match_loop` processes incoming messages
-5. movement is simulated server-side at fixed speed
-6. collision blocking prevents players overlapping or crossing through each other
-7. an `OP_STATE` snapshot is broadcast every loop when players exist
+---
 
-## Message Handling
+## Game Server — Tick Loop (20Hz)
 
-`lobby.lua` understands:
+Every 50ms:
 
-- `OP_INPUT`
-- `OP_START_GAME`
-- op code `0` for legacy JSON `player_info` metadata
+1. **Input dequeue** — validate and apply player inputs (speed cap, cooldowns, bounds)
+2. **Mob AI step** — follow flow-field / steering per mob type
+3. **Collision check** — spatial hash for players + mobs + projectiles
+4. **Damage + loot** — XP, drop tables, coin rewards
+5. **Interest filter (AOI)** — per-player cull
+6. **Delta snapshot** — diff vs last snapshot, pack, broadcast per-player slice
 
-This mirrors the client’s mixed authoritative-plus-legacy transition state.
+### Match State Machine
 
-## Important Constraints
+```
+LOBBY → PRE_WAVE → IN_WAVE → UPGRADE_PHASE → (loop) → RESULTS
+```
 
-The server currently uses:
+- `UPGRADE_PHASE` exits when **all players ready** or **60s timeout** (host can force)
+- Host transfer occurs automatically if host disconnects
 
-- one hardcoded movement speed constant: `100.0`
-- fixed map bounds
-- in-memory room registry
+### Op Codes (Client → Server)
 
-So if gameplay stats or room persistence requirements change, both client and server assumptions may need updating.
+| Code | Name | Description |
+|---|---|---|
+| 1 | OP_INPUT | Movement, attack flags, rotation, seq |
+| 2 | OP_START_GAME | Host only — begin match |
+| 3 | OP_UPGRADE_SELECT | Item/upgrade selection during upgrade phase |
+| 4 | OP_PLAYER_READY | Toggle ready state |
+| 5 | OP_VOTE_KICK | Initiate vote kick against a user_id |
 
-## Deployment Notes
+### Op Codes (Server → Client)
 
-The repo assumes Docker deployment, but the exact command on the host may be either:
+| Code | Name | Description |
+|---|---|---|
+| 10 | OP_STATE | Delta snapshot — tick, player vitals, mob states |
+| 11 | OP_SYNC_ALL | Full world dump on join/reconnect |
+| 12 | OP_PLAYER_JOIN | Player joined the room |
+| 13 | OP_PLAYER_LEAVE | Player left the room |
+| 14 | OP_WAVE_START | Wave begins |
+| 15 | OP_WAVE_END | Wave cleared |
+| 16 | OP_MOB_SPAWN | New mob spawned |
+| 17 | OP_MOB_DIE | Mob killed |
+| 18 | OP_GAME_OVER | Match ended — results + rewards |
+| 19 | OP_PLAYER_RECONNECTING | Teammate disconnecting (15s grace) |
+| 20 | OP_VOTE_STATUS | Current kick vote tally |
 
-- `docker-compose`
-- `docker compose`
+---
 
-That depends on the VM environment, not the repo itself.
+## Admin Portal — Moon Control Center
 
-## Operational Truths For This Repo
+A Next.js dashboard at `http://localhost:3001` with views:
 
-- The server is small and readable enough that `lobby.lua` is the main source of truth for gameplay authority.
-- The RPC registry is lightweight and intentionally simple, but not durable.
-- Console access is operational configuration, not game-user authorization.
+| View | Description |
+|---|---|
+| Dashboard | Server health, active rooms, live player count |
+| Player Database | Search players, view email/username/creation date, Online/Offline status |
+| Tuning → Enemies | Live mob stat editor (HP, speed, damage, XP) |
+| Tuning → Items | Shop item catalogue |
+| Tuning → Classes | Class + subclass stat and skill editor |
+| Broadcast | Send global server announcements |
+| Graveyard | Ban / kick players by user ID with audit log |
+
+---
+
+## Deployment Commands
+
+```bash
+# Start full stack
+docker compose up --build
+
+# Rebuild one service
+docker compose build --no-cache admin-portal
+docker compose up -d admin-portal
+
+# View logs
+docker compose logs -f lobby-api
+docker compose logs -f game-server
+
+# Reset everything (drops all data)
+docker compose down -v && docker compose up --build
+```

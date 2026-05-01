@@ -1,7 +1,7 @@
 extends Node
 
 ## CloudSaveManager (Custom API Version)
-## Replaced Nakama storage with custom REST endpoints on /saves
+## Custom REST endpoints for cloud saves on /saves
 
 signal save_completed(slot: int, success: bool)
 signal load_completed(slot: int, success: bool)

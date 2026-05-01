@@ -135,7 +135,10 @@ CREATE INDEX idx_staff_logs_admin ON staff_logs(admin_id, created_at DESC);
 -- ── Seed Data: Default Mob Configs ────────────────────────────────────────────
 INSERT INTO mob_configs (mob_type, health, speed, damage, xp_reward) VALUES
     ('slime',    80,   55.0, 8,  3),
-    ('skeleton', 120,  70.0, 15, 7),
+    ('common',   100,  60.0, 10, 5),
+    ('lancer',   150,  80.0, 20, 10),
+    ('archer',   90,   75.0, 15, 8),
+    ('warden',   400,  50.0, 25, 30),
     ('boss',     2000, 40.0, 40, 100)
 ON CONFLICT DO NOTHING;
 
