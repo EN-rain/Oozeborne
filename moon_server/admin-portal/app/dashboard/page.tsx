@@ -480,7 +480,7 @@ function EnemiesTab() {
           placeholder="Filter enemies..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      <div style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
+      <div style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '4rem' }}>
         {MOB_GROUPS.map(group => {
           const groupMobs = group.mobs.filter(m => 
             m.toLowerCase().includes(search.toLowerCase())
