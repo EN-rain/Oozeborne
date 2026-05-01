@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server } from 'lucide-react';
+import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server, Skull } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
@@ -197,13 +197,12 @@ function LiveRooms({ onModerate }: { onModerate: (id: string) => void }) {
 function PlayerSearch() {
   const [q, setQ] = useState('');
   const [players, setPlayers] = useState<any[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const qRef = useRef(q);
 
   const fetchPlayers = async () => {
     try {
       const res = await axios.get(`${API}/admin/players/search?q=${qRef.current}`, { headers: authHeader() });
-      setPlayers(res.data.players || []);
+      setPlayers((res.data.players || []).filter((p: any) => p.role_level === 0));
     } catch {}
   };
 
@@ -220,30 +219,6 @@ function PlayerSearch() {
     fetchPlayers();
   }, [q]);
 
-  async function ban(user_id: string) {
-    const reason = prompt('Ban reason:');
-    if (!reason) return;
-    try {
-      await axios.post(`${API}/admin/ban`, { user_id, reason }, { headers: authHeader() });
-      alert('Player banned');
-    } catch (e: any) { alert(e.response?.data?.error || 'Failed'); }
-  }
-
-  async function wipe(user_id: string) {
-    if (!confirm("WARNING: This will permanently reset this player's level, xp, and coins to zero. Are you sure?")) return;
-    try {
-      await axios.post(`${API}/admin/players/${user_id}/wipe`, {}, { headers: authHeader() });
-      alert('Cloud save wiped.');
-    } catch (e: any) { alert('Failed'); }
-  }
-
-  async function sendAction(user_id: string, action: string, payload: any) {
-    try {
-      await axios.post(`${API}/admin/player_action`, { user_id, action, payload }, { headers: authHeader() });
-      alert(`${action} command sent to live servers.`);
-    } catch (e: any) { alert('Failed to send command.'); }
-  }
-
   return (
     <section style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
@@ -251,82 +226,36 @@ function PlayerSearch() {
           style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '280px', fontSize: '0.85rem' }}
           value={q} onChange={e => setQ(e.target.value)} placeholder="Filter players..." />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', flex: 1 }}>
-        {players.map(p => (
-          <div key={p.user_id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: 8, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', cursor: 'pointer' }} onClick={() => setExpandedId(expandedId === p.user_id ? null : p.user_id)}>
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {p.username}
+      <div className="glass-card" style={{ flex: 1, overflowY: 'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Date Created</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map(p => (
+              <tr key={p.user_id}>
+                <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }} title={p.user_id}>{p.user_id.substring(0,8)}</td>
+                <td style={{ fontWeight: 600 }}>{p.username}</td>
+                <td>{p.email || 'N/A'}</td>
+                <td>{p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A'}</td>
+                <td>
                   {p.active_bans > 0
                     ? <span className="badge badge-danger">Banned</span>
                     : <span className="badge badge-success">Active</span>}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  ID: <span style={{ fontFamily: 'monospace' }}>{p.user_id.substring(0,8)}</span> | Display: {p.display_name}
-                </div>
-              </div>
-              <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-                {expandedId === p.user_id ? 'Close' : 'God Mode'}
-              </button>
-            </div>
-            
-            {expandedId === p.user_id && (
-              <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.4)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                {/* Live Manipulation */}
-                <div>
-                  <h4 style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Live Manipulation</h4>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input id={`item-${p.user_id}`} className="input-field" placeholder="Item ID (e.g. coins)" style={{ flex: 1, padding: '4px 8px' }} />
-                    <input id={`amt-${p.user_id}`} className="input-field" type="number" placeholder="Amount" defaultValue={100} style={{ width: 80, padding: '4px 8px' }} />
-                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
-                      const elId = document.getElementById(`item-${p.user_id}`) as HTMLInputElement;
-                      const elAmt = document.getElementById(`amt-${p.user_id}`) as HTMLInputElement;
-                      if(elId.value) sendAction(p.user_id, 'give_item', { item_id: elId.value, amount: parseInt(elAmt.value) });
-                    }}>Give</button>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <select id={`stat-${p.user_id}`} className="input-field" style={{ flex: 1, padding: '4px 8px' }}>
-                      <option value="max_health">Max Health</option>
-                      <option value="move_speed">Move Speed</option>
-                      <option value="damage_multiplier">Damage Mult</option>
-                    </select>
-                    <input id={`val-${p.user_id}`} className="input-field" type="number" placeholder="Value" defaultValue={500} style={{ width: 80, padding: '4px 8px' }} />
-                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
-                      const elSt = document.getElementById(`stat-${p.user_id}`) as HTMLSelectElement;
-                      const elV = document.getElementById(`val-${p.user_id}`) as HTMLInputElement;
-                      if(elV.value) sendAction(p.user_id, 'set_stat', { stat: elSt.value, value: parseFloat(elV.value) });
-                    }}>Set</button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input id={`x-${p.user_id}`} className="input-field" type="number" placeholder="X Coord" defaultValue={0} style={{ flex: 1, padding: '4px 8px' }} />
-                    <input id={`y-${p.user_id}`} className="input-field" type="number" placeholder="Y Coord" defaultValue={0} style={{ flex: 1, padding: '4px 8px' }} />
-                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={() => {
-                      const elX = document.getElementById(`x-${p.user_id}`) as HTMLInputElement;
-                      const elY = document.getElementById(`y-${p.user_id}`) as HTMLInputElement;
-                      sendAction(p.user_id, 'teleport', { x: parseFloat(elX.value), y: parseFloat(elY.value) });
-                    }}>Teleport</button>
-                  </div>
-                </div>
-
-                {/* Moderation */}
-                <div>
-                  <h4 style={{ fontSize: '0.8rem', color: 'var(--danger)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moderation & Data</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <button className="btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', justifyContent: 'center' }} onClick={() => ban(p.user_id)}>
-                      Ban Player (Kicks & Disables Login)
-                    </button>
-                    <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', justifyContent: 'center' }} onClick={() => wipe(p.user_id)}>
-                      Wipe Cloud Save (Reset Lvl/Coins)
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </td>
+              </tr>
+            ))}
+            {players.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No players found.</td></tr>
             )}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );
@@ -445,9 +374,71 @@ function BroadcastPanel() {
   );
 }
 
+function GraveyardPanel() {
+  const [targetId, setTargetId] = useState('');
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
+  };
+
+  async function ban() {
+    if (!targetId.trim()) return;
+    const reason = prompt('Ban reason:');
+    if (!reason) return;
+    try {
+      await axios.post(`${API}/admin/ban`, { user_id: targetId, reason }, { headers: authHeader() });
+      addLog(`Banned player ${targetId} for: ${reason}`);
+      setTargetId('');
+    } catch (e: any) { 
+      addLog(`Failed to ban ${targetId}: ${e.response?.data?.error || 'Error'}`); 
+    }
+  }
+
+  async function kick() {
+    if (!targetId.trim()) return;
+    if (!confirm('Kick this player from current session?')) return;
+    try {
+      await axios.post(`${API}/admin/player_action`, { user_id: targetId, action: 'kick', payload: {} }, { headers: authHeader() });
+      addLog(`Kicked player ${targetId}`);
+      setTargetId('');
+    } catch (e: any) { 
+      addLog(`Failed to kick ${targetId}: ${e.response?.data?.error || 'Error'}`); 
+    }
+  }
+
+  return (
+    <section className="glass-card">
+      <div className="glass-header" style={{ color: 'var(--danger)' }}>
+        <Skull size={18} /> Graveyard (Punishment & Kicks)
+      </div>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500 }}>TARGET PLAYER ID</h4>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <input className="input-field" placeholder="Enter Player User ID..." 
+            value={targetId} onChange={e => setTargetId(e.target.value)} style={{ flex: 1 }} />
+          <button className="btn-danger" onClick={ban}><Shield size={16} /> Ban</button>
+          <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={kick}><LogOut size={16} /> Kick</button>
+        </div>
+      </div>
+
+      <div>
+        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500 }}>ACTION LOGS</h4>
+        <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '1rem', minHeight: '200px', maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          {logs.length === 0 && <div>No recent actions.</div>}
+          {logs.map((log, i) => (
+            <div key={i} style={{ marginBottom: 4 }}>{log}</div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Dashboard layout ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings' | 'moderate'>('overview');
+  const [view, setView] = useState<'overview' | 'players' | 'mobs' | 'broadcast' | 'settings' | 'moderate' | 'graveyard'>('overview');
   const [roomsCount, setRoomsCount] = useState(0);
   const [uptimeStr, setUptimeStr] = useState('Checking...');
   const [moderateRoomId, setModerateRoomId] = useState<string | null>(null);
@@ -536,8 +527,11 @@ export default function DashboardPage() {
 
         <div style={{ flex: 1 }} />
         
-        <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
-          <button className="btn-outline" onClick={logout} style={{ width: '100%', justifyContent: 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }}>
+        <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)', display: 'flex', gap: 8 }}>
+          <button className={`btn-outline ${view === 'graveyard' ? 'active' : ''}`} onClick={() => setView('graveyard')} style={{ border: 'none', background: 'rgba(255,255,255,0.05)', padding: '10px' }} title="Graveyard">
+            <Skull size={18} />
+          </button>
+          <button className="btn-outline" onClick={logout} style={{ flex: 1, justifyContent: 'center', border: 'none', background: 'rgba(255,255,255,0.05)' }}>
             <LogOut size={16} /> Sign Out
           </button>
         </div>
@@ -552,6 +546,7 @@ export default function DashboardPage() {
         {view === 'mobs' && <MobTuner />}
         {view === 'broadcast' && <BroadcastPanel />}
         {view === 'settings' && <SettingsPanel />}
+        {view === 'graveyard' && <GraveyardPanel />}
       </main>
     </div>
   );
