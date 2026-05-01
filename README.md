@@ -1,6 +1,17 @@
 # New Game
 
 A Godot 4.6 multiplayer game with Nakama backend.
+cd ~/Oozeborne
+git reset --hard
+git pull
+cd moon_server
+
+# 1. Rebuild the portal to load the new CSS and React components
+docker compose build --no-cache admin-portal
+
+# 2. Restart the portal
+docker compose up -d admin-portal
+
 
 ## Project Structure
 

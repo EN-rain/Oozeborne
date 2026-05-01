@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server, Skull } from 'lucide-react';
+import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server, Skull, Edit3, Check } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
@@ -261,7 +261,7 @@ function PlayerSearch() {
   );
 }
 
-function MobCard({ mobType }: { mobType: string }) {
+function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }) {
   const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -297,38 +297,69 @@ function MobCard({ mobType }: { mobType: string }) {
     setTimeout(() => setMsg(''), 3000);
   }
 
+  useEffect(() => {
+    if (!isEditing && msg === '') {
+      // Potentially save here if values changed, but for now we'll rely on the user manual save
+    }
+    const handleSave = () => { if (isEditing) save(); };
+    window.addEventListener('moon-save-mobs', handleSave);
+    return () => window.removeEventListener('moon-save-mobs', handleSave);
+  }, [isEditing, stats]);
+
   return (
-    <div className="glass-card" style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: mobType === 'boss' ? 'var(--danger)' : 'var(--accent-primary)', textTransform: 'capitalize' }}>{mobType}</h3>
-        <span style={{ fontSize: '0.75rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>{msg}</span>
+    <div className="glass-card" style={{ padding: '0.875rem', background: 'rgba(0,0,0,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: mobType === 'boss' ? 'var(--danger)' : 'var(--accent-primary)', textTransform: 'capitalize', margin: 0 }}>{mobType}</h3>
+        {isEditing && <span style={{ fontSize: '0.75rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>{msg}</span>}
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: isEditing ? '1rem' : 0 }}>
         {(['health','speed','damage','xp_reward'] as const).map(field => (
           <div key={field}>
-            <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>{field.replace('_', ' ')}</label>
-            <input className="input-field" type="number" style={{ padding: '6px 10px', fontSize: '0.85rem' }}
+            <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>{field.replace('_', ' ')}</label>
+            <input className="input-field" type="number" 
+              disabled={!isEditing}
+              style={{ 
+                padding: '4px 8px', 
+                fontSize: '0.8rem', 
+                height: '32px',
+                background: isEditing ? 'var(--bg-input)' : 'transparent',
+                borderColor: isEditing ? 'var(--border-light)' : 'transparent',
+                cursor: isEditing ? 'text' : 'default'
+              }}
               value={stats[field]} onChange={e => setStats(s => ({ ...s, [field]: e.target.value }))} />
           </div>
         ))}
       </div>
-      
-      <button className="btn-primary" style={{ width: '100%', padding: '8px', fontSize: '0.85rem' }} onClick={save} disabled={loading}>
-        {loading ? 'Saving...' : 'Push Configuration'}
-      </button>
     </div>
   );
 }
 
 function MobTuner() {
-  const mobs = ['slime', 'skeleton', 'boss', 'bat', 'ghost', 'golem']; // Added more based on typical game mobs
+  const mobs = ['slime', 'skeleton', 'boss', 'bat', 'ghost', 'golem']; 
   const [search, setSearch] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   
   const filteredMobs = mobs.filter(m => m.toLowerCase().includes(search.toLowerCase()));
 
+  const toggleEdit = () => {
+    if (isEditing) {
+      // Trigger save on all cards
+      window.dispatchEvent(new CustomEvent('moon-save-mobs'));
+    }
+    setIsEditing(!isEditing);
+  };
+
   return (
     <section>
+      <div style={{ marginBottom: '1rem' }}>
+        <button className="btn-outline" onClick={toggleEdit} 
+          style={{ background: isEditing ? 'var(--accent-primary)' : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none' }}>
+          {isEditing ? <Check size={16} /> : <Edit3 size={16} />}
+          {isEditing ? 'Confirm Changes' : 'Edit Parameters'}
+        </button>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
         <input className="input-field" 
           style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '280px', fontSize: '0.85rem' }}
@@ -336,9 +367,9 @@ function MobTuner() {
           value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
         {filteredMobs.map(m => (
-          <MobCard key={m} mobType={m} />
+          <MobCard key={m} mobType={m} isEditing={isEditing} />
         ))}
         {filteredMobs.length === 0 && (
           <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
