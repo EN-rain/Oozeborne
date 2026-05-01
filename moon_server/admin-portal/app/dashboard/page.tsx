@@ -376,6 +376,8 @@ function ItemsTab() {
     </div>
   );
 }
+
+function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }) {
   const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
