@@ -480,7 +480,7 @@ function EnemiesTab() {
           placeholder="Filter enemies..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      <div style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '4rem' }}>
+      <div style={{ paddingRight: '0.5rem', paddingBottom: '2rem' }}>
         {MOB_GROUPS.map(group => {
           const groupMobs = group.mobs.filter(m => 
             m.toLowerCase().includes(search.toLowerCase())
@@ -591,32 +591,56 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
 
 function ClassesTab() {
   const [selected, setSelected] = useState<{ classId: string; mainId: string } | null>(null);
+  const [activeMain, setActiveMain] = useState<string>('tank');
+
   if (selected) return <ClassDetailPage classId={selected.classId} mainClassId={selected.mainId} onBack={() => setSelected(null)} />;
+
+  const subs = CLASS_TREE[activeMain] || [];
+  const color = CLASS_COLOR[activeMain] || 'var(--accent-primary)';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {Object.entries(CLASS_TREE).map(([mainId, subs]) => {
-        const color = CLASS_COLOR[mainId];
-        return (
-          <div key={mainId}>
-            <button onClick={() => setSelected({ classId: mainId, mainId })}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', marginBottom: '0.75rem', padding: 0 }}>
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'capitalize', color }}>{mainId}</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>main class</span>
+      {/* Main Class Tabs */}
+      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border-light)', paddingBottom: 8, overflowX: 'auto' }}>
+        {Object.keys(CLASS_TREE).map(mainId => (
+          <button key={mainId} onClick={() => setActiveMain(mainId)}
+            style={{ 
+              padding: '6px 16px', background: 'transparent', border: 'none', cursor: 'pointer', 
+              fontSize: '0.85rem', fontWeight: 600, textTransform: 'capitalize', borderRadius: '6px 6px 0 0',
+              color: activeMain === mainId ? CLASS_COLOR[mainId] : 'var(--text-muted)',
+              borderBottom: activeMain === mainId ? `2px solid ${CLASS_COLOR[mainId]}` : '2px solid transparent',
+              transition: 'all 0.15s'
+            }}>
+            {mainId}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Class Select & Subclasses */}
+      <div style={{ padding: '1rem 0' }}>
+        <button onClick={() => setSelected({ classId: activeMain, mainId: activeMain })}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', marginBottom: '1.25rem', padding: 0 }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }} />
+          <span style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'capitalize', color }}>{activeMain}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>Main Class</span>
+        </button>
+
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subclasses</div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {subs.map((sub: string) => (
+            <button key={sub} onClick={() => setSelected({ classId: sub, mainId: activeMain })}
+              style={{ 
+                padding: '8px 18px', borderRadius: 24, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', 
+                border: `1px solid ${color}33`, background: `${color}15`, color, textTransform: 'capitalize', 
+                transition: 'all 0.2s', boxShadow: `0 2px 8px ${color}11`
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = `${color}25`)}
+              onMouseOut={e => (e.currentTarget.style.background = `${color}15`)}>
+              {sub.replace('_',' ')}
             </button>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingLeft: 22 }}>
-              {subs.map(sub => (
-                <button key={sub} onClick={() => setSelected({ classId: sub, mainId })}
-                  style={{ padding: '6px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', border: `1px solid ${color}22`, background: `${color}11`, color, textTransform: 'capitalize', transition: 'all 0.15s' }}
-                  onMouseOver={e => (e.currentTarget.style.background = `${color}25`)}
-                  onMouseOut={e => (e.currentTarget.style.background = `${color}11`)}>
-                  {sub.replace('_',' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
