@@ -21,7 +21,38 @@ import (
 var (
 	ctx         = context.Background()
 	redisClient *redis.Client
+	
+	// Game Config (Live Tuning)
+	configMu     sync.RWMutex
+	mobConfigs   = make(map[string]MobConfig)
+	itemConfigs  = make(map[string]ItemConfig)
+	classConfigs = make(map[string]ClassConfig)
 )
+
+type MobConfig struct {
+	MobType   string  `json:"mob_type"`
+	Health    int     `json:"health"`
+	Speed     float64 `json:"speed"`
+	Damage    int     `json:"damage"`
+	XPReward  int     `json:"xp_reward"`
+}
+
+type ItemConfig struct {
+	ItemID      string  `json:"item_id"`
+	DisplayName string  `json:"display_name"`
+	Price       int     `json:"price"`
+	StatType    string  `json:"stat_type"`
+	StatValue   float64 `json:"stat_value"`
+	InstantHeal int     `json:"instant_heal"`
+}
+
+type ClassConfig struct {
+	ClassID          string  `json:"class_id"`
+	BaseMaxHealth    int     `json:"base_max_health"`
+	BaseSpeed        float64 `json:"base_speed"`
+	BaseAttackDamage int     `json:"base_attack_damage"`
+	BaseMaxMana      int     `json:"base_max_mana"`
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants (matching lobby.lua parity)
@@ -133,6 +164,7 @@ type PlayerBuild struct {
 
 type Player struct {
 	UserID           string
+	ClassID          string
 	Conn             *websocket.Conn
 	Pos              Vec2
 	LastPos          Vec2 // for speed-hack detection
@@ -203,6 +235,7 @@ type Claims struct {
 	UserID    string `json:"user_id"`
 	Username  string `json:"username"`
 	RoleLevel int    `json:"role_level"`
+	ClassID   string `json:"class_id"`
 	jwt.RegisteredClaims
 }
 
@@ -365,7 +398,7 @@ func (r *Room) tick() {
 			p.InputQueue = p.InputQueue[1:]
 
 			p.LastPos = p.Pos
-			applyInput(p, input)
+			applyInput(r, p, input)
 
 			// Post-move speed validation (authoritative)
 			dx := p.Pos.X - p.LastPos.X
@@ -387,8 +420,16 @@ func (r *Room) tick() {
 	r.broadcastState()
 }
 
-func applyInput(p *Player, input PlayerInput) {
-	const speed = 2.5
+func applyInput(r *Room, p *Player, input PlayerInput) {
+	configMu.RLock()
+	class, ok := classConfigs[p.ClassID]
+	configMu.RUnlock()
+
+	speed := 2.5
+	if ok {
+		speed = class.BaseSpeed / TickRate // convert pixels/sec to pixels/tick
+	}
+	
 	p.Pos.X = clamp(p.Pos.X+input.MoveX*speed, 0, WorldBoundsX)
 	p.Pos.Y = clamp(p.Pos.Y+input.MoveY*speed, 0, WorldBoundsY)
 }
@@ -533,7 +574,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	player := &Player{
-		UserID:        claims.UserID, // from verified JWT — not query param
+		UserID:        claims.UserID,
+		ClassID:       claims.ClassID,
 		Conn:          conn,
 		Pos:           Vec2{X: WorldBoundsX / 2, Y: WorldBoundsY / 2},
 		Vitals:        PlayerVitals{HP: 100, MaxHP: 100, DeathState: DeathStateAlive},
@@ -724,7 +766,9 @@ func main() {
 	})
 	log.Printf("Connecting to Redis at %s...", redisAddr)
 
+	fetchInitialConfig()
 	go listenAdminCommands()
+	go listenConfigUpdates()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", wsHandler)
@@ -789,5 +833,49 @@ func listenAdminCommands() {
 				roomManager.mu.Unlock()
 			}
 		}
+	}
+}
+
+func fetchInitialConfig() {
+	lobbyURL := os.Getenv("LOBBY_API_URL")
+	if lobbyURL == "" {
+		lobbyURL = "http://lobby-api:3000"
+	}
+	resp, err := http.Get(lobbyURL + "/game/config")
+	if err != nil {
+		log.Printf("[CONFIG] Failed to fetch initial config: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		Mobs    []MobConfig    `json:"mobs"`
+		Items   []ItemConfig   `json:"items"`
+		Classes []ClassConfig  `json:"classes"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		log.Printf("[CONFIG] Decode error: %v", err)
+		return
+	}
+
+	configMu.Lock()
+	for _, m := range data.Mobs { mobConfigs[m.MobType] = m }
+	for _, i := range data.Items { itemConfigs[i.ItemID] = i }
+	for _, c := range data.Classes { classConfigs[c.ClassID] = c }
+	configMu.Unlock()
+	log.Printf("[CONFIG] Initialized: %d mobs, %d items, %d classes", len(data.Mobs), len(data.Items), len(data.Classes))
+}
+
+func listenConfigUpdates() {
+	pubsub := redisClient.Subscribe(ctx, "config_updates")
+	defer pubsub.Close()
+	for {
+		msg, err := pubsub.ReceiveMessage(ctx)
+		if err != nil { continue }
+		
+		log.Printf("[CONFIG] Update received: %s", msg.Payload)
+		// Simplest way to sync: just re-fetch everything
+		// This is safe because updates are rare (admin tuning)
+		fetchInitialConfig()
 	}
 }

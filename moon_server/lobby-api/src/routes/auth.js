@@ -44,9 +44,10 @@ router.post('/login', loginRules, validate, async (req, res, next) => {
       return res.status(400).json({ error: 'username and password required' });
 
     const { rows } = await db.query(
-      `SELECT p.user_id, p.username, p.password_hash, COALESCE(r.role_level, 0) as role_level
+      `SELECT p.user_id, p.username, p.password_hash, COALESCE(r.role_level, 0) as role_level, pr.class_id
        FROM players p
        LEFT JOIN user_roles r ON r.user_id = p.user_id
+       LEFT JOIN profiles pr ON pr.user_id = p.user_id
        WHERE LOWER(p.username) = LOWER($1) OR LOWER(p.email) = LOWER($1)`,
       [username]
     );
@@ -67,8 +68,9 @@ router.post('/login', loginRules, validate, async (req, res, next) => {
       user_id:    player.user_id,
       username:   player.username,
       role_level: player.role_level,
+      class_id:   player.class_id,
     });
-    res.json({ token, user_id: player.user_id, username: player.username, role_level: player.role_level });
+    res.json({ token, user_id: player.user_id, username: player.username, role_level: player.role_level, class_id: player.class_id });
   } catch (err) { next(err); }
 });
 

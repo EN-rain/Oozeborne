@@ -95,17 +95,7 @@ router.post('/kick', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── POST /admin/broadcast ────────────────────────────────────────────────
-router.post('/broadcast', async (req, res, next) => {
-  try {
-    const { message } = req.body;
-    await redis.publish('admin_commands', JSON.stringify({
-      cmd: 'broadcast', message, by: req.user.user_id,
-    }));
-    await logAction(db, req.user.user_id, 'broadcast', null, { message });
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-});
+// Broadcast endpoint removed at user request
 
 // ─── POST /admin/maintenance ──────────────────────────────────────────────
 router.post('/maintenance', async (req, res, next) => {
@@ -185,6 +175,77 @@ router.patch('/mobs/:mob_type', async (req, res, next) => {
       health, speed, damage, xp_reward,
     }));
     await logAction(db, req.user.user_id, 'mob_tune', null, { mob_type: req.params.mob_type, health, speed, damage });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ─── GET /admin/items — Fetch all item configs ─────────────────────────────
+router.get('/items', async (req, res, next) => {
+  try {
+    const { rows } = await db.query(`SELECT * FROM item_configs ORDER BY category, price`);
+    res.json({ items: rows });
+  } catch (err) { next(err); }
+});
+
+// ─── PATCH /admin/items/:item_id — Tune item stats ─────────────────────────
+router.patch('/items/:item_id', async (req, res, next) => {
+  try {
+    const { display_name, description, price, stat_type, stat_value, instant_heal, duration } = req.body;
+    await db.query(
+      `UPDATE item_configs SET
+         display_name = COALESCE($1, display_name),
+         description  = COALESCE($2, description),
+         price        = COALESCE($3, price),
+         stat_type    = COALESCE($4, stat_type),
+         stat_value   = COALESCE($5, stat_value),
+         instant_heal = COALESCE($6, instant_heal),
+         duration     = COALESCE($7, duration),
+         updated_at   = NOW()
+       WHERE item_id = $8`,
+      [display_name, description, price, stat_type, stat_value, instant_heal, duration, req.params.item_id]
+    );
+    await redis.publish('config_updates', JSON.stringify({ type: 'item_config', item_id: req.params.item_id }));
+    await logAction(db, req.user.user_id, 'item_tune', null, { item_id: req.params.item_id });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ─── GET /admin/classes/:class_id — Fetch class stats ──────────────────────
+router.get('/classes/:class_id', async (req, res, next) => {
+  try {
+    const { rows } = await db.query(`SELECT * FROM class_configs WHERE class_id = $1`, [req.params.class_id]);
+    res.json({ class: rows[0] || null });
+  } catch (err) { next(err); }
+});
+
+// ─── PATCH /admin/classes/:class_id — Tune class stats ─────────────────────
+router.patch('/classes/:class_id', async (req, res, next) => {
+  try {
+    const { 
+      base_max_health, base_speed, base_attack_damage, base_crit_chance, 
+      base_max_mana, health_per_level, damage_per_level, skills 
+    } = req.body;
+    await db.query(
+      `UPDATE class_configs SET
+         base_max_health    = COALESCE($1, base_max_health),
+         base_speed         = COALESCE($2, base_speed),
+         base_attack_damage = COALESCE($3, base_attack_damage),
+         base_crit_chance   = COALESCE($4, base_crit_chance),
+         base_max_mana      = COALESCE($5, base_max_mana),
+         health_per_level   = COALESCE($6, health_per_level),
+         damage_per_level   = COALESCE($7, damage_per_level),
+         skills             = COALESCE($8, skills),
+         updated_at         = NOW()
+       WHERE class_id = $9`,
+      [
+        base_max_health, base_speed, base_attack_damage, base_crit_chance, 
+        base_max_mana, health_per_level, damage_per_level, 
+        skills ? JSON.stringify(skills) : null, 
+        req.params.class_id
+      ]
+    );
+    await redis.publish('config_updates', JSON.stringify({ type: 'class_config', class_id: req.params.class_id }));
+    await logAction(db, req.user.user_id, 'class_tune', null, { class_id: req.params.class_id });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

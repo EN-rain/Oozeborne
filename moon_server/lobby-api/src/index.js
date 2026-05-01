@@ -10,6 +10,7 @@ const profileRoutes = require('./routes/profiles');
 const adminRoutes   = require('./routes/admin');
 const friendRoutes  = require('./routes/friends');
 const chatRoutes    = require('./routes/chat');
+const gameRoutes    = require('./routes/game');
 
 const { authLimiter, apiLimiter, adminLimiter } = require('./middleware/rateLimiter');
 
@@ -81,6 +82,7 @@ app.use('/profiles', profileRoutes);
 app.use('/admin',    adminLimiter, adminRoutes);    // admin-specific limiter
 app.use('/friends',  friendRoutes);
 app.use('/chat',     chatRoutes);
+app.use('/game',     gameRoutes);
 app.use('/saves',    require('./routes/saves'));
 
 // ─── Health (no auth required) ────────────────────────────────────────────

@@ -97,6 +97,33 @@ CREATE TABLE IF NOT EXISTS wave_configs (
     duration_sec    INT NOT NULL DEFAULT 60
 );
 
+-- ── Game Config: Items & Classes ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS item_configs (
+    item_id         TEXT PRIMARY KEY,
+    display_name    TEXT NOT NULL,
+    description     TEXT,
+    price           INT NOT NULL DEFAULT 0,
+    stat_type       TEXT,               -- 'MAX_HP', 'ATTACK', 'SPEED', etc.
+    stat_value      FLOAT,
+    instant_heal    INT DEFAULT 0,
+    duration        INT DEFAULT 0,      -- For temporary buffs
+    category        TEXT NOT NULL DEFAULT 'consumables', -- 'consumables', 'upgrades', etc.
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS class_configs (
+    class_id            TEXT PRIMARY KEY,
+    base_max_health     INT NOT NULL DEFAULT 100,
+    base_speed          FLOAT NOT NULL DEFAULT 60.0,
+    base_attack_damage  INT NOT NULL DEFAULT 10,
+    base_crit_chance    FLOAT NOT NULL DEFAULT 5.0,
+    base_max_mana       INT NOT NULL DEFAULT 50,
+    health_per_level    INT NOT NULL DEFAULT 10,
+    damage_per_level    INT NOT NULL DEFAULT 2,
+    skills              JSONB DEFAULT '[]', -- Array of skill objects
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── Match History & Results ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS match_sessions (
     match_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -149,4 +176,26 @@ INSERT INTO wave_configs (wave_num, mob_weights, mob_count_base, duration_sec) V
     (3,  '{"slime": 60, "skeleton": 40}', 16, 60),
     (5,  '{"slime": 40, "skeleton": 55, "boss": 5}', 20, 90),
     (10, '{"skeleton": 50, "boss": 50}', 25, 120)
+ON CONFLICT DO NOTHING;
+
+-- ── Seed Data: Default Item Configs ──────────────────────────────────────────
+INSERT INTO item_configs (item_id, display_name, description, price, stat_type, stat_value, instant_heal, duration, category) VALUES
+    ('health_potion_small', 'Health Potion', 'Restores health.', 8, NULL, NULL, 50, 0, 'consumables'),
+    ('health_potion_large', 'Large Health Potion', 'Restores significant health.', 20, NULL, NULL, 100, 0, 'consumables'),
+    ('shield_potion', 'Shield Potion', 'Temporary defense boost.', 25, 'DEFENSE', 50, 0, 30, 'consumables'),
+    ('speed_potion', 'Speed Potion', 'Temporary speed boost.', 15, 'SPEED', 30, 0, 60, 'consumables'),
+    ('max_hp_10', 'Max HP +10', 'Permanent HP increase.', 40, 'MAX_HP', 10, 0, 0, 'upgrades'),
+    ('max_hp_25', 'Max HP +25', 'Permanent HP increase.', 85, 'MAX_HP', 25, 0, 0, 'upgrades'),
+    ('attack_5', 'Attack +5', 'Permanent damage increase.', 50, 'ATTACK', 5, 0, 0, 'upgrades'),
+    ('iron_sword', 'Iron Sword', 'Increases damage.', 65, 'ATTACK', 10, 0, 0, 'equipment'),
+    ('swift_boots', 'Swift Boots', 'Increases speed.', 50, 'SPEED', 15, 0, 0, 'equipment'),
+    ('revive_stone', 'Revive Stone', 'Auto-revive on death.', 180, NULL, NULL, 0, 0, 'special'),
+    ('xp_tome', 'XP Tome', 'Instantly gain 50 XP.', 25, NULL, NULL, 0, 0, 'special')
+ON CONFLICT DO NOTHING;
+
+-- ── Seed Data: Default Class Configs ──────────────────────────────────────────
+INSERT INTO class_configs (class_id, base_max_health, base_speed, base_attack_damage, base_crit_chance, base_max_mana, health_per_level, damage_per_level, skills) VALUES
+    ('tank', 150, 50.0, 12, 5.0, 40, 20, 3, '[{"name": "Passive", "desc": "Reduced damage taken."}]'),
+    ('dps',  90, 70.0, 20, 10.0, 60, 8, 5, '[{"name": "Passive", "desc": "Increased attack speed."}]'),
+    ('support', 100, 60.0, 10, 5.0, 100, 10, 2, '[{"name": "Passive", "desc": "Aura of healing."}]')
 ON CONFLICT DO NOTHING;
