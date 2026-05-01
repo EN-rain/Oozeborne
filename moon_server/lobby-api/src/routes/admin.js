@@ -148,7 +148,8 @@ router.post('/players/:user_id/wipe', async (req, res, next) => {
 router.get('/mobs/:mob_type', async (req, res, next) => {
   try {
     const { rows } = await db.query(
-      `SELECT health, speed, damage, xp_reward FROM mob_configs WHERE mob_type = $1`,
+      `SELECT health, speed, damage, xp_reward, gold_reward, attributes 
+       FROM mob_configs WHERE mob_type = $1`,
       [req.params.mob_type]
     );
     res.json({ mob: rows[0] || null });
@@ -158,21 +159,23 @@ router.get('/mobs/:mob_type', async (req, res, next) => {
 // ─── PATCH /admin/mobs/:mob_type — Live mob stat tuning ──────────────────
 router.patch('/mobs/:mob_type', async (req, res, next) => {
   try {
-    const { health, speed, damage, xp_reward } = req.body;
+    const { health, speed, damage, xp_reward, gold_reward, attributes } = req.body;
     await db.query(
       `UPDATE mob_configs SET
-         health     = COALESCE($1, health),
-         speed      = COALESCE($2, speed),
-         damage     = COALESCE($3, damage),
-         xp_reward  = COALESCE($4, xp_reward),
-         updated_at = NOW()
-       WHERE mob_type = $5`,
-      [health, speed, damage, xp_reward, req.params.mob_type]
+         health      = COALESCE($1, health),
+         speed       = COALESCE($2, speed),
+         damage      = COALESCE($3, damage),
+         xp_reward   = COALESCE($4, xp_reward),
+         gold_reward = COALESCE($5, gold_reward),
+         attributes  = COALESCE($6, attributes),
+         updated_at  = NOW()
+       WHERE mob_type = $7`,
+      [health, speed, damage, xp_reward, gold_reward, attributes ? JSON.stringify(attributes) : null, req.params.mob_type]
     );
     // Broadcast live stat update to all game-server instances
     await redis.publish('config_updates', JSON.stringify({
       type: 'mob_config', mob_type: req.params.mob_type,
-      health, speed, damage, xp_reward,
+      health, speed, damage, xp_reward, gold_reward, attributes
     }));
     await logAction(db, req.user.user_id, 'mob_tune', null, { mob_type: req.params.mob_type, health, speed, damage });
     res.json({ ok: true });

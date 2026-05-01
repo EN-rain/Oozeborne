@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server, Skull, Edit3, Check } from 'lucide-react';
+import { Settings, Users, Activity, Crosshair, Wifi, LogOut, Shield, Trash2, Plus, Server, Skull, Edit3, Check, Search } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_LOBBY_API_URL || 
   (typeof window !== 'undefined' ? `http://${window.location.hostname}:3000` : 'http://localhost:3000');
@@ -283,47 +283,60 @@ const ITEM_CATEGORIES = [
   { key: 'special',     label: 'Special',     color: '#ec4899' },
 ];
 
-function ItemCard({ item, isEditing }: { item: any, isEditing: boolean }) {
+function ItemCard({ item }: { item: any }) {
   const [data, setData] = useState({ ...item });
   const [msg, setMsg] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   async function save() {
     try {
       await axios.patch(`${API}/admin/items/${item.item_id}`, data, { headers: authHeader() });
       setMsg('Saved');
+      setIsEditing(false);
     } catch { setMsg('Error'); }
     setTimeout(() => setMsg(''), 2000);
   }
 
-  useEffect(() => {
-    const handleSave = () => { if (isEditing) save(); };
-    window.addEventListener('moon-save-items', handleSave);
-    return () => window.removeEventListener('moon-save-items', handleSave);
-  }, [isEditing, data]);
-
   return (
-    <div className="glass-card" style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>{item.display_name}</div>
-        {msg && <span style={{ fontSize: '0.65rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)' }}>{msg}</span>}
+    <div className="glass-card" style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.2)', position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)', opacity: 0.9 }}>{item.display_name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {msg && <span style={{ fontSize: '0.65rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>{msg}</span>}
+          <button onClick={() => isEditing ? save() : setIsEditing(true)} 
+            style={{ background: 'transparent', border: 'none', color: isEditing ? 'var(--accent-primary)' : 'var(--text-muted)', cursor: 'pointer', padding: 2, display: 'flex' }}
+            title={isEditing ? 'Save' : 'Edit'}>
+            {isEditing ? <Check size={14} /> : <Edit3 size={14} />}
+          </button>
+        </div>
       </div>
       
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <input className="input-field" style={{ fontSize: '0.7rem', height: 26 }} value={data.price} onChange={e => setData({...data, price: +e.target.value})} placeholder="Price" type="number" />
-          <input className="input-field" style={{ fontSize: '0.7rem', height: 26 }} value={data.description} onChange={e => setData({...data, description: e.target.value})} placeholder="Desc" />
           <div style={{ display: 'flex', gap: 4 }}>
-            <input className="input-field" style={{ fontSize: '0.7rem', height: 26, flex: 1 }} value={data.stat_value || ''} onChange={e => setData({...data, stat_value: +e.target.value})} placeholder="Val" type="number" />
-            <input className="input-field" style={{ fontSize: '0.7rem', height: 26, flex: 1 }} value={data.instant_heal || ''} onChange={e => setData({...data, instant_heal: +e.target.value})} placeholder="Heal" type="number" />
+            <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', flex: 1 }}>PRICE</label>
+            <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', flex: 1 }}>VALUE</label>
           </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <input className="input-field" style={{ fontSize: '0.7rem', height: 26, flex: 1 }} value={data.price} onChange={e => setData({...data, price: +e.target.value})} placeholder="Price" type="number" />
+            <input className="input-field" style={{ fontSize: '0.7rem', height: 26, flex: 1 }} value={data.stat_value || ''} onChange={e => setData({...data, stat_value: +e.target.value})} placeholder="Val" type="number" />
+          </div>
+          <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>DESCRIPTION</label>
+          <input className="input-field" style={{ fontSize: '0.7rem', height: 26 }} value={data.description} onChange={e => setData({...data, description: e.target.value})} placeholder="Desc" />
+          {data.instant_heal !== undefined && (
+            <>
+              <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>INSTANT HEAL</label>
+              <input className="input-field" style={{ fontSize: '0.7rem', height: 26 }} value={data.instant_heal} onChange={e => setData({...data, instant_heal: +e.target.value})} placeholder="Heal" type="number" />
+            </>
+          )}
         </div>
       ) : (
         <>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 8, height: 32, overflow: 'hidden' }}>{item.description}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-            <span style={{ color: '#f59e0b', fontWeight: 600 }}>💰 {data.price}g</span>
-            {data.stat_type && <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{data.stat_type} +{data.stat_value}</span>}
-            {data.instant_heal > 0 && <span style={{ color: '#10b981', fontWeight: 600 }}>+{data.instant_heal} HP</span>}
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 10, height: 32, overflow: 'hidden', lineHeight: 1.4 }}>{item.description}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', opacity: 0.8 }}>
+            <span style={{ color: 'var(--text-main)', fontWeight: 700 }}>{data.price}G</span>
+            {data.stat_type && <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{data.stat_type.toUpperCase()} +{data.stat_value}</span>}
+            {data.instant_heal > 0 && <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>+{data.instant_heal} HP</span>}
           </div>
         </>
       )}
@@ -332,122 +345,163 @@ function ItemCard({ item, isEditing }: { item: any, isEditing: boolean }) {
 }
 
 // ─── Items Tab ────────────────────────────────────────────────────────────────
-function ItemsTab() {
+function ItemsTab({ search }: { search: string }) {
   const [items, setItems] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [activeCat, setActiveCat] = useState<string>(ITEM_CATEGORIES[0].key);
 
   useEffect(() => {
     axios.get(`${API}/admin/items`, { headers: authHeader() }).then(res => setItems(res.data.items || []));
   }, []);
 
-  const toggleEdit = () => {
-    if (isEditing) window.dispatchEvent(new CustomEvent('moon-save-items'));
-    setIsEditing(!isEditing);
-  };
+  const filteredItems = items.filter(i => {
+    const matchesSearch = i.display_name.toLowerCase().includes(search.toLowerCase()) || i.item_id.includes(search.toLowerCase());
+    if (search) return matchesSearch;
+    return i.category === activeCat;
+  });
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: '1.5rem' }}>
-        <button className="btn-outline" onClick={toggleEdit}
-          style={{ background: isEditing ? 'var(--accent-primary)' : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none', padding: '10px' }}
-          title={isEditing ? 'Confirm' : 'Edit Items'}>
-          {isEditing ? <Check size={18} /> : <Edit3 size={18} />}
-        </button>
-        <input className="input-field"
-          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '260px', fontSize: '0.85rem' }}
-          placeholder="Filter items..." value={search} onChange={e => setSearch(e.target.value)} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Category Tabs */}
+      <div className="no-scrollbar" style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border-light)', paddingBottom: 0, overflowX: 'auto' }}>
+        {ITEM_CATEGORIES.map(cat => (
+          <button key={cat.key} onClick={() => setActiveCat(cat.key)}
+            style={{ 
+              padding: '8px 20px', background: 'transparent', border: 'none', cursor: 'pointer', 
+              fontSize: '0.85rem', fontWeight: 700, textTransform: 'capitalize',
+              color: activeCat === cat.key ? 'var(--text-main)' : 'var(--text-muted)',
+              borderBottom: activeCat === cat.key ? `2px solid var(--accent-primary)` : '2px solid transparent',
+              marginBottom: -1, transition: 'all 0.15s'
+            }}>
+            {cat.label}
+          </button>
+        ))}
       </div>
-      {ITEM_CATEGORIES.map(cat => {
-        const catItems = items.filter(i => 
-          i.category === cat.key && 
-          (i.display_name.toLowerCase().includes(search.toLowerCase()) || i.item_id.includes(search.toLowerCase()))
-        );
-        if (catItems.length === 0) return null;
-        return (
-          <div key={cat.key} style={{ marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: cat.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{cat.label}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-              {catItems.map(item => <ItemCard key={item.item_id} item={item} isEditing={isEditing} />)}
-            </div>
-          </div>
-        );
-      })}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+        {filteredItems.map(item => <ItemCard key={item.item_id} item={item} />)}
+        {filteredItems.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No items found.</div>
+        )}
+      </div>
     </div>
   );
 }
 
-function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }) {
-  const [stats, setStats] = useState({ health: '', speed: '', damage: '', xp_reward: '' });
+function MobDetailPage({ mobType, onBack }: { mobType: string; onBack: () => void }) {
+  const [stats, setStats] = useState<any>({ attributes: {} });
+  const [isEditing, setIsEditing] = useState(false);
   const [msg, setMsg] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await axios.get(`${API}/admin/mobs/${mobType}`, { headers: authHeader() });
-        if (res.data.mob) {
-          setStats({
-            health: res.data.mob.health || '',
-            speed: res.data.mob.speed || '',
-            damage: res.data.mob.damage || '',
-            xp_reward: res.data.mob.xp_reward || ''
-          });
-        }
-      } catch (e) {}
-    }
-    fetchStats();
+    axios.get(`${API}/admin/mobs/${mobType}`, { headers: authHeader() }).then(res => {
+      if (res.data.mob) {
+        setStats({
+          ...res.data.mob,
+          attributes: res.data.mob.attributes || {}
+        });
+      }
+    });
   }, [mobType]);
 
   async function save() {
-    setLoading(true);
     try {
-      await axios.patch(`${API}/admin/mobs/${mobType}`,
-        { health: +stats.health || undefined, speed: +stats.speed || undefined,
-          damage: +stats.damage || undefined, xp_reward: +stats.xp_reward || undefined },
-        { headers: authHeader() }
-      );
-      setMsg('Updated');
+      await axios.patch(`${API}/admin/mobs/${mobType}`, stats, { headers: authHeader() });
+      setMsg('Saved');
+      setIsEditing(false);
     } catch { setMsg('Error'); }
-    setLoading(false);
-    setTimeout(() => setMsg(''), 3000);
+    setTimeout(() => setMsg(''), 2000);
   }
 
-  useEffect(() => {
-    if (!isEditing && msg === '') {
-      // Potentially save here if values changed, but for now we'll rely on the user manual save
-    }
-    const handleSave = () => { if (isEditing) save(); };
-    window.addEventListener('moon-save-mobs', handleSave);
-    return () => window.removeEventListener('moon-save-mobs', handleSave);
-  }, [isEditing, stats]);
+  const coreFields = ['health', 'speed', 'damage', 'xp_reward', 'gold_reward'];
+
+  const getLabel = (f: string) => {
+    if (f === 'damage') return 'Attack';
+    if (f === 'xp_reward') return 'XP Reward';
+    if (f === 'gold_reward') return 'Gold Reward';
+    if (f === 'phase_2_threshold') return 'Phase 2 (%)';
+    if (f === 'phase_3_threshold') return 'Phase 3 (%)';
+    return f.replace(/_/g, ' ');
+  };
 
   return (
-    <div className="glass-card" style={{ padding: '0.875rem', background: 'rgba(0,0,0,0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: mobType === 'boss' ? 'var(--danger)' : 'var(--accent-primary)', textTransform: 'capitalize', margin: 0 }}>{mobType}</h3>
-        {isEditing && <span style={{ fontSize: '0.75rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>{msg}</span>}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
+        <button onClick={onBack} className="btn-outline" style={{ padding: '6px 12px' }}>← Back</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'capitalize', margin: 0, color: 'var(--text-main)' }}>{mobType}</h2>
+          {msg && <span style={{ fontSize: '0.8rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', marginLeft: 10 }}>{msg}</span>}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button className="btn-outline" onClick={() => { if (isEditing) save(); setIsEditing(!isEditing); }}
+          style={{ background: isEditing ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'var(--text-main)', border: isEditing ? '1px solid var(--text-main)' : '1px solid var(--border-light)', padding: '10px' }}
+          title={isEditing ? 'Confirm' : 'Edit Stats'}>
+          {isEditing ? <Check size={18} /> : <Edit3 size={18} />}
+        </button>
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: isEditing ? '1rem' : 0 }}>
-        {(['health','speed','damage','xp_reward'] as const).map(field => (
-          <div key={field}>
-            <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>{field.replace('_', ' ')}</label>
-            <input className="input-field" type="number" 
-              disabled={!isEditing}
-              style={{ 
-                padding: '4px 8px', 
-                fontSize: '0.8rem', 
-                height: '32px',
-                background: isEditing ? 'var(--bg-input)' : 'transparent',
-                borderColor: isEditing ? 'var(--border-light)' : 'transparent',
-                cursor: isEditing ? 'text' : 'default'
-              }}
-              value={stats[field]} onChange={e => setStats(s => ({ ...s, [field]: e.target.value }))} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
+        {/* Core Stats Section */}
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9, marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 8 }}>Core Stats</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {coreFields.map(f => (
+              <div key={f}>
+                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>
+                  {getLabel(f)}
+                </label>
+                <input className="input-field" type="number" disabled={!isEditing}
+                  style={{ padding: '8px 12px', fontSize: '0.9rem', height: '38px', background: isEditing ? 'var(--bg-input)' : 'transparent', borderColor: isEditing ? 'var(--border-light)' : 'transparent' }}
+                  value={stats[f] || ''} onChange={e => setStats({...stats, [f]: +e.target.value})} />
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Dynamic Attributes Section */}
+        {Object.keys(stats.attributes).length > 0 && (
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9, marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 8 }}>Advanced Mechanics</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {Object.keys(stats.attributes).map(key => (
+                <div key={key}>
+                  <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>
+                    {getLabel(key)}
+                  </label>
+                  <input className="input-field" type="number" step="any" disabled={!isEditing}
+                    style={{ padding: '8px 12px', fontSize: '0.9rem', height: '38px', background: isEditing ? 'var(--bg-input)' : 'transparent', borderColor: isEditing ? 'var(--border-light)' : 'transparent' }}
+                    value={stats.attributes[key] ?? ''} 
+                    onChange={e => setStats({
+                      ...stats, 
+                      attributes: { ...stats.attributes, [key]: parseFloat(e.target.value) }
+                    })} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function MobCard({ mobType, onClick }: { mobType: string; onClick: () => void }) {
+  const group = MOB_GROUPS.find(g => g.mobs.includes(mobType));
+
+  return (
+    <button onClick={onClick} className="glass-card" 
+      style={{ 
+        padding: '1rem', background: 'rgba(0,0,0,0.2)', position: 'relative', cursor: 'pointer', border: 'none', textAlign: 'center', width: '100%',
+        transition: 'all 0.2s'
+      }}
+      onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+      onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.2)'; }}>
+      
+      <h3 style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'capitalize', margin: 0, opacity: 0.9 }}>{mobType}</h3>
+      
+      <div style={{ fontSize: '0.6rem', color: group?.color || 'var(--text-muted)', marginTop: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {group?.key || 'Mob'}
+      </div>
+    </button>
   );
 }
 
@@ -458,48 +512,50 @@ const MOB_GROUPS = [
   { key: 'boss', label: 'Boss Entities', color: 'var(--danger)', mobs: ['warden'] },
 ];
 
-function EnemiesTab() {
-  const [search, setSearch] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+function EnemiesTab({ search }: { search: string }) {
+  const [selectedMob, setSelectedMob] = useState<string | null>(null);
 
-  const toggleEdit = () => {
-    if (isEditing) window.dispatchEvent(new CustomEvent('moon-save-mobs'));
-    setIsEditing(!isEditing);
-  };
+  // Flatten and sort: Boss -> Elite -> Common
+  const bossMobs = MOB_GROUPS.find(g => g.key === 'boss')?.mobs || [];
+  const eliteMobs = MOB_GROUPS.find(g => g.key === 'elite')?.mobs || [];
+  const commonMobs = MOB_GROUPS.find(g => g.key === 'common')?.mobs || [];
+  const allMobs = [...bossMobs, ...eliteMobs, ...commonMobs];
+
+  const filtered = allMobs.filter(m => 
+    m.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
-        <button className="btn-outline" onClick={toggleEdit}
-          style={{ background: isEditing ? 'var(--accent-primary)' : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none', padding: '10px' }}
-          title={isEditing ? 'Confirm' : 'Edit'}>
-          {isEditing ? <Check size={18} /> : <Edit3 size={18} />}
-        </button>
-        <input className="input-field"
-          style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '260px', fontSize: '0.85rem' }}
-          placeholder="Filter enemies..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-
-      <div style={{ paddingRight: '0.5rem', paddingBottom: '2rem' }}>
-        {MOB_GROUPS.map(group => {
-          const groupMobs = group.mobs.filter(m => 
-            m.toLowerCase().includes(search.toLowerCase())
-          );
-          if (groupMobs.length === 0) return null;
-
-          return (
-            <div key={group.key} style={{ marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: group.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group.label}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                {groupMobs.map(m => <MobCard key={m} mobType={m} isEditing={isEditing} />)}
-              </div>
-            </div>
-          );
-        })}
-        {MOB_GROUPS.every(g => g.mobs.filter(m => m.toLowerCase().includes(search.toLowerCase())).length === 0) && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No enemies found matching "{search}"</div>
+    <div style={{ position: 'relative' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+        {filtered.map(m => <MobCard key={m} mobType={m} onClick={() => setSelectedMob(m)} />)}
+        {filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+            No enemies found.
+          </div>
         )}
       </div>
+
+      {/* Pop-up Window (Modal) for Enemies */}
+      {selectedMob && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
+          padding: '2rem'
+        }} onClick={() => setSelectedMob(null)}>
+          <div style={{ 
+            width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto',
+            background: 'var(--bg-main)', border: '1px solid var(--border-light)',
+            borderRadius: 12, padding: '2rem', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+          }} onClick={e => e.stopPropagation()}>
+            <MobDetailPage 
+              mobType={selectedMob} 
+              onBack={() => setSelectedMob(null)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -508,7 +564,6 @@ function EnemiesTab() {
 
 // ─── Classes Tab ──────────────────────────────────────────────────────────────
 function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; mainClassId: string; onBack: () => void }) {
-  const color = CLASS_COLOR[mainClassId] || 'var(--accent-primary)';
   const statFields = ['base_max_health','base_speed','base_attack_damage','base_crit_chance','base_max_mana','health_per_level','damage_per_level'];
   const [stats, setStats] = useState<any>({});
   const [skills, setSkills] = useState<any[]>([]);
@@ -538,13 +593,12 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
         <button onClick={onBack} className="btn-outline" style={{ padding: '6px 12px' }}>← Back</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, textTransform: 'capitalize', margin: 0, color }}>{classId.replace('_',' ')}</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'capitalize', margin: 0, color: 'var(--text-main)' }}>{classId.replace('_',' ')}</h2>
           {msg && <span style={{ fontSize: '0.8rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', marginLeft: 10 }}>{msg}</span>}
         </div>
         <div style={{ flex: 1 }} />
         <button className="btn-outline" onClick={() => { if (isEditing) save(); setIsEditing(!isEditing); }}
-          style={{ background: isEditing ? color : 'transparent', color: isEditing ? 'white' : 'var(--text-main)', border: 'none', padding: '10px' }}
+          style={{ background: isEditing ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'var(--text-main)', border: isEditing ? '1px solid var(--text-main)' : '1px solid var(--border-light)', padding: '10px' }}
           title={isEditing ? 'Confirm' : 'Edit Stats'}>
           {isEditing ? <Check size={18} /> : <Edit3 size={18} />}
         </button>
@@ -552,11 +606,13 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="glass-card">
-          <div className="glass-header" style={{ color }}><Activity size={16} /> Base Stats</div>
+          <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9 }}>Base Stats</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {statFields.map(f => (
               <div key={f}>
-                <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>{f.replace(/_/g,' ')}</label>
+                <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>
+                  {f === 'damage' || f === 'base_attack_damage' ? 'Attack' : f.replace('base_','').replace(/_/g,' ')}
+                </label>
                 <input className="input-field" type="number" disabled={!isEditing}
                   style={{ padding: '4px 8px', fontSize: '0.8rem', height: '30px', background: isEditing ? 'var(--bg-input)' : 'transparent', borderColor: isEditing ? 'var(--border-light)' : 'transparent' }}
                   value={stats[f] || 0} onChange={e => setStats({...stats, [f]: +e.target.value})} />
@@ -566,10 +622,10 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
         </div>
 
         <div className="glass-card">
-          <div className="glass-header" style={{ color }}><Shield size={16} /> Skills</div>
+          <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9 }}>Skills</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {skills.map((sk, idx) => (
-              <div key={idx} style={{ padding: '0.6rem', background: 'rgba(0,0,0,0.2)', borderRadius: 8, borderLeft: `3px solid ${color}` }}>
+              <div key={idx} style={{ padding: '0.6rem', background: 'rgba(0,0,0,0.2)', borderRadius: 8, borderLeft: `3px solid var(--border-light)` }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 3 }}>{sk.name}</div>
                 {isEditing
                   ? <input className="input-field" value={sk.desc} style={{ fontSize: '0.75rem', padding: '3px 6px', height: '28px' }} 
@@ -589,58 +645,65 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
   );
 }
 
-function ClassesTab() {
-  const [selected, setSelected] = useState<{ classId: string; mainId: string } | null>(null);
-  const [activeMain, setActiveMain] = useState<string>('tank');
+function ClassesTab({ search }: { search: string }) {
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
-  if (selected) return <ClassDetailPage classId={selected.classId} mainClassId={selected.mainId} onBack={() => setSelected(null)} />;
+  // Sort: Main classes first, then subclasses
+  const mains = Object.keys(CLASS_TREE);
+  const subs = Array.from(new Set(Object.values(CLASS_TREE).flat())).filter(s => !mains.includes(s));
+  const allAvailableClasses = [...mains, ...subs];
 
-  const subs = CLASS_TREE[activeMain] || [];
-  const color = CLASS_COLOR[activeMain] || 'var(--accent-primary)';
+  const filtered = allAvailableClasses.filter(c => 
+    c.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Main Class Tabs */}
-      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border-light)', paddingBottom: 8, overflowX: 'auto' }}>
-        {Object.keys(CLASS_TREE).map(mainId => (
-          <button key={mainId} onClick={() => setActiveMain(mainId)}
-            style={{ 
-              padding: '6px 16px', background: 'transparent', border: 'none', cursor: 'pointer', 
-              fontSize: '0.85rem', fontWeight: 600, textTransform: 'capitalize', borderRadius: '6px 6px 0 0',
-              color: activeMain === mainId ? CLASS_COLOR[mainId] : 'var(--text-muted)',
-              borderBottom: activeMain === mainId ? `2px solid ${CLASS_COLOR[mainId]}` : '2px solid transparent',
-              transition: 'all 0.15s'
-            }}>
-            {mainId}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Class Select & Subclasses */}
-      <div style={{ padding: '1rem 0' }}>
-        <button onClick={() => setSelected({ classId: activeMain, mainId: activeMain })}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', marginBottom: '1.25rem', padding: 0 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }} />
-          <span style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'capitalize', color }}>{activeMain}</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>Main Class</span>
-        </button>
-
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subclasses</div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {subs.map((sub: string) => (
-            <button key={sub} onClick={() => setSelected({ classId: sub, mainId: activeMain })}
+    <div style={{ position: 'relative' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+        {filtered.map(clsId => {
+          const isMain = mains.includes(clsId);
+          return (
+            <button key={clsId} onClick={() => setSelectedClass(clsId)} className="glass-card"
               style={{ 
-                padding: '8px 18px', borderRadius: 24, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', 
-                border: `1px solid ${color}33`, background: `${color}15`, color, textTransform: 'capitalize', 
-                transition: 'all 0.2s', boxShadow: `0 2px 8px ${color}11`
-              }}
-              onMouseOver={e => (e.currentTarget.style.background = `${color}25`)}
-              onMouseOut={e => (e.currentTarget.style.background = `${color}15`)}>
-              {sub.replace('_',' ')}
+                padding: '1rem', textAlign: 'center', cursor: 'pointer',
+                border: 'none',
+                background: 'rgba(0,0,0,0.2)', transition: 'all 0.2s', position: 'relative'
+              }}>
+              <h4 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, textTransform: 'capitalize', color: 'var(--text-main)', opacity: 0.9 }}>{clsId.replace('_', ' ')}</h4>
+              <div style={{ fontSize: '0.6rem', color: isMain ? 'var(--accent-primary)' : 'var(--text-muted)', marginTop: 4, fontWeight: 700, textTransform: 'uppercase' }}>
+                {isMain ? 'Main Class' : 'Subclass'}
+              </div>
             </button>
-          ))}
-        </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+            No classes found.
+          </div>
+        )}
       </div>
+
+      {/* Pop-up Window (Modal) */}
+      {selectedClass && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
+          padding: '2rem'
+        }} onClick={() => setSelectedClass(null)}>
+          <div style={{ 
+            width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto',
+            background: 'var(--bg-main)', border: '1px solid var(--border-light)',
+            borderRadius: 12, padding: '2rem', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+          }} onClick={e => e.stopPropagation()}>
+            <ClassDetailPage 
+              classId={selectedClass} 
+              mainClassId={selectedClass} 
+              onBack={() => setSelectedClass(null)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -648,27 +711,49 @@ function ClassesTab() {
 // ─── Main Tuning Panel ────────────────────────────────────────────────────────
 function MobTuner() {
   const [tab, setTab] = useState<'enemies'|'items'|'classes'>('enemies');
+  const [search, setSearch] = useState('');
   const tabs: { key: 'enemies'|'items'|'classes'; label: string }[] = [
     { key: 'enemies', label: 'Enemies' },
     { key: 'items',   label: 'Items' },
     { key: 'classes', label: 'Classes' },
   ];
+
   return (
     <section>
-      <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: 0 }}>
+      {/* Global Search - Positioned above tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+        <div style={{ position: 'relative', width: '380px' }}>
+          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input className="input-field"
+            style={{ 
+              background: 'rgba(0,0,0,0.2)', 
+              border: '1px solid var(--border-light)', 
+              borderRadius: 30, 
+              paddingLeft: 46, 
+              fontSize: '0.85rem', 
+              height: 44 
+            }}
+            placeholder={`Search ${tab}...`} value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="no-scrollbar" style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: 0, overflowX: 'auto' }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            style={{ padding: '8px 20px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
-              color: tab === t.key ? 'var(--accent-primary)' : 'var(--text-muted)',
+          <button key={t.key} onClick={() => { setTab(t.key); setSearch(''); }}
+            style={{ 
+              padding: '8px 20px', background: 'transparent', border: 'none', cursor: 'pointer', 
+              fontSize: '0.85rem', fontWeight: 700,
+              color: tab === t.key ? 'var(--text-main)' : 'var(--text-muted)',
               borderBottom: tab === t.key ? '2px solid var(--accent-primary)' : '2px solid transparent',
-              marginBottom: -1, transition: 'all 0.15s' }}>
+              marginBottom: -1, transition: 'all 0.15s' 
+            }}>
             {t.label}
           </button>
         ))}
       </div>
-      {tab === 'enemies' && <EnemiesTab />}
-      {tab === 'items'   && <ItemsTab />}
-      {tab === 'classes' && <ClassesTab />}
+      {tab === 'enemies' && <EnemiesTab search={search} />}
+      {tab === 'items'   && <ItemsTab search={search} />}
+      {tab === 'classes' && <ClassesTab search={search} />}
     </section>
   );
 }
@@ -709,28 +794,43 @@ function GraveyardPanel() {
   }
 
   return (
-    <section className="glass-card">
-      <div className="glass-header" style={{ color: 'var(--danger)' }}>
-        <Skull size={18} /> Graveyard (Punishment & Kicks)
+    <section className="glass-card" style={{ border: '1px solid var(--border-light)' }}>
+      <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9 }}>
+        <Skull size={18} /> Graveyard Control
       </div>
       
-      <div style={{ marginBottom: '2rem' }}>
-        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500 }}>TARGET PLAYER ID</h4>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <input className="input-field" placeholder="Enter Player User ID..." 
-            value={targetId} onChange={e => setTargetId(e.target.value)} style={{ flex: 1 }} />
-          <button className="btn-danger" onClick={ban}><Shield size={16} /> Ban</button>
-          <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={kick}><LogOut size={16} /> Kick</button>
+      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <h4 style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Player</h4>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input className="input-field" placeholder="Enter User ID (e.g. user_123...)" 
+              value={targetId} onChange={e => setTargetId(e.target.value)} 
+              style={{ flex: 1, background: 'rgba(0,0,0,0.2)', height: '42px' }} />
+            <button className="btn-outline" onClick={kick} 
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px', height: '42px', fontSize: '0.85rem' }}>
+              <LogOut size={16} /> Kick
+            </button>
+            <button className="btn-outline" onClick={ban} 
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px', height: '42px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)' }}>
+              <Shield size={16} /> Ban Player
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500 }}>ACTION LOGS</h4>
-        <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '1rem', minHeight: '200px', maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          {logs.length === 0 && <div>No recent actions.</div>}
-          {logs.map((log, i) => (
-            <div key={i} style={{ marginBottom: 4 }}>{log}</div>
-          ))}
+        <div>
+          <h4 style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Logs</h4>
+          <div style={{ 
+            background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: '1rem', height: '300px', overflowY: 'auto', 
+            fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)', border: '1px solid var(--border-light)' 
+          }}>
+            {logs.length === 0 && <div style={{ opacity: 0.5 }}>System idle. Awaiting actions...</div>}
+            {logs.map((log, i) => (
+              <div key={i} style={{ marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.02)', paddingBottom: 4 }}>
+                <span style={{ color: 'var(--accent-primary)', marginRight: 8 }}>{log.split(']')[0]}]</span>
+                {log.split(']')[1]}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -792,14 +892,9 @@ export default function DashboardPage() {
       {/* Sidebar */}
       <aside style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: 260, borderRight: '1px solid var(--border-light)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', zIndex: 50 }}>
         <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ background: 'var(--accent-primary)', width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(96, 165, 250, 0.2)' }}>
-              <Server size={20} color="white" />
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '-0.01em', color: 'var(--text-main)' }}>SYSTEM ONLINE</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Uptime: {uptimeStr}</div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.05em', color: 'var(--text-main)', textTransform: 'uppercase' }}>MOON SERVER</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Uptime: {uptimeStr}</div>
           </div>
           <button onClick={() => setView('settings')} style={{ background: 'transparent', border: 'none', color: view === 'settings' ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
             <Settings size={18} />

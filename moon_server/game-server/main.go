@@ -30,13 +30,14 @@ var (
 )
 
 type MobConfig struct {
-	MobType    string  `json:"mob_type"`
-	Health     int     `json:"health"`
-	Speed      float64 `json:"speed"`
-	Damage     int     `json:"damage"`
-	XPReward   int     `json:"xp_reward"`
-	GoldReward int     `json:"gold_reward"`
-	Category   string  `json:"category"`
+	MobType         string  `json:"mob_type"`
+	Health          int     `json:"health"`
+	Speed           float64 `json:"speed"`
+	Damage          int     `json:"damage"`
+	XPReward   int                    `json:"xp_reward"`
+	GoldReward int                    `json:"gold_reward"`
+	Attributes map[string]interface{} `json:"attributes"`
+	Category   string                 `json:"category"`
 }
 
 type ItemConfig struct {
