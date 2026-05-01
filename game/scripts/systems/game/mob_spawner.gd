@@ -9,7 +9,7 @@ signal active_mob_count_changed(current_alive: int, total_in_round: int)
 signal round_started(round_number: int, total_mobs: int)
 signal round_cleared(round_number: int)
 
-@export var common_mob_scene: PackedScene
+@export var slime_mob_scene: PackedScene
 @export var elite_mob_lancer_scene: PackedScene
 @export var elite_mob_archer_scene: PackedScene
 @export var warden_mob_scene: PackedScene
@@ -17,7 +17,7 @@ signal round_cleared(round_number: int)
 
 var MOB_NAME_MAP: Dictionary = {}
 
-@export var initial_common_mob_count: int = 7
+@export var initial_slime_mob_count: int = 7
 @export var initial_elite_mob_count: int = 3
 @export var additional_mobs_per_round: int = 10
 @export_range(0.0, 1.0, 0.01) var elite_ratio_per_round: float = 0.3
@@ -27,7 +27,7 @@ var MOB_NAME_MAP: Dictionary = {}
 @export var offscreen_margin: float = 8.0
 @export var offscreen_spawn_band: float = 24.0
 
-var current_common_mob_count := 0
+var current_slime_mob_count := 0
 var current_elite_mob_count := 0
 
 var _parent: Node
@@ -48,12 +48,10 @@ func initialize(parent: Node, player: Node):
 
 func _build_mob_name_map() -> void:
 	MOB_NAME_MAP = MobSceneRegistry.build_mob_name_map(
-		null, # slime uses common in this spawner
-		common_mob_scene,
+		slime_mob_scene,
 		elite_mob_lancer_scene,
 		elite_mob_archer_scene,
-		warden_mob_scene,
-		boss_mob_scene
+		warden_mob_scene
 	)
 
 
@@ -72,7 +70,7 @@ func begin_network_round(round_number: int) -> void:
 	_current_round = max(1, round_number)
 	_round_total_mobs = get_round_total_mobs(_current_round)
 	_round_active_mobs = 0
-	current_common_mob_count = 0
+	current_slime_mob_count = 0
 	current_elite_mob_count = 0
 	_round_in_progress = true
 	_emit_active_count()
@@ -91,7 +89,7 @@ func start_round(round_number: int) -> void:
 	_current_round = max(1, round_number)
 	_round_total_mobs = get_round_total_mobs(_current_round)
 	_round_active_mobs = 0
-	current_common_mob_count = 0
+	current_slime_mob_count = 0
 	current_elite_mob_count = 0
 	_round_in_progress = true
 
@@ -99,7 +97,7 @@ func start_round(round_number: int) -> void:
 	var common_target: int = maxi(_round_total_mobs - elite_target, 0)
 
 	for i in range(common_target):
-		spawn_common_mob()
+		spawn_slime_mob()
 	for i in range(elite_target):
 		spawn_elite_mob()
 
@@ -107,50 +105,50 @@ func start_round(round_number: int) -> void:
 	round_started.emit(_current_round, _round_total_mobs)
 
 
-func spawn_common_mob() -> void:
+func spawn_slime_mob() -> void:
 	if _network_spawn_enabled:
 		return
-	if common_mob_scene == null:
+	if slime_mob_scene == null:
 		return
 	
-	var mob: Node2D = common_mob_scene.instantiate() as Node2D
+	var mob: Node2D = slime_mob_scene.instantiate() as Node2D
 	if mob == null:
 		return
 	mob.global_position = get_random_spawn_position()
-	mob.set_meta("mob_type", "common")
-	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+	mob.set_meta("mob_type", "slime")
+	mob.tree_exiting.connect(_on_slime_mob_died.bind(mob))
 	
 	_parent.add_child(mob)
 	if _round_manager != null:
 		_round_manager.register_mob(mob)
 	mob_spawned.emit(mob)
 	
-	current_common_mob_count += 1
+	current_slime_mob_count += 1
 	_round_active_mobs += 1
 	_emit_active_count()
 
 
-func spawn_common_mob_at(world_pos: Vector2) -> Node2D:
-	if common_mob_scene == null:
+func spawn_slime_mob_at(world_pos: Vector2) -> Node2D:
+	if slime_mob_scene == null:
 		return null
-	var mob: Node2D = common_mob_scene.instantiate() as Node2D
+	var mob: Node2D = slime_mob_scene.instantiate() as Node2D
 	if mob == null:
 		return null
 	mob.global_position = world_pos
-	mob.set_meta("mob_type", "common")
-	mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+	mob.set_meta("mob_type", "slime")
+	mob.tree_exiting.connect(_on_slime_mob_died.bind(mob))
 	_parent.add_child(mob)
 	if _round_manager != null:
 		_round_manager.register_mob(mob)
 	mob_spawned.emit(mob)
-	current_common_mob_count += 1
+	current_slime_mob_count += 1
 	_round_active_mobs += 1
 	_emit_active_count()
 	return mob
 
 
-func _on_common_mob_died(_mob: Node) -> void:
-	current_common_mob_count = max(current_common_mob_count - 1, 0)
+func _on_slime_mob_died(_mob: Node) -> void:
+	current_slime_mob_count = max(current_slime_mob_count - 1, 0)
 	_round_active_mobs = max(_round_active_mobs - 1, 0)
 	var xp: int = _mob.xp_value if _mob.has_method("get") or "xp_value" in _mob else 10
 	mob_died.emit(_mob, 1, xp)
@@ -215,7 +213,7 @@ func _on_elite_mob_died(_elite: Node) -> void:
 
 
 func get_round_total_mobs(round_number: int) -> int:
-	return initial_common_mob_count + initial_elite_mob_count + max(round_number - 1, 0) * additional_mobs_per_round
+	return initial_slime_mob_count + initial_elite_mob_count + max(round_number - 1, 0) * additional_mobs_per_round
 
 
 func get_round_added_mobs(round_number: int) -> int:
@@ -242,7 +240,7 @@ func spawn_mob_by_name(mob_name: String, count: int = 1) -> int:
 			continue
 		mob.global_position = get_random_spawn_position()
 		mob.set_meta("mob_type", key)
-		mob.tree_exiting.connect(_on_common_mob_died.bind(mob))
+		mob.tree_exiting.connect(_on_slime_mob_died.bind(mob))
 		_parent.add_child(mob)
 		if _round_manager != null:
 			_round_manager.register_mob(mob)

@@ -14,11 +14,10 @@
 y_sort_enabled = true
 script = ExtResource("6_mainscript")
 player_scene = ExtResource("4_player")
-common_mob_scene = ExtResource("7_blueslime")
+slime_mob_scene = ExtResource("7_blueslime")
 elite_lancer_scene = ExtResource("8_lancer")
 elite_archer_scene = ExtResource("9_archer")
 warden_mob_scene = ExtResource("10_warden")
-boss_mob_scene = ExtResource("10_warden")
 
 [node name="Environment" parent="." unique_id=1978563765 instance=ExtResource("2_env")]
 

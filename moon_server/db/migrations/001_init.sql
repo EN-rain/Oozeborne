@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS mob_configs (
     speed       FLOAT NOT NULL DEFAULT 60.0,
     damage      INT NOT NULL DEFAULT 10,
     xp_reward   INT NOT NULL DEFAULT 5,
+    gold_reward INT NOT NULL DEFAULT 5,
     drop_rates  JSONB DEFAULT '{}',
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -160,22 +161,20 @@ CREATE TABLE IF NOT EXISTS staff_logs (
 CREATE INDEX idx_staff_logs_admin ON staff_logs(admin_id, created_at DESC);
 
 -- ── Seed Data: Default Mob Configs ────────────────────────────────────────────
-INSERT INTO mob_configs (mob_type, health, speed, damage, xp_reward) VALUES
-    ('slime',    80,   55.0, 8,  3),
-    ('common',   100,  60.0, 10, 5),
-    ('lancer',   150,  80.0, 20, 10),
-    ('archer',   90,   75.0, 15, 8),
-    ('warden',   400,  50.0, 25, 30),
-    ('boss',     2000, 40.0, 40, 100)
+INSERT INTO mob_configs (mob_type, health, speed, damage, xp_reward, gold_reward) VALUES
+    ('slime',    80,   55.0, 8,  3,  2),
+    ('lancer',   150,  80.0, 20, 10, 8),
+    ('archer',   90,   75.0, 15, 8,  6),
+    ('warden',   400,  50.0, 25, 30, 25)
 ON CONFLICT DO NOTHING;
 
 -- ── Seed Data: Default Wave Configs ───────────────────────────────────────────
 INSERT INTO wave_configs (wave_num, mob_weights, mob_count_base, duration_sec) VALUES
     (1,  '{"slime": 100}',              8,  50),
-    (2,  '{"slime": 80, "skeleton": 20}', 12, 55),
-    (3,  '{"slime": 60, "skeleton": 40}', 16, 60),
-    (5,  '{"slime": 40, "skeleton": 55, "boss": 5}', 20, 90),
-    (10, '{"skeleton": 50, "boss": 50}', 25, 120)
+    (2,  '{"slime": 100}',             12,  55),
+    (3,  '{"slime": 70, "archer": 30}', 16,  60),
+    (5,  '{"slime": 40, "lancer": 40, "warden": 20}', 20, 90),
+    (10, '{"archer": 30, "lancer": 40, "warden": 30}', 25, 120)
 ON CONFLICT DO NOTHING;
 
 -- ── Seed Data: Default Item Configs ──────────────────────────────────────────
@@ -197,5 +196,6 @@ ON CONFLICT DO NOTHING;
 INSERT INTO class_configs (class_id, base_max_health, base_speed, base_attack_damage, base_crit_chance, base_max_mana, health_per_level, damage_per_level, skills) VALUES
     ('tank', 150, 50.0, 12, 5.0, 40, 20, 3, '[{"name": "Passive", "desc": "Reduced damage taken."}]'),
     ('dps',  90, 70.0, 20, 10.0, 60, 8, 5, '[{"name": "Passive", "desc": "Increased attack speed."}]'),
-    ('support', 100, 60.0, 10, 5.0, 100, 10, 2, '[{"name": "Passive", "desc": "Aura of healing."}]')
+    ('support', 100, 60.0, 10, 5.0, 100, 10, 2, '[{"name": "Passive", "desc": "Aura of healing."}]'),
+    ('base', 100, 60.0, 10, 5.0, 50, 10, 2, '[]')
 ON CONFLICT DO NOTHING;

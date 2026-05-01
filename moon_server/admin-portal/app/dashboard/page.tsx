@@ -452,15 +452,21 @@ function MobCard({ mobType, isEditing }: { mobType: string, isEditing: boolean }
 }
 
 // ─── Enemies Tab ─────────────────────────────────────────────────────────────
+const MOB_GROUPS = [
+  { key: 'common', label: 'Common Mobs', color: 'var(--success)', mobs: ['slime'] },
+  { key: 'elite', label: 'Elite Mobs', color: 'var(--warning)', mobs: ['lancer', 'archer'] },
+  { key: 'boss', label: 'Boss Entities', color: 'var(--danger)', mobs: ['warden'] },
+];
+
 function EnemiesTab() {
-  const mobs = ['slime', 'common', 'lancer', 'archer', 'warden', 'boss'];
   const [search, setSearch] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const filteredMobs = mobs.filter(m => m.toLowerCase().includes(search.toLowerCase()));
+
   const toggleEdit = () => {
     if (isEditing) window.dispatchEvent(new CustomEvent('moon-save-mobs'));
     setIsEditing(!isEditing);
   };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
@@ -473,9 +479,26 @@ function EnemiesTab() {
           style={{ background: 'transparent', border: '1px solid var(--border-light)', borderRadius: 6, width: '260px', fontSize: '0.85rem' }}
           placeholder="Filter enemies..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
-        {filteredMobs.map(m => <MobCard key={m} mobType={m} isEditing={isEditing} />)}
-        {filteredMobs.length === 0 && <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No enemies found matching "{search}"</div>}
+
+      <div style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto', paddingRight: '0.5rem' }}>
+        {MOB_GROUPS.map(group => {
+          const groupMobs = group.mobs.filter(m => 
+            m.toLowerCase().includes(search.toLowerCase())
+          );
+          if (groupMobs.length === 0) return null;
+
+          return (
+            <div key={group.key} style={{ marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: group.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group.label}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                {groupMobs.map(m => <MobCard key={m} mobType={m} isEditing={isEditing} />)}
+              </div>
+            </div>
+          );
+        })}
+        {MOB_GROUPS.every(g => g.mobs.filter(m => m.toLowerCase().includes(search.toLowerCase())).length === 0) && (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No enemies found matching "{search}"</div>
+        )}
       </div>
     </div>
   );

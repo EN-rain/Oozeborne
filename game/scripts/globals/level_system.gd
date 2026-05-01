@@ -52,6 +52,8 @@ func reset_run_state() -> void:
 func add_xp(player: Node, amount: int) -> void:
 	if amount <= 0 or player == null or not is_instance_valid(player):
 		return
+	if MultiplayerManager.is_authenticated():
+		return # Authoritative server handles XP
 	var entity_id := player.get_instance_id()
 	if not player_data.has(entity_id):
 		return
@@ -140,8 +142,17 @@ func set_level(player: Node, level: int) -> void:
 	player_data[entity_id].level = resolved_level
 	player_data[entity_id].xp = 0
 	player_data[entity_id].xp_to_next = player_stats.get_xp_for_level(resolved_level + 1)
-	_apply_current_stats(entity_id)
+	if not MultiplayerManager.is_authenticated():
+		_apply_current_stats(entity_id)
 	level_up.emit(entity_id, resolved_level, player_stats.get_stats_at_level(resolved_level))
+
+func set_xp(player: Node, xp: int) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var entity_id := player.get_instance_id()
+	if player_data.has(entity_id):
+		player_data[entity_id].xp = xp
+		xp_gained.emit(entity_id, 0, xp)
 
 
 func _level_up(entity_id: int) -> void:
@@ -157,6 +168,8 @@ func _level_up(entity_id: int) -> void:
 
 
 func _apply_current_stats(entity_id: int) -> void:
+	if MultiplayerManager.is_authenticated():
+		return # Do not overwrite server authoritative stats
 	if not player_data.has(entity_id):
 		return
 	var data: Dictionary = player_data[entity_id]

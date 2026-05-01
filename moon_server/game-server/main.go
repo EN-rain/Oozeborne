@@ -30,28 +30,43 @@ var (
 )
 
 type MobConfig struct {
-	MobType   string  `json:"mob_type"`
-	Health    int     `json:"health"`
-	Speed     float64 `json:"speed"`
-	Damage    int     `json:"damage"`
-	XPReward  int     `json:"xp_reward"`
+	MobType    string  `json:"mob_type"`
+	Health     int     `json:"health"`
+	Speed      float64 `json:"speed"`
+	Damage     int     `json:"damage"`
+	XPReward   int     `json:"xp_reward"`
+	GoldReward int     `json:"gold_reward"`
+	Category   string  `json:"category"`
 }
 
 type ItemConfig struct {
 	ItemID      string  `json:"item_id"`
 	DisplayName string  `json:"display_name"`
+	Description string  `json:"description"`
 	Price       int     `json:"price"`
 	StatType    string  `json:"stat_type"`
 	StatValue   float64 `json:"stat_value"`
 	InstantHeal int     `json:"instant_heal"`
+	Duration    int     `json:"duration"`
+	Category    string  `json:"category"`
+}
+
+type Skill struct {
+	Name string `json:"name"`
+	Desc string `json:"desc"`
 }
 
 type ClassConfig struct {
 	ClassID          string  `json:"class_id"`
+	DisplayName      string  `json:"display_name"`
 	BaseMaxHealth    int     `json:"base_max_health"`
 	BaseSpeed        float64 `json:"base_speed"`
 	BaseAttackDamage int     `json:"base_attack_damage"`
+	BaseCritChance   float64 `json:"base_crit_chance"`
 	BaseMaxMana      int     `json:"base_max_mana"`
+	HealthPerLevel   int     `json:"health_per_level"`
+	DamagePerLevel   int     `json:"damage_per_level"`
+	Skills           []Skill `json:"skills"`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -105,6 +120,9 @@ const (
 	OP_PLAYER_RECONNECTING = 16
 	OP_VOTE_STATUS         = 17
 	OP_GAME_OVER           = 18
+	OP_BUY_ITEM            = 19
+	OP_PLAYER_HIT          = 20
+	OP_LEVEL_UP            = 21
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,13 +166,18 @@ type PlayerInput struct {
 
 type PlayerVitals struct {
 	HP         int        `json:"hp"`
-	MaxHP      int        `json:"max_hp"`
-	DeathState DeathState `json:"death_state"`
-	PingRTT    int        `json:"ping_rtt_ms"`
-	IsAFK      bool       `json:"is_afk"`
+	MaxHP        int        `json:"max_hp"`
+	Mana         int        `json:"mana"`
+	MaxMana      int        `json:"max_mana"`
+	AttackDamage int        `json:"attack_damage"`
+	Speed        float64    `json:"speed"`
+	DeathState   DeathState `json:"death_state"`
 	Kills      int        `json:"kills"`
 	DmgDealt   int        `json:"dmg_dealt"`
 	Gold       int        `json:"gold"`
+	XP         int        `json:"xp"`
+	PingRTT    int        `json:"ping_rtt_ms"`
+	IsAFK      bool       `json:"is_afk"`
 }
 
 type PlayerBuild struct {
@@ -183,8 +206,9 @@ type MobState struct {
 	MobID   string  `json:"mob_id"`
 	MobType string  `json:"mob_type"`
 	PosX    float64 `json:"pos_x"`
-	PosY    float64 `json:"pos_y"`
-	HP      int     `json:"hp"`
+	PosY           float64   `json:"pos_y"`
+	HP             int       `json:"hp"`
+	LastAttackTime time.Time `json:"-"`
 }
 
 type Room struct {
@@ -324,6 +348,30 @@ func (rm *RoomManager) GetOrCreate(roomID, roomCode string) *Room {
 	return r
 }
 
+func (r *Room) SpawnMob(mobType string) {
+	configMu.RLock()
+	config, ok := mobConfigs[mobType]
+	configMu.RUnlock()
+
+	hp := 100
+	if ok {
+		hp = config.Health
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	mobID := uuid.New().String()
+	r.Mobs[mobID] = &MobState{
+		MobID:   mobID,
+		MobType: mobType,
+		PosX:    WorldBoundsX * 0.8, // Spawn near right edge
+		PosY:    WorldBoundsY * 0.5,
+		HP:      hp,
+	}
+	log.Printf("[ROOM %s] Spawned mob %s (%s) with %d HP", r.RoomID, mobID, mobType, hp)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tick Loop
 // ─────────────────────────────────────────────────────────────────────────────
@@ -391,6 +439,7 @@ func (r *Room) tick() {
 		return
 	}
 
+	// ─── Player Movement ───
 	for _, p := range r.Players {
 		p.mu.Lock()
 		if len(p.InputQueue) > 0 {
@@ -399,16 +448,19 @@ func (r *Room) tick() {
 
 			p.LastPos = p.Pos
 			applyInput(r, p, input)
+			handleAttack(r, p, input)
 
 			// Post-move speed validation (authoritative)
+			maxSpeed := MaxMoveSpeed
+			if p.Vitals.Speed > 0 {
+				maxSpeed = (p.Vitals.Speed / float64(TickRate)) * 1.2
+			}
 			dx := p.Pos.X - p.LastPos.X
 			dy := p.Pos.Y - p.LastPos.Y
-			if math.Sqrt(dx*dx+dy*dy) > MaxMoveSpeed {
-				// Rollback to last valid position
+			if math.Sqrt(dx*dx+dy*dy) > maxSpeed {
 				p.Pos = p.LastPos
 				log.Printf("[ANTICHEAT] Player %s speed violation — rolled back", p.UserID)
 			}
-
 			p.LastInputTime = time.Now()
 		}
 		if time.Since(p.LastInputTime).Seconds() > AFKTimeoutSec {
@@ -417,21 +469,139 @@ func (r *Room) tick() {
 		p.mu.Unlock()
 	}
 
+	// ─── Mob AI & Movement ───
+	for _, m := range r.Mobs {
+		configMu.RLock()
+		config, ok := mobConfigs[m.MobType]
+		configMu.RUnlock()
+
+		speed := 1.0
+		damage := 10
+		if ok {
+			speed = config.Speed / float64(TickRate)
+			damage = config.Damage
+		}
+
+		// Find nearest player
+		var nearest *Player
+		minDist := 999999.0
+		for _, p := range r.Players {
+			dx := p.Pos.X - m.PosX
+			dy := p.Pos.Y - m.PosY
+			dist := math.Sqrt(dx*dx+dy*dy)
+			if dist < minDist {
+				minDist = dist
+				nearest = p
+			}
+		}
+
+		stopDist := 5.0
+		if nearest != nil {
+			if minDist > stopDist {
+				angle := math.Atan2(nearest.Pos.Y-m.PosY, nearest.Pos.X-m.PosX)
+				m.PosX += math.Cos(angle) * speed
+				m.PosY += math.Sin(angle) * speed
+			} else {
+				// Mob attack logic
+				if time.Since(m.LastAttackTime).Milliseconds() > 1000 && nearest.Vitals.HP > 0 {
+					m.LastAttackTime = time.Now()
+					nearest.Vitals.HP -= damage
+					if nearest.Vitals.HP <= 0 {
+						nearest.Vitals.HP = 0
+						nearest.Vitals.DeathState = DeathStateDowned
+					}
+					hitMsg, _ := json.Marshal(map[string]any{
+						"op": OP_PLAYER_HIT, "target_id": nearest.UserID, "damage": damage,
+					})
+					r.broadcast(hitMsg)
+				}
+			}
+		}
+	}
+
 	r.broadcastState()
 }
 
 func applyInput(r *Room, p *Player, input PlayerInput) {
-	configMu.RLock()
-	class, ok := classConfigs[p.ClassID]
-	configMu.RUnlock()
-
 	speed := 2.5
-	if ok {
-		speed = class.BaseSpeed / TickRate // convert pixels/sec to pixels/tick
+	if p.Vitals.Speed > 0 {
+		speed = p.Vitals.Speed / TickRate // convert pixels/sec to pixels/tick
 	}
 	
 	p.Pos.X = clamp(p.Pos.X+input.MoveX*speed, 0, WorldBoundsX)
 	p.Pos.Y = clamp(p.Pos.Y+input.MoveY*speed, 0, WorldBoundsY)
+}
+
+func handleAttack(r *Room, p *Player, input PlayerInput) {
+	if input.AttackFlags == 0 {
+		return
+	}
+
+	if !validateAttack(p) {
+		return
+	}
+
+	damage := 10
+	if p.Vitals.AttackDamage > 0 {
+		damage = p.Vitals.AttackDamage
+	}
+
+	p.LastAttackTime = time.Now()
+
+	// Simple circular AOE attack for MVP
+	for mobID, m := range r.Mobs {
+		dx := m.PosX - p.Pos.X
+		dy := m.PosY - p.Pos.Y
+		dist := math.Sqrt(dx*dx + dy*dy)
+
+		if dist <= AttackRange {
+			m.HP -= damage
+			p.Vitals.DmgDealt += damage
+			if m.HP <= 0 {
+				configMu.RLock()
+				mobCfg, ok := mobConfigs[m.MobType]
+				configMu.RUnlock()
+
+				goldReward := 5
+				xpReward := 10
+				if ok {
+					goldReward = mobCfg.GoldReward
+					xpReward = mobCfg.XPReward
+				}
+
+				delete(r.Mobs, mobID)
+				p.Vitals.Kills++
+				p.Vitals.Gold += goldReward
+				p.Vitals.XP += xpReward
+				
+				// Level up calculation
+				xpNeeded := p.Build.Level * 100
+				if p.Vitals.XP >= xpNeeded {
+					p.Build.Level++
+					p.Vitals.XP -= xpNeeded
+					
+					configMu.RLock()
+					classCfg, ok := classConfigs[p.ClassID]
+					configMu.RUnlock()
+					if ok {
+						p.Vitals.MaxHP += classCfg.HealthPerLevel
+						p.Vitals.HP = p.Vitals.MaxHP
+						p.Vitals.AttackDamage += classCfg.DamagePerLevel
+					}
+					lvlMsg, _ := json.Marshal(map[string]any{
+						"op": OP_LEVEL_UP, "user_id": p.UserID, "level": p.Build.Level,
+					})
+					r.broadcast(lvlMsg)
+				}
+				
+				dieMsg, _ := json.Marshal(map[string]any{
+					"op": OP_MOB_DIE, "mob_id": mobID, "killer_id": p.UserID,
+					"xp_gain": xpReward, "gold_gain": goldReward,
+				})
+				r.broadcast(dieMsg)
+			}
+		}
+	}
 }
 
 func clamp(v, min, max float64) float64 {
@@ -573,12 +743,31 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	configMu.RLock()
+	classConfig, ok := classConfigs[claims.ClassID]
+	configMu.RUnlock()
+
+	hp := 100
+	mana := 50
+	dmg := 10
+	speed := 60.0
+	if ok {
+		hp = classConfig.BaseMaxHealth
+		mana = classConfig.BaseMaxMana
+		dmg = classConfig.BaseAttackDamage
+		speed = classConfig.BaseSpeed
+	}
+
 	player := &Player{
 		UserID:        claims.UserID,
 		ClassID:       claims.ClassID,
 		Conn:          conn,
 		Pos:           Vec2{X: WorldBoundsX / 2, Y: WorldBoundsY / 2},
-		Vitals:        PlayerVitals{HP: 100, MaxHP: 100, DeathState: DeathStateAlive},
+		Vitals:        PlayerVitals{
+			HP: hp, MaxHP: hp, Mana: mana, MaxMana: mana, 
+			AttackDamage: dmg, Speed: speed, DeathState: DeathStateAlive,
+		},
+		Build:         PlayerBuild{Level: 1, Items: []string{}},
 		LastInputTime: time.Now(),
 		LastSeen:      time.Now(),
 	}
@@ -695,6 +884,39 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 		room.mu.RLock()
 		room.broadcast(voteMsg)
 		room.mu.RUnlock()
+
+	case OP_BUY_ITEM:
+		itemID, ok := msg["item_id"].(string)
+		if !ok { return }
+		configMu.RLock()
+		itemCfg, hasItem := itemConfigs[itemID]
+		configMu.RUnlock()
+		if !hasItem { return }
+		
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		if p.Vitals.Gold >= itemCfg.Price {
+			p.Vitals.Gold -= itemCfg.Price
+			p.Build.Items = append(p.Build.Items, itemID)
+			
+			if itemCfg.InstantHeal > 0 {
+				p.Vitals.HP = int(math.Min(float64(p.Vitals.HP + itemCfg.InstantHeal), float64(p.Vitals.MaxHP)))
+			}
+			
+			switch itemCfg.StatType {
+			case "MAX_HP":
+				p.Vitals.MaxHP += int(itemCfg.StatValue)
+				p.Vitals.HP += int(itemCfg.StatValue)
+			case "ATTACK":
+				p.Vitals.AttackDamage += int(itemCfg.StatValue)
+			case "SPEED":
+				if itemCfg.Category == "percentage" {
+					p.Vitals.Speed *= (1.0 + itemCfg.StatValue/100.0)
+				} else {
+					p.Vitals.Speed += itemCfg.StatValue
+				}
+			}
+		}
 	}
 }
 
@@ -805,10 +1027,12 @@ func listenAdminCommands() {
 		}
 
 		var cmd struct {
-			Cmd    string `json:"cmd"`
-			RoomID string `json:"room_id"`
-			UserID string `json:"user_id"`
-			Value  any    `json:"value"`
+			Cmd     string `json:"cmd"`
+			RoomID  string `json:"room_id"`
+			UserID  string `json:"user_id"`
+			MobType string `json:"mob_type"`
+			Count   int    `json:"count"`
+			Value   any    `json:"value"`
 		}
 		if err := json.Unmarshal([]byte(msg.Payload), &cmd); err != nil {
 			continue
@@ -831,6 +1055,21 @@ func listenAdminCommands() {
 				roomManager.mu.Lock()
 				delete(roomManager.rooms, cmd.RoomID)
 				roomManager.mu.Unlock()
+			}
+		case "spawn_mob":
+			room := roomManager.rooms[cmd.RoomID]
+			if room != nil {
+				mobType := cmd.MobType
+				if mobType == "" {
+					mobType = "slime"
+				}
+				count := cmd.Count
+				if count <= 0 {
+					count = 1
+				}
+				for i := 0; i < count; i++ {
+					room.SpawnMob(mobType)
+				}
 			}
 		}
 	}

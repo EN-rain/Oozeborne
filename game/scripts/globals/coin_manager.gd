@@ -135,42 +135,13 @@ const SAVE_PATH := "user://coins.sav"
 
 
 func _load_coins():
-	if not FileAccess.file_exists(SAVE_PATH):
-		_coin_totals_by_user.clear()
-		_coin_totals_by_user[_resolve_coin_user_id()] = 0
-		_sync_legacy_total()
-		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		push_warning("[CoinManager] Failed to open coin save file for reading")
-		_coin_totals_by_user.clear()
-		_coin_totals_by_user[_resolve_coin_user_id()] = 0
-		_sync_legacy_total()
-		return
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not (parsed is Dictionary):
-		push_warning("[CoinManager] Invalid coin save format, resetting")
-		_coin_totals_by_user.clear()
-		_coin_totals_by_user[_resolve_coin_user_id()] = 0
-		_sync_legacy_total()
-		return
 	_coin_totals_by_user.clear()
-	for key in parsed:
-		_coin_totals_by_user[str(key)] = int(parsed[key])
+	_coin_totals_by_user[_resolve_coin_user_id()] = 0
 	_sync_legacy_total()
 
 
 func save_coins():
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_warning("[CoinManager] Failed to open coin save file for writing")
-		return
-	var data := {}
-	for key in _coin_totals_by_user:
-		data[str(key)] = int(_coin_totals_by_user[key])
-	file.store_string(JSON.stringify(data))
-	file.close()
+	pass # Disabled: Authoritative Server Sync Only
 
 
 func _schedule_save() -> void:

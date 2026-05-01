@@ -34,8 +34,32 @@ func on_match_state(match_state) -> void:
 		_handle_player_leave(data)
 		return
 
-	if op_code == MultiplayerUtils.OP_START_GAME:
+	if op_code == NetworkMessaging.OP_START_GAME:
 		_main._debug_log("Received start_game signal while already in game")
+		return
+
+	if op_code == NetworkMessaging.OP_PLAYER_HIT:
+		var target_id = data.get("target_id", "")
+		var dmg = int(data.get("damage", 0))
+		if target_id == MultiplayerManager.user_id:
+			if _player != null:
+				DamageNumbers.spawn_damage(_player.global_position, dmg, false)
+		else:
+			if MultiplayerUtils.has_remote_player(target_id):
+				var node = MultiplayerUtils.get_remote_player_node(target_id)
+				DamageNumbers.spawn_damage(node.global_position, dmg, false)
+		return
+
+	if op_code == NetworkMessaging.OP_LEVEL_UP:
+		var target_id = data.get("user_id", "")
+		var new_level = int(data.get("level", 1))
+		if target_id == MultiplayerManager.user_id:
+			if _player != null:
+				DamageNumbers.spawn_text(_player.global_position, "LEVEL UP!", Color(1.0, 0.8, 0.2))
+		else:
+			if MultiplayerUtils.has_remote_player(target_id):
+				var node = MultiplayerUtils.get_remote_player_node(target_id)
+				DamageNumbers.spawn_text(node.global_position, "LEVEL UP!", Color(1.0, 0.8, 0.2))
 		return
 
 	if data == null:
@@ -236,8 +260,38 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		}
 		_main._apply_authoritative_player_info(user_id, ign, is_host_flag)
 
+		var vitals = player_data.get("vitals", {})
+		var build = player_data.get("build", {})
+
 		if MultiplayerUtils.is_local_player(user_id):
 			MultiplayerUtils.reconcile_local_player(new_pos, velocity, server_seq)
+			if _player != null:
+				if vitals.has("gold"):
+					CoinManager.set_coins(int(vitals.get("gold", 0)))
+				if vitals.has("hp"):
+					var health_node = _player.get_node_or_null("Health")
+					if health_node != null:
+						health_node.current_health = int(vitals.get("hp", 0))
+						health_node.max_health = int(vitals.get("max_hp", 100))
+						health_node.health_changed.emit(health_node.current_health, health_node.max_health)
+				if vitals.has("mana"):
+					var mana_node = _player.get_node_or_null("Mana")
+					if mana_node != null:
+						mana_node.current_mana = int(vitals.get("mana", 0))
+						mana_node.max_mana = int(vitals.get("max_mana", 50))
+						mana_node.mana_changed.emit(mana_node.current_mana, mana_node.max_mana)
+				if vitals.has("speed"):
+					if "speed" in _player:
+						_player.speed = float(vitals.get("speed", 60.0))
+				if vitals.has("attack_damage"):
+					if "attack_damage" in _player:
+						_player.attack_damage = int(vitals.get("attack_damage", 10))
+					else:
+						_player.set_meta("attack_damage", int(vitals.get("attack_damage", 10)))
+				if build.has("level"):
+					LevelSystem.set_level(_player, int(build.get("level", 1)))
+					if build.has("xp"):
+						LevelSystem.set_xp(_player, int(build.get("xp", 0)))
 			continue
 
 		if not MultiplayerUtils.has_remote_player(user_id):

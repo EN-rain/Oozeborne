@@ -9,6 +9,9 @@ const OP_STATE = 2        ## Server -> Client: state snapshot
 const OP_PLAYER_JOIN = 3  ## Server -> Client: player joined
 const OP_PLAYER_LEAVE = 4 ## Server -> Client: player left
 const OP_START_GAME = 5   ## Host -> Server -> Clients: start game
+const OP_BUY_ITEM = 19
+const OP_PLAYER_HIT = 20
+const OP_LEVEL_UP = 21
 
 ## Ping tracking
 var _last_ping_time: float = 0.0
@@ -73,6 +76,17 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false,
 	MultiplayerManager.socket.send_match_state_async(
 		MultiplayerManager.match_id, 
 		OP_INPUT, 
+		json, 
+		null
+	)
+
+func send_message(op_code: int, data: Dictionary) -> void:
+	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
+		return
+	var json = JSON.stringify(data)
+	MultiplayerManager.socket.send_match_state_async(
+		MultiplayerManager.match_id, 
+		op_code, 
 		json, 
 		null
 	)

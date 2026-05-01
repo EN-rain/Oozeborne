@@ -1,4 +1,4 @@
-﻿extends Node2D
+extends Node2D
 
 const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_button.tscn")
 
@@ -10,11 +10,10 @@ const SubclassChoiceButtonScene := preload("res://scenes/ui/subclass_choice_butt
 
 @export var player_scene: PackedScene
 
-@export var common_mob_scene: PackedScene
+@export var slime_mob_scene: PackedScene
 @export var elite_lancer_scene: PackedScene
 @export var elite_archer_scene: PackedScene
 @export var warden_mob_scene: PackedScene
-@export var boss_mob_scene: PackedScene
 
 var mob_spawner: MobSpawner
 var round_manager: RoundManager
@@ -75,11 +74,10 @@ func _ready():
 	mob_spawner = MobSpawner.new()
 	mob_spawner.name = "MobSpawner"
 	mob_spawner.add_to_group("mob_spawner")
-	mob_spawner.common_mob_scene = common_mob_scene
+	mob_spawner.slime_mob_scene = slime_mob_scene
 	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
 	mob_spawner.elite_mob_archer_scene = elite_archer_scene
 	mob_spawner.warden_mob_scene = warden_mob_scene
-	mob_spawner.boss_mob_scene = boss_mob_scene
 	# Only the host should generate random mob spawns. Clients receive spawns via match messages.
 	mob_spawner.set_network_spawn_enabled(not MultiplayerManager.is_host)
 	mob_spawner.initialize(self, player)

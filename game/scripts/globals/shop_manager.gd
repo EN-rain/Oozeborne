@@ -133,13 +133,10 @@ func purchase_item(item: ShopItem) -> bool:
 		item_purchased.emit(item, false)
 		return false
 	
-	# Spend coins
-	CoinManager.spend_coins(item.price)
+	if MultiplayerManager.is_authenticated():
+		NetworkMessaging.send_message(19, {"item_id": item.item_id}) # 19 = OP_BUY_ITEM
 	
-	# Apply item effect
-	_apply_item(item)
-	
-	# Track purchase
+	# Track purchase locally for UI purposes only
 	match item.item_type:
 		ShopItem.ItemType.CONSUMABLE:
 			if not inventory.has(item.item_id):
@@ -149,11 +146,7 @@ func purchase_item(item: ShopItem) -> bool:
 		
 		ShopItem.ItemType.PERMANENT_UPGRADE:
 			item.owned = true
-			# Track permanent stat
-			var stat_key = item.stat_type
-			if not permanent_upgrades.has(stat_key):
-				permanent_upgrades[str(stat_key)] = 0.0
-			permanent_upgrades[str(stat_key)] += item.stat_value
+			# Stat application is now handled by the authoritative server via OP_STATE
 		
 		ShopItem.ItemType.EQUIPMENT:
 			item.owned = true
