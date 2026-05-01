@@ -370,7 +370,7 @@ function MobTuner() {
       </div>
       <div className="panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
         MODULE_LOADED: {tab.toUpperCase()} <br/><br/>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>> Tuning subsystems are locked in this terminal view. Please access via dedicated editing interface.</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{'>'} Tuning subsystems are locked in this terminal view. Please access via dedicated editing interface.</span>
       </div>
     </section>
   );
