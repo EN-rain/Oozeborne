@@ -49,6 +49,11 @@ const (
 	OP_BUY_ITEM            = 19
 	OP_PLAYER_HIT          = 20
 	OP_LEVEL_UP            = 21
+	OP_CAST_SKILL_1        = 22
+	OP_CAST_SKILL_2        = 23
+	OP_CAST_SPECIAL        = 24
+	OP_EFFECT_APPLY        = 25
+	OP_EFFECT_REMOVE       = 26
 )
 
 type MatchState int
@@ -94,8 +99,9 @@ type PlayerVitals struct {
 	DmgDealt     int        `json:"dmg_dealt"`
 	Gold         int        `json:"gold"`
 	XP           int        `json:"xp"`
-	PingRTT      int        `json:"ping_rtt_ms"`
-	IsAFK        bool       `json:"is_afk"`
+	PingRTT      int                `json:"ping_rtt_ms"`
+	IsAFK        bool               `json:"is_afk"`
+	Attributes   map[string]float64 `json:"attributes"`
 }
 
 type PlayerBuild struct {
@@ -108,6 +114,7 @@ type MobState struct {
 	MobType        string    `json:"mob_type"`
 	PosX           float64   `json:"pos_x"`
 	PosY           float64   `json:"pos_y"`
-	HP             int       `json:"hp"`
-	LastAttackTime time.Time `json:"-"`
+	HP             int                 `json:"hp"`
+	LastAttackTime time.Time           `json:"-"`
+	Cooldowns      map[string]time.Time `json:"-"`
 }

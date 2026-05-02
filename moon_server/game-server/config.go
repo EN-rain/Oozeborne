@@ -39,12 +39,18 @@ type ItemConfig struct {
 	Category    string  `json:"category"`
 }
 
+type SkillParam struct {
+	Init   float64 `json:"init"`
+	PerLvl float64 `json:"per_lvl"`
+	Max    float64 `json:"max"`
+}
+
 type Skill struct {
-	Name     string             `json:"name"`
-	Desc     string             `json:"desc"`
-	Cooldown float64            `json:"cooldown,omitempty"`
-	Value    float64            `json:"value,omitempty"`
-	Extra    map[string]float64 `json:"extra,omitempty"`
+	Name       string       `json:"name"`
+	Desc       string       `json:"desc"`
+	Type       string       `json:"type"`
+	ParamLabel string       `json:"paramLabel"`
+	Params     []SkillParam `json:"params"`
 }
 
 type ClassConfig struct {

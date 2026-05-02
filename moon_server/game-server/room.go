@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"math"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -24,6 +25,7 @@ type Room struct {
 	ReadySet  map[string]bool
 	mu        sync.RWMutex
 	tickStop  chan struct{}
+	tickCount int64
 }
 
 type RoomManager struct {
@@ -76,6 +78,7 @@ func (r *Room) SpawnMob(mobType string) {
 		PosX:    WorldBoundsX * 0.8,
 		PosY:    WorldBoundsY * 0.5,
 		HP:      hp,
+		Cooldowns: make(map[string]time.Time),
 	}
 	log.Printf("[ROOM %s] Spawned mob %s (%s) with %d HP", r.RoomID, mobID, mobType, hp)
 }
@@ -138,6 +141,25 @@ func (r *Room) syncStats() {
 func (r *Room) tick() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.tickCount++
+
+	// 1-second regeneration tick
+	if r.tickCount%TickRate == 0 {
+		for _, p := range r.Players {
+			p.mu.Lock()
+			// HP Regen
+			hpRegen := p.Vitals.Attributes["hp_regen"]
+			if hpRegen > 0 && p.Vitals.HP < p.Vitals.MaxHP {
+				p.Vitals.HP = int(math.Min(float64(p.Vitals.HP)+hpRegen, float64(p.Vitals.MaxHP)))
+			}
+			// MP Regen
+			mpRegen := p.Vitals.Attributes["mana_regen"]
+			if mpRegen > 0 && p.Vitals.Mana < p.Vitals.MaxMana {
+				p.Vitals.Mana = int(math.Min(float64(p.Vitals.Mana)+mpRegen, float64(p.Vitals.MaxMana)))
+			}
+			p.mu.Unlock()
+		}
+	}
 
 	if r.State != StateInWave {
 		return
@@ -165,22 +187,32 @@ func (r *Room) tick() {
 			}
 			p.LastInputTime = time.Now()
 		}
+
+		processEffects(p)
+
 		if time.Since(p.LastInputTime).Seconds() > AFKTimeoutSec {
 			p.Vitals.IsAFK = true
 		}
 		p.mu.Unlock()
 	}
 
-	for _, m := range r.Mobs {
+	for mobID, m := range r.Mobs {
+		damage := 5.0 + float64(r.WaveNum)*2.0
+		speed := 1.0 + float64(r.WaveNum)*0.1
+
+		// Thorns logic
+		if m.HP <= 0 {
+			delete(r.Mobs, mobID)
+			continue
+		}
+
 		configMu.RLock()
 		config, ok := mobConfigs[m.MobType]
 		configMu.RUnlock()
 
-		speed := 1.0
-		damage := 10
 		if ok {
+			damage = float64(config.Damage)
 			speed = config.Speed / float64(TickRate)
-			damage = config.Damage
 		}
 
 		var nearest *Player
@@ -204,15 +236,41 @@ func (r *Room) tick() {
 			} else {
 				if time.Since(m.LastAttackTime).Milliseconds() > 1000 && nearest.Vitals.HP > 0 {
 					m.LastAttackTime = time.Now()
-					nearest.Vitals.HP -= damage
-					if nearest.Vitals.HP <= 0 {
-						nearest.Vitals.HP = 0
-						nearest.Vitals.DeathState = DeathStateDowned
+
+					// Dodge check
+					dodge := nearest.Vitals.Attributes["dodge"]
+					if dodge > 0 && rand.Float64()*100 < dodge {
+						// Dodged!
+						dodgeMsg, _ := json.Marshal(map[string]any{
+							"op": OP_MESSAGE, "user_id": nearest.UserID, "msg": "Dodged!",
+						})
+						r.broadcast(dodgeMsg)
+					} else {
+						// Calculate mitigated damage
+						defense := nearest.Vitals.Attributes["defense"]
+						mitigatedDmg := float64(damage) * (1.0 - (defense / (defense + 100.0)))
+						if mitigatedDmg < 1 {
+							mitigatedDmg = 1
+						}
+
+						finalDmg := int(mitigatedDmg)
+						nearest.Vitals.HP -= finalDmg
+
+						// Thorns
+						thorns := nearest.Vitals.Attributes["thorns"]
+						if thorns > 0 {
+							m.HP -= int(thorns)
+						}
+
+						if nearest.Vitals.HP <= 0 {
+							nearest.Vitals.HP = 0
+							nearest.Vitals.DeathState = DeathStateDowned
+						}
+						hitMsg, _ := json.Marshal(map[string]any{
+							"op": OP_PLAYER_HIT, "target_id": nearest.UserID, "damage": finalDmg,
+						})
+						r.broadcast(hitMsg)
 					}
-					hitMsg, _ := json.Marshal(map[string]any{
-						"op": OP_PLAYER_HIT, "target_id": nearest.UserID, "damage": damage,
-					})
-					r.broadcast(hitMsg)
 				}
 			}
 		}

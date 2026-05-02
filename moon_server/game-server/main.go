@@ -114,32 +114,59 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	configMu.RLock()
-	classConfig, ok := classConfigs[claims.ClassID]
+	classConfig, ok1 := classConfigs[claims.ClassID]
+	subClassConfig, ok2 := classConfigs[claims.SubclassID]
 	configMu.RUnlock()
 
 	hp := 100
 	mana := 50
 	dmg := 10
 	speed := 60.0
-	if ok {
+	attributes := make(map[string]float64)
+
+	// Apply base stats and attributes from Main Class
+	if ok1 {
 		hp = classConfig.BaseMaxHealth
 		mana = classConfig.BaseMaxMana
 		dmg = classConfig.BaseAttackDamage
 		speed = classConfig.BaseSpeed
+		for k, v := range classConfig.Attributes {
+			if val, ok := v.(float64); ok {
+				attributes[k] += val
+			}
+		}
+	}
+
+	// Apply stats and attributes from Subclass at 50% efficiency
+	if ok2 && claims.SubclassID != claims.ClassID && claims.SubclassID != "base" && claims.SubclassID != "" {
+		hp += (subClassConfig.BaseMaxHealth - 100) / 2
+		mana += (subClassConfig.BaseMaxMana - 50) / 2
+		dmg += (subClassConfig.BaseAttackDamage - 10) / 2
+		speed += (subClassConfig.BaseSpeed - 60.0) / 2
+		
+		for k, v := range subClassConfig.Attributes {
+			if val, ok := v.(float64); ok {
+				attributes[k] += (val * 0.5)
+			}
+		}
 	}
 
 	player := &Player{
-		UserID:  claims.UserID,
-		ClassID: claims.ClassID,
-		Conn:    conn,
-		Pos:     Vec2{X: WorldBoundsX / 2, Y: WorldBoundsY / 2},
+		UserID:     claims.UserID,
+		ClassID:    claims.ClassID,
+		SubclassID: claims.SubclassID,
+		Conn:       conn,
+		Pos:        Vec2{X: WorldBoundsX / 2, Y: WorldBoundsY / 2},
 		Vitals: PlayerVitals{
 			HP: hp, MaxHP: hp, Mana: mana, MaxMana: mana,
 			AttackDamage: dmg, Speed: speed, DeathState: DeathStateAlive,
+			Attributes: attributes,
 		},
 		Build:         PlayerBuild{Level: 1, Items: []string{}},
 		LastInputTime: time.Now(),
 		LastSeen:      time.Now(),
+		Cooldowns:     make(map[string]time.Time),
+		ActiveEffects: make(map[string]time.Time),
 	}
 	room.Players[claims.UserID] = player
 	if room.HostID == "" {
@@ -218,6 +245,13 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 		}
 		room.mu.Unlock()
 
+	case OP_CAST_SKILL_1:
+		activateSkill(room, p, 1)
+	case OP_CAST_SKILL_2:
+		activateSkill(room, p, 2)
+	case OP_CAST_SPECIAL:
+		activateSkill(room, p, 0) // Special is index 0 in config
+
 	case OP_EMOTE:
 		emoteID, ok := msg["emote_id"].(string)
 		if !ok || len(emoteID) > 32 {
@@ -279,7 +313,86 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 				} else {
 					p.Vitals.Speed += itemCfg.StatValue
 				}
+			case "MANA":
+				p.Vitals.MaxMana += int(itemCfg.StatValue)
+				p.Vitals.Mana += int(itemCfg.StatValue)
+			default:
+				// Dynamic attribute support (Lifesteal, Dodge, etc.)
+				if itemCfg.StatType != "" {
+					p.Vitals.Attributes[strings.ToLower(itemCfg.StatType)] += itemCfg.StatValue
+				}
 			}
+		}
+	}
+}
+
+func activateSkill(r *Room, p *Player, skillIdx int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	configMu.RLock()
+	classCfg, ok := classConfigs[p.ClassID]
+	configMu.RUnlock()
+
+	if !ok || skillIdx >= len(classCfg.Skills) {
+		return
+	}
+
+	skill := classCfg.Skills[skillIdx]
+	cooldownKey := "skill_" + skill.Name
+	if lastUsed, exists := p.Cooldowns[cooldownKey]; exists {
+		// Calculate cooldown from params[0] or default
+		cd := 5.0
+		if len(skill.Params) > 0 {
+			cd = skill.Params[0].Init // Assumes P1 is cooldown if not labeled otherwise
+		}
+		if time.Since(lastUsed).Seconds() < cd {
+			return
+		}
+	}
+
+	// Unlocked check (Special at level 10)
+	if skill.Type == "Special" && p.Build.Level < 10 {
+		return
+	}
+
+	// Consume Mana
+	manaCost := 10.0 // Default
+	if p.Vitals.Mana < int(manaCost) {
+		return
+	}
+	p.Vitals.Mana -= int(manaCost)
+
+	// Mark Cooldown
+	p.Cooldowns[cooldownKey] = time.Now()
+
+	// Broadcast Skill Activation
+	castMsg, _ := json.Marshal(map[string]any{
+		"op": OP_EFFECT_APPLY, "user_id": p.UserID, "skill_name": skill.Name,
+	})
+	r.broadcast(castMsg)
+
+	log.Printf("[SKILL] Player %s cast %s", p.UserID, skill.Name)
+
+	// Apply immediate effects based on skill name
+	switch skill.Name {
+	case "Fortify":
+		p.ActiveEffects["dmg_red"] = time.Now().Add(3 * time.Second)
+	case "Adrenaline":
+		p.ActiveEffects["atk_boost"] = time.Now().Add(5 * time.Second)
+	case "Frenzy":
+		p.ActiveEffects["atk_spd_boost"] = time.Now().Add(4 * time.Second)
+	}
+}
+
+func processEffects(p *Player) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for effect, expiry := range p.ActiveEffects {
+		if time.Now().After(expiry) {
+			delete(p.ActiveEffects, effect)
+			// Optional: Broadcast effect removal
 		}
 	}
 }

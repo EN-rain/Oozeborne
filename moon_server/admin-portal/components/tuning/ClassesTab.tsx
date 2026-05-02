@@ -17,17 +17,27 @@ const CLASS_TREE: Record<string, string[]> = {
      'attr:key' → stats.attributes[key]  (attributes JSONB)
    A stat is ONLY shown if its init value is non-zero.
 ─────────────────────────────────────────────────────────────────────── */
-interface StatDef { label: string; initField: string; perLvlField?: string; maxField?: string; step: string; }
+interface StatDef { label: string; initField: string; perLvlField?: string; maxField?: string; step: string; isPercent?: boolean; }
 
 const STAT_DEFS: StatDef[] = [
-  { label: 'HP',       initField: 'base_max_health',    perLvlField: 'health_per_level',     maxField: 'attr:hp_max',          step: '1'   },
-  { label: 'Atk',      initField: 'base_attack_damage', perLvlField: 'damage_per_level',     maxField: 'attr:atk_max',         step: '1'   },
-  { label: 'Def',      initField: 'attr:base_defense',  perLvlField: 'attr:def_per_level',   maxField: 'attr:def_max',         step: '1'   },
-  { label: 'Mana',     initField: 'base_max_mana',      perLvlField: 'attr:mana_per_level',  maxField: 'attr:mana_max',        step: '1'   },
-  { label: 'Speed',    initField: 'base_speed',         perLvlField: 'attr:spd_per_level',   maxField: 'attr:spd_max',         step: '0.5' },
-  { label: 'Atk Spd',  initField: 'attr:base_atk_spd', perLvlField: 'attr:atk_spd_per_lvl', maxField: 'attr:atk_spd_max',    step: '0.01'},
-  { label: 'Crit Dmg', initField: 'attr:base_crit_dmg', perLvlField: 'attr:crit_dmg_per_lvl',maxField: 'attr:crit_dmg_max',   step: '1'   },
-  { label: 'Crit',     initField: 'base_crit_chance',   perLvlField: 'attr:crit_per_level',  maxField: 'attr:crit_max',        step: '0.1' },
+  { label: 'HP',          initField: 'base_max_health',    perLvlField: 'health_per_level',     maxField: 'attr:hp_max',          step: '1'   },
+  { label: 'Atk',         initField: 'base_attack_damage', perLvlField: 'damage_per_level',     maxField: 'attr:atk_max',         step: '1'   },
+  { label: 'Def',         initField: 'attr:base_defense',  perLvlField: 'attr:def_per_level',   maxField: 'attr:def_max',         step: '1'   },
+  { label: 'Mana',        initField: 'base_max_mana',      perLvlField: 'attr:mana_per_level',  maxField: 'attr:mana_max',        step: '1'   },
+  { label: 'Speed',       initField: 'base_speed',         perLvlField: 'attr:spd_per_level',   maxField: 'attr:spd_max',         step: '0.5' },
+  { label: 'Atk Spd',     initField: 'attr:base_atk_spd',  perLvlField: 'attr:atk_spd_per_lvl', maxField: 'attr:atk_spd_max',     step: '0.01', isPercent: true },
+  { label: 'Crit Damage', initField: 'attr:base_crit_dmg', perLvlField: 'attr:crit_dmg_per_lvl',maxField: 'attr:crit_dmg_max',    step: '1',    isPercent: true },
+  { label: 'Crit Rate',   initField: 'base_crit_chance',   perLvlField: 'attr:crit_per_level',  maxField: 'attr:crit_max',        step: '0.1',  isPercent: true },
+  { label: 'Lifesteal',   initField: 'attr:lifesteal',     perLvlField: 'attr:ls_per_lvl',      maxField: 'attr:ls_max',          step: '0.1',  isPercent: true },
+  { label: 'Dodge',       initField: 'attr:dodge',         perLvlField: 'attr:dodge_per_lvl',   maxField: 'attr:dodge_max',       step: '0.1',  isPercent: true },
+  { label: 'Mana Regen',  initField: 'attr:mana_regen',    perLvlField: 'attr:mp_regen_lvl',    maxField: 'attr:mp_regen_max',    step: '0.1' },
+  { label: 'Thorns',      initField: 'attr:thorns',        perLvlField: 'attr:thorns_lvl',      maxField: 'attr:thorns_max',      step: '1'   },
+  { label: 'HP Regen',    initField: 'attr:hp_regen',      perLvlField: 'attr:hp_regen_lvl',    maxField: 'attr:hp_regen_max',    step: '0.5' },
+  { label: 'Spell Res',   initField: 'attr:spell_res',     perLvlField: 'attr:spell_res_lvl',   maxField: 'attr:spell_res_max',   step: '1' },
+  { label: 'Block',       initField: 'attr:block',         perLvlField: 'attr:block_lvl',       maxField: 'attr:block_max',       step: '0.1',  isPercent: true },
+  { label: 'Crit Res',    initField: 'attr:crit_res',      perLvlField: 'attr:crit_res_lvl',    maxField: 'attr:crit_res_max',    step: '0.1',  isPercent: true },
+  { label: 'Heal Recv',   initField: 'attr:heal_recv',     perLvlField: 'attr:heal_recv_lvl',   maxField: 'attr:heal_recv_max',   step: '0.1',  isPercent: true },
+  { label: 'Attack Range',initField: 'attr:atk_range',     perLvlField: 'attr:atk_range_lvl',   maxField: 'attr:atk_range_max',   step: '0.1' },
 ];
 
 function getVal(stats: any, field: string): number {
@@ -87,40 +97,43 @@ function getSkillFields(sk: any): SkillField[] {
 }
 
 /* ── Tiny number input ─────────────────────────────────────────────── */
-function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: number) => void; step?: string }) {
+function Tiny({ value, onChange, step = 'any', isPercent }: { value: number; onChange: (v: number) => void; step?: string; isPercent?: boolean }) {
   const [focusVal, setFocusVal] = useState<string | null>(null);
 
   return (
-    <input
-      type="number" step={step} 
-      value={focusVal !== null ? focusVal : value}
-      onFocus={() => setFocusVal(String(value))}
-      onChange={e => {
-        const str = e.target.value;
-        setFocusVal(str);
-        if (str === '' || str === '-') {
-          onChange(0);
-        } else {
-          const parsed = parseFloat(str);
-          if (!isNaN(parsed)) onChange(parsed);
-        }
-      }}
-      onBlur={() => {
-        setFocusVal(null);
-      }}
-      style={{
-        width: 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
-        textAlign: 'center', padding: '0 3px',
-        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.13)',
-        borderRadius: 4, color: 'var(--text-main)', outline: 'none',
-      }}
-    />
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <input
+        type="number" step={step} 
+        value={focusVal !== null ? focusVal : value}
+        onFocus={() => setFocusVal(String(value))}
+        onChange={e => {
+          const str = e.target.value;
+          setFocusVal(str);
+          if (str === '' || str === '-') {
+            onChange(0);
+          } else {
+            const parsed = parseFloat(str);
+            if (!isNaN(parsed)) onChange(parsed);
+          }
+        }}
+        onBlur={() => {
+          setFocusVal(null);
+        }}
+        style={{
+          width: isPercent ? 48 : 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
+          textAlign: 'center', padding: isPercent ? '0 10px 0 2px' : '0 3px',
+          background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.13)',
+          borderRadius: 4, color: 'var(--text-main)', outline: 'none',
+        }}
+      />
+      {isPercent && <span style={{ position: 'absolute', right: 4, fontSize: '0.55rem', color: 'var(--text-muted)', pointerEvents: 'none', fontWeight: 800 }}>%</span>}
+    </div>
   );
 }
 
 /* ── Triplet: single stat ──────────────────────────────────────────── */
-function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
-  label: string; init: number; perLvl: number; max: number; step?: string;
+function Triplet({ label, init, perLvl, max, step, isPercent, onInit, onPerLvl, onMax }: {
+  label: string; init: number; perLvl: number; max: number; step?: string; isPercent?: boolean;
   onInit: (v: number) => void; onPerLvl: (v: number) => void; onMax: (v: number) => void;
 }) {
   const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
@@ -131,13 +144,13 @@ function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
       </span>
       <div style={{ display: 'flex', gap: 3 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>min</span><Tiny value={init} onChange={onInit} step={step} />
+          <span style={sub}>min</span><Tiny value={init} onChange={onInit} step={step} isPercent={isPercent} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>per lvl</span><Tiny value={perLvl} onChange={onPerLvl} step={step} />
+          <span style={sub}>per lvl</span><Tiny value={perLvl} onChange={onPerLvl} step={step} isPercent={isPercent} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>max</span><Tiny value={max} onChange={onMax} step={step} />
+          <span style={sub}>max</span><Tiny value={max} onChange={onMax} step={step} isPercent={isPercent} />
         </div>
       </div>
     </div>
@@ -181,7 +194,7 @@ const PARAM_LABELS: Record<string, string[]> = {
   "Adrenaline": ["dmg boost", "max boost"],
   "Holy Strike": ["damage", "slow dur"],
   "Consecrate": ["dmg/s", "duration"],
-  "Surge": ["duration"],
+  "Surge": ["duration", "cc amp %"],
   "Executioner": ["dmg boost"],
   "Shadow Teleport": ["crit chance"],
   "Smoke Bomb": ["duration"],
@@ -252,38 +265,94 @@ const PARAM_LABELS: Record<string, string[]> = {
   "Holy Light": ["lifesteal %", "kill heal"],
   "Mystic Armor": ["armor", "spell res"],
   "Ring of Thorns": ["duration", "dmg/s"],
+
+  // Missing Stat Skills
+  "Iron Skin": ["armor"],
+  "Fortification": ["hp %"],
+  "Stalwart": ["block %"],
+  "Ironclad": ["armor pen res"],
+  "Rage": ["atk %"],
+  "Endurance": ["hp regen"],
+  "Holy Might": ["holy dmg %"],
+  "Grace": ["heal recv %"],
+  "Sharpen": ["atk %"],
+  "Precision": ["crit %"],
+  "Lethal Edge": ["crit dmg %"],
+  "Evasion": ["dodge %"],
+  "Hawk Eye": ["range %"],
+  "Swift Shot": ["atk spd %"],
+  "Arcane Surge": ["spell dmg %"],
+  "Focus": ["max mp"],
+  "Blade Mastery": ["phys dmg %"],
+  "Composure": ["crit res %"],
+  "Mending": ["heal pwr %"],
+  "Resilience": ["aura def %"],
+  "Sanctify": ["holy heal %"],
+  "Devotion": ["buff dur"],
+  "Inspiration": ["buff str %"],
+  "Rhythm": ["move spd %"],
+  "Toxicology": ["poison dmg %"],
+  "Preparation": ["item slots"],
+  "Undead Mastery": ["minion stat %"],
+  "Soul Reaping": ["max summons"],
+  "Arcane Blade": ["magic melee %"],
+  "Mana Blade": ["magic dmg %"],
+  "Resonance": ["cd red %"],
+  "Shadow Power": ["dark dmg %"],
+  "Eclipse": ["low hp dmg %"],
+  "Chi Flow": ["energy regen"],
+  "Discipline": ["combo mult %"],
+  "Command": ["cc dur"],
+  "Tactical Mind": ["cc cd red %"],
+  "Time Warp": ["move spd %"],
+  "Decay": ["slow dmg/s"],
+  "Entrapment": ["root dur"],
+  "Dark Mark": ["curse dmg %"],
+  "Affliction": ["curse str %"],
+  "Voltage": ["lightning dmg %"],
 };
 
-function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void; setStats: any; stats: any }) {
+function MultiTriplet({ labels, params, onChange }: { labels: string[]; params: any[]; onChange: (pIdx: number, sub: 'init'|'perLvl'|'max', val: number) => void }) {
   const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const, marginBottom: 2 };
   const paramNameStyle = { fontSize: '0.5rem', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.05em', textAlign: 'center' as const, marginBottom: 4, whiteSpace: 'nowrap' as const };
   
-  const labels = PARAM_LABELS[sk.name] || [];
-
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
-      {group.params.map((p: any, i: number) => {
+      {params.map((p: any, i: number) => {
         const init = p.init ?? 0;
         const perLvl = p.per_lvl ?? 0;
         const maxVal = p.max ?? 0;
         const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
         const label = labels[i] || `p${i + 1}`;
+        
+        // Flag detection (is_... or can_...)
+        const isFlag = label.toLowerCase().startsWith('is ') || label.toLowerCase().startsWith('can ');
+
         return (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <span style={paramNameStyle}>{label}</span>
             <div style={{ display: 'flex', gap: 4 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <span style={sub}>min</span>
-                <Tiny value={init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <span style={sub}>per lvl</span>
-                <Tiny value={perLvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <span style={sub}>max</span>
-                <Tiny value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
-              </div>
+              {isFlag ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 24, padding: '0 8px', background: 'rgba(0,0,0,0.3)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' }}>
+                   <input type="checkbox" checked={init === 1} onChange={e => onChange(i, 'init', e.target.checked ? 1 : 0)} style={{ cursor: 'pointer' }} />
+                   <span style={{ fontSize: '0.55rem', color: init === 1 ? 'var(--accent-primary)' : 'var(--text-muted)', fontWeight: 800 }}>{init === 1 ? 'ON' : 'OFF'}</span>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={sub}>min</span>
+                    <Tiny value={init} onChange={v => onChange(i, 'init', v)} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={sub}>per lvl</span>
+                    <Tiny value={perLvl} onChange={v => onChange(i, 'perLvl', v)} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={sub}>max</span>
+                    <Tiny value={calculatedMax} onChange={v => onChange(i, 'max', v)} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
@@ -318,8 +387,10 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
   const [skills, setSkills] = useState<any[]>([]);
   const [msg, setMsg]       = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     api.getClass(classId).then(res => {
       if (res.class) {
         const { skills: s, ...rest } = res.class;
@@ -337,7 +408,8 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
         });
         setSkills(safeSkills);
       }
-    });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [classId]);
 
   async function save() {
@@ -363,7 +435,11 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
   }
 
   const isMain     = Object.keys(CLASS_TREE).includes(classId);
-  const visibleStats = STAT_DEFS.filter(d => getVal(stats, d.initField) !== 0);
+  const visibleStats = STAT_DEFS.filter(d => {
+    // Always show core stats for tuning
+    if (['HP', 'Atk', 'Def', 'Mana', 'Speed'].includes(d.label)) return true;
+    return getVal(stats, d.initField) !== 0;
+  });
 
   const panelHdr = { fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 14 };
 
@@ -401,74 +477,84 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
 
         {/* LEFT — Stats */}
         <div style={{ padding: '16px 14px', overflowY: 'auto', borderRight: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.18)' }}>
-          <div style={panelHdr}>In Stats</div>
-          {visibleStats.length === 0 && (
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No stats in DB yet.</div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
-            {visibleStats.map(def => {
-              const init = getVal(stats, def.initField) || 0;
-              const perLvl = def.perLvlField ? getVal(stats, def.perLvlField) : 0;
-              const maxVal = def.maxField ? getVal(stats, def.maxField) : 0;
-              const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
+          <div style={panelHdr}>Innate Stats</div>
+          
+          {loading ? (
+            <div style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', opacity: 0.8 }}>
+              ACCESSING ARCHIVES...
+            </div>
+          ) : (
+            <>
+              {visibleStats.length === 0 && (
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No stats in DB yet.</div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
+                {visibleStats.map(def => {
+                  const init = getVal(stats, def.initField) || 0;
+                  const perLvl = def.perLvlField ? getVal(stats, def.perLvlField) : 0;
+                  const maxVal = def.maxField ? getVal(stats, def.maxField) : 0;
+                  const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
 
-              return (
-                <Triplet
-                  key={def.label}
-                  label={def.label}
-                  step={def.step}
-                  init={init}
-                  perLvl={perLvl}
-                  max={calculatedMax}
-                  onInit={v => setVal(stats, def.initField, Math.max(0, v), setStats)}
-                  onPerLvl={v => def.perLvlField && setVal(stats, def.perLvlField, Math.max(0, v), setStats)}
-                  onMax={v => def.maxField && setVal(stats, def.maxField, Math.max(0, v), setStats)}
-                />
-              );
-            })}
-          </div>
+                  return (
+                    <Triplet
+                      key={def.label}
+                      label={def.label}
+                      step={def.step}
+                      isPercent={def.isPercent}
+                      init={init}
+                      perLvl={perLvl}
+                      max={calculatedMax}
+                      onInit={v => setVal(stats, def.initField, Math.max(0, v), setStats)}
+                      onPerLvl={v => def.perLvlField && setVal(stats, def.perLvlField, Math.max(0, v), setStats)}
+                      onMax={v => def.maxField && setVal(stats, def.maxField, Math.max(0, v), setStats)}
+                    />
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* RIGHT — Skills */}
-        <div style={{ padding: '16px', overflowY: 'auto' }}>
-          <div style={panelHdr}>
-            Skills
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {sortedSkills.map((sk, skLoopIdx) => {
-              const idx = skills.findIndex(s => s.name === sk.name);
-              const groups = getSkillGroups(sk);
-              return (
-                <div key={idx} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.22)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {/* Name */}
-                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: 2 }}>
-                    {sk.name} <span style={{ fontSize: '0.55rem', fontWeight: 600, color: 'var(--accent-primary)', marginLeft: 6, textTransform: 'uppercase' }}>{sk.type}</span>
-                  </div>
-                  {/* Description */}
-                  <div style={{ fontSize: '0.63rem', color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.45 }}>
-                    {sk.desc}
-                  </div>
-                  
-                  {/* Dynamic Param Groups */}
-                  <div>
-                    {groups.map((grp, gIdx) => (
+        <div style={{ padding: '16px 18px', overflowY: 'auto', background: 'rgba(0,0,0,0.05)' }}>
+          <div style={panelHdr}>Skills</div>
+          
+          {loading ? (
+            <div style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', opacity: 0.8 }}>
+              SYNCHRONIZING MANA CHANNELS...
+            </div>
+          ) : (
+            <>
+              {skills.length === 0 && (
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No skills found.</div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {sortedSkills.map((sk, skIdx) => {
+                  const idxInOrig = skills.findIndex(s => s.name === sk.name);
+                  return (
+                    <div key={sk.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>{sk.name}</span>
+                          <span style={{ fontSize: '0.45rem', padding: '1px 4px', borderRadius: 3, background: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontWeight: 700 }}>{sk.type}</span>
+                        </div>
+                      </div>
+                      
+                      <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic', maxWidth: '400px', lineHeight: 1.4 }}>
+                        {sk.desc}
+                      </div>
+
                       <MultiTriplet 
-                        key={gIdx} 
-                        group={grp} 
-                        sk={sk}
-                        stats={stats}
-                        setStats={setStats}
-                        onUpdate={(paramIdx, sub, val) => updateSkillParam(idx, paramIdx, sub, val)} 
+                        labels={PARAM_LABELS[sk.name] || []}
+                        params={sk.params || []}
+                        onChange={(pIdx, field, val) => updateSkillParam(idxInOrig, pIdx, field, val)}
                       />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            {skills.length === 0 && (
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>No skills found.</div>
-            )}
-          </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
       </div>

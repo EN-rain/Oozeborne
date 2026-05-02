@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"math"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 type Player struct {
 	UserID         string
 	ClassID        string
+	SubclassID     string
 	Conn           *websocket.Conn
 	Pos            Vec2
 	LastPos        Vec2
@@ -24,6 +26,8 @@ type Player struct {
 	LastSeen       time.Time
 	PingSentAt     time.Time
 	LastSeqSeen    int
+	Cooldowns      map[string]time.Time
+	ActiveEffects  map[string]time.Time
 	mu             sync.Mutex
 }
 
@@ -59,8 +63,25 @@ func handleAttack(r *Room, p *Player, input PlayerInput) {
 		dist := math.Sqrt(dx*dx + dy*dy)
 
 		if dist <= AttackRange {
-			m.HP -= damage
-			p.Vitals.DmgDealt += damage
+			finalDmg := float64(damage)
+			// Crit check
+			critChance := p.Vitals.Attributes["crit_chance"]
+			if critChance > 0 {
+				if rand.Float64()*100 < critChance {
+					multiplier := 1.5 + (p.Vitals.Attributes["crit_dmg"] / 100.0)
+					finalDmg *= multiplier
+				}
+			}
+
+			m.HP -= int(finalDmg)
+			p.Vitals.DmgDealt += int(finalDmg)
+
+			// Lifesteal
+			lifesteal := p.Vitals.Attributes["lifesteal"]
+			if lifesteal > 0 {
+				heal := int(finalDmg * (lifesteal / 100.0))
+				p.Vitals.HP = int(math.Min(float64(p.Vitals.HP+heal), float64(p.Vitals.MaxHP)))
+			}
 			if m.HP <= 0 {
 				configMu.RLock()
 				mobCfg, ok := mobConfigs[m.MobType]
