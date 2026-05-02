@@ -84,9 +84,23 @@ func fetchInitialConfig() {
 	}
 
 	configMu.Lock()
-	for _, m := range data.Mobs { mobConfigs[m.MobType] = m }
+	for _, m := range data.Mobs { 
+		if m.MaxHealth < 0 { m.MaxHealth = 0 }
+		if m.Speed < 0 { m.Speed = 0 }
+		if m.Damage < 0 { m.Damage = 0 }
+		mobConfigs[m.MobType] = m 
+	}
 	for _, i := range data.Items { itemConfigs[i.ItemID] = i }
-	for _, c := range data.Classes { classConfigs[c.ClassID] = c }
+	for _, c := range data.Classes { 
+		if c.BaseMaxHealth < 0 { c.BaseMaxHealth = 0 }
+		if c.BaseSpeed < 0 { c.BaseSpeed = 0 }
+		if c.BaseAttackDamage < 0 { c.BaseAttackDamage = 0 }
+		if c.BaseCritChance < 0 { c.BaseCritChance = 0 }
+		if c.BaseMaxMana < 0 { c.BaseMaxMana = 0 }
+		if c.HealthPerLevel < 0 { c.HealthPerLevel = 0 }
+		if c.DamagePerLevel < 0 { c.DamagePerLevel = 0 }
+		classConfigs[c.ClassID] = c 
+	}
 	configMu.Unlock()
 	log.Printf("[CONFIG] Initialized: %d mobs, %d items, %d classes", len(data.Mobs), len(data.Items), len(data.Classes))
 }

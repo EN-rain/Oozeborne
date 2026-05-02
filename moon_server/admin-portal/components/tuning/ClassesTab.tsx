@@ -156,9 +156,15 @@ function MultiTriplet({ group, onUpdate }: { group: any; onUpdate: (idx: number,
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>max</span>
           <div style={{ display: 'flex', gap: 4 }}>
-            {group.params.map((p: any, i: number) => (
-              <Tiny key={i} value={p.max} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
-            ))}
+            {group.params.map((p: any, i: number) => {
+              const init = p.init || 0;
+              const perLvl = p.per_lvl || 0;
+              const maxVal = p.max || 0;
+              const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
+              return (
+                <Tiny key={i} value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -167,22 +173,30 @@ function MultiTriplet({ group, onUpdate }: { group: any; onUpdate: (idx: number,
 }
 
 function getSkillGroups(sk: any) {
-  if (!sk.params || sk.params.length === 0) return [];
-  const parts = sk.desc.split(/[,\.]\s*/).filter((p: string) => p.trim() !== '');
+  const parts = (sk.desc || '').split(/[,\.]\s*/).filter((p: string) => p.trim() !== '');
   let paramIdx = 0;
   const groups = [];
+  
+  // If params are completely missing from DB, we create a fallback array
+  const hasParams = sk.params && sk.params.length > 0;
+  const sourceParams = hasParams ? sk.params : [];
   
   for (const part of parts) {
     const matches = part.match(/[0-9.-]+/g);
     if (!matches) continue;
     const count = matches.length;
     const groupParams = [];
+    
     for (let i = 0; i < count; i++) {
-      if (paramIdx < sk.params.length) {
-        groupParams.push(sk.params[paramIdx]);
-        paramIdx++;
+      if (hasParams && paramIdx < sourceParams.length) {
+        groupParams.push(sourceParams[paramIdx]);
+      } else {
+        // Fallback parameter if missing in DB
+        groupParams.push({ init: parseFloat(matches[i]) || 0, per_lvl: 0, max: 0 });
       }
+      paramIdx++;
     }
+    
     const label = part.replace(/[0-9.-]+/g, 'nth');
     if (groupParams.length > 0) {
       groups.push({ label, params: groupParams, startIdx: paramIdx - count });
@@ -203,7 +217,18 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
       if (res.class) {
         const { skills: s, ...rest } = res.class;
         setStats({ ...rest, attributes: rest.attributes || {} });
-        setSkills(s || []);
+        
+        // Ensure params exists on all skills for saving
+        const safeSkills = (s || []).map((sk: any) => {
+          if (!sk.params || sk.params.length === 0) {
+             const fallbackGroups = getSkillGroups(sk);
+             const builtParams: any[] = [];
+             fallbackGroups.forEach(g => builtParams.push(...g.params));
+             return { ...sk, params: builtParams };
+          }
+          return sk;
+        });
+        setSkills(safeSkills);
       }
     });
   }, [classId]);
@@ -234,6 +259,11 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
   const visibleStats = STAT_DEFS.filter(d => getVal(stats, d.initField) !== 0);
 
   const panelHdr = { fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 14 };
+
+  const sortedSkills = [...skills].sort((a, b) => {
+    const order: Record<string, number> = { 'Special': 1, 'Ability': 2, 'Stat': 3, 'Passive': 4 };
+    return (order[a.type] || 99) - (order[b.type] || 99);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-main)' }}>
@@ -269,35 +299,43 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No stats in DB yet.</div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
-            {visibleStats.map(def => (
-              <Triplet
-                key={def.label}
-                label={def.label}
-                step={def.step}
-                init={getVal(stats, def.initField)}
-                perLvl={def.perLvlField ? getVal(stats, def.perLvlField) : 0}
-                max={def.maxField ? getVal(stats, def.maxField) : 0}
-                onInit={v => setVal(stats, def.initField, v, setStats)}
-                onPerLvl={v => def.perLvlField && setVal(stats, def.perLvlField, v, setStats)}
-                onMax={v => def.maxField && setVal(stats, def.maxField, v, setStats)}
-              />
-            ))}
+            {visibleStats.map(def => {
+              const init = getVal(stats, def.initField) || 0;
+              const perLvl = def.perLvlField ? getVal(stats, def.perLvlField) : 0;
+              const maxVal = def.maxField ? getVal(stats, def.maxField) : 0;
+              const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
+
+              return (
+                <Triplet
+                  key={def.label}
+                  label={def.label}
+                  step={def.step}
+                  init={init}
+                  perLvl={perLvl}
+                  max={calculatedMax}
+                  onInit={v => setVal(stats, def.initField, Math.max(0, v), setStats)}
+                  onPerLvl={v => def.perLvlField && setVal(stats, def.perLvlField, Math.max(0, v), setStats)}
+                  onMax={v => def.maxField && setVal(stats, def.maxField, Math.max(0, v), setStats)}
+                />
+              );
+            })}
           </div>
         </div>
 
         {/* RIGHT — Skills */}
         <div style={{ padding: '16px', overflowY: 'auto' }}>
           <div style={panelHdr}>
-            Skills — {skills.length} abilities seeded from DB
+            Skills
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {skills.map((sk, idx) => {
+            {sortedSkills.map((sk, skLoopIdx) => {
+              const idx = skills.findIndex(s => s.name === sk.name);
               const groups = getSkillGroups(sk);
               return (
                 <div key={idx} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.22)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
                   {/* Name */}
                   <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: 2 }}>
-                    {sk.name}
+                    {sk.name} <span style={{ fontSize: '0.55rem', fontWeight: 600, color: 'var(--accent-primary)', marginLeft: 6, textTransform: 'uppercase' }}>{sk.type}</span>
                   </div>
                   {/* Description */}
                   <div style={{ fontSize: '0.63rem', color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.45 }}>
