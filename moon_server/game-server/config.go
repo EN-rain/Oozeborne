@@ -40,8 +40,11 @@ type ItemConfig struct {
 }
 
 type Skill struct {
-	Name string `json:"name"`
-	Desc string `json:"desc"`
+	Name     string             `json:"name"`
+	Desc     string             `json:"desc"`
+	Cooldown float64            `json:"cooldown,omitempty"`
+	Value    float64            `json:"value,omitempty"`
+	Extra    map[string]float64 `json:"extra,omitempty"`
 }
 
 type ClassConfig struct {

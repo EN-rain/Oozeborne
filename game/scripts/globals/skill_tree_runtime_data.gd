@@ -1,7 +1,7 @@
 extends RefCounted
 class_name SkillTreeRuntimeData
 
-const STAT_RULES := {
+var STAT_RULES := {
 	"controller_chronomancer_decay_stat": {"kind": "meta_multi", "entries": [{"kind": "meta_flat", "target": "control_dot_bonus", "value": 5.0}, {"kind": "meta_flat", "target": "mana_regen", "value": 0.5}]},
 	"controller_chronomancer_time_warp_stat": {"kind": "property_percent", "target": "speed", "value": 0.03},
 	"controller_hexbinder_affliction_stat": {"kind": "meta_percent", "target": "curse_debuff_strength_bonus", "value": 0.03},
@@ -50,7 +50,7 @@ const STAT_RULES := {
 	"tank_paladin_holy_might_stat": {"kind": "meta_percent", "target": "holy_damage_bonus", "value": 0.05},
 }
 
-const PASSIVE_RULES := {
+var PASSIVE_RULES := {
 	"controller_chronomancer_borrowed_seconds_passive": {"target": "control_burst_cdr_bonus", "kind": "meta_percent", "value": 0.06},
 	"controller_hexbinder_malice_chain_passive": {"target": "curse_spread_chance", "kind": "meta_percent", "value": 0.1},
 	"controller_main_tempo_lock_passive": {"target": "control_zone_enemy_damage_reduction", "kind": "meta_percent", "value": 0.03},
@@ -76,7 +76,7 @@ const PASSIVE_RULES := {
 	"tank_paladin_holy_light_passive": {"target": "damage_to_healing_ratio", "kind": "meta_percent", "value": 0.01},
 }
 
-const ABILITY_COOLDOWNS := {
+var ABILITY_COOLDOWNS := {
 	"controller_chronomancer_rewind_ability": 35.0,
 	"controller_chronomancer_slow_field_ability": 20.0,
 	"controller_chronomancer_time_fracture_special": 16.0,
@@ -133,7 +133,7 @@ const ABILITY_COOLDOWNS := {
 	"tank_paladin_divine_shield_special": 25.0,
 }
 
-const ABILITY_DURATIONS := {
+var ABILITY_DURATIONS := {
 	"tank_main_taunt_ability": 2.0,
 	"tank_main_frenzy_ability": 4.0,
 	"tank_main_fortify_special": 3.0,
@@ -145,3 +145,32 @@ const ABILITY_DURATIONS := {
 	"controller_main_bramble_wall_ability": 2.0,
 	"controller_warden_bramble_wall_ability": 2.0,
 }
+
+static func update_from_server(classes_data: Array) -> void:
+	for cls in classes_data:
+		var class_id = cls.get("class_id", "")
+		var skills = cls.get("skills", [])
+		for skill in skills:
+			var skill_name = skill.get("name", "").to_lower().replace(" ", "_")
+			var internal_id = class_id + "_" + skill_name # basic mapping logic
+			
+			if skill.has("cooldown") and skill.cooldown > 0:
+				# Just update any matching string loosely if exact ID is unknown
+				for key in ABILITY_COOLDOWNS.keys():
+					if skill_name in key:
+						ABILITY_COOLDOWNS[key] = float(skill.cooldown)
+						
+			if skill.has("extra") and skill.extra != null:
+				if skill.extra.has("duration"):
+					for key in ABILITY_DURATIONS.keys():
+						if skill_name in key:
+							ABILITY_DURATIONS[key] = float(skill.extra.duration)
+							
+			if skill.has("value") and skill.value > 0:
+				for key in STAT_RULES.keys():
+					if skill_name in key and STAT_RULES[key].has("value"):
+						STAT_RULES[key]["value"] = float(skill.value)
+				for key in PASSIVE_RULES.keys():
+					if skill_name in key and PASSIVE_RULES[key].has("value"):
+						PASSIVE_RULES[key]["value"] = float(skill.value)
+

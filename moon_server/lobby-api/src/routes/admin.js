@@ -233,23 +233,24 @@ router.get('/classes/:class_id', async (req, res, next) => {
 router.patch('/classes/:class_id', async (req, res, next) => {
   try {
     const { 
-      base_max_health, base_speed, base_attack_damage, base_crit_chance, 
+      display_name, base_max_health, base_speed, base_attack_damage, base_crit_chance, 
       base_max_mana, health_per_level, damage_per_level, skills 
     } = req.body;
     await db.query(
       `UPDATE class_configs SET
-         base_max_health    = COALESCE($1, base_max_health),
-         base_speed         = COALESCE($2, base_speed),
-         base_attack_damage = COALESCE($3, base_attack_damage),
-         base_crit_chance   = COALESCE($4, base_crit_chance),
-         base_max_mana      = COALESCE($5, base_max_mana),
-         health_per_level   = COALESCE($6, health_per_level),
-         damage_per_level   = COALESCE($7, damage_per_level),
-         skills             = COALESCE($8, skills),
+         display_name       = COALESCE($1, display_name),
+         base_max_health    = COALESCE($2, base_max_health),
+         base_speed         = COALESCE($3, base_speed),
+         base_attack_damage = COALESCE($4, base_attack_damage),
+         base_crit_chance   = COALESCE($5, base_crit_chance),
+         base_max_mana      = COALESCE($6, base_max_mana),
+         health_per_level   = COALESCE($7, health_per_level),
+         damage_per_level   = COALESCE($8, damage_per_level),
+         skills             = COALESCE($9, skills),
          updated_at         = NOW()
-       WHERE class_id = $9`,
+       WHERE class_id = $10`,
       [
-        base_max_health, base_speed, base_attack_damage, base_crit_chance, 
+        display_name, base_max_health, base_speed, base_attack_damage, base_crit_chance, 
         base_max_mana, health_per_level, damage_per_level, 
         skills ? JSON.stringify(skills) : null, 
         req.params.class_id

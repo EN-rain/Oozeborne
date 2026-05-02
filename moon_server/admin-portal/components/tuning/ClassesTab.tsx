@@ -32,35 +32,27 @@ const STAT_ROWS: {
   field: string;
   type: 'int' | 'float';
   step: string;
-  accent: string;
   group: string;
 }[] = [
   // ── Health ──────────────────────────────────────────────
-  { label: 'HP',      sublabel: 'initial',   field: 'base_max_health',    type: 'int',   step: '1',    accent: '#ef4444', group: 'Health' },
-  { label: 'HP',      sublabel: 'per level', field: 'health_per_level',   type: 'int',   step: '1',    accent: '#f87171', group: 'Health' },
+  { label: 'HP',      sublabel: 'initial',   field: 'base_max_health',    type: 'int',   step: '1',    group: 'Health' },
+  { label: 'HP',      sublabel: 'per level', field: 'health_per_level',   type: 'int',   step: '1',    group: 'Health' },
   // ── Mana ─────────────────────────────────────────────────
-  { label: 'Mana',    sublabel: 'initial',   field: 'base_max_mana',      type: 'int',   step: '1',    accent: '#818cf8', group: 'Mana'   },
+  { label: 'Mana',    sublabel: 'initial',   field: 'base_max_mana',      type: 'int',   step: '1',    group: 'Mana'   },
   // ── Combat ───────────────────────────────────────────────
-  { label: 'Attack',  sublabel: 'initial',   field: 'base_attack_damage', type: 'int',   step: '1',    accent: '#f59e0b', group: 'Combat' },
-  { label: 'Attack',  sublabel: 'per level', field: 'damage_per_level',   type: 'int',   step: '1',    accent: '#fbbf24', group: 'Combat' },
-  { label: 'Crit',    sublabel: 'initial',   field: 'base_crit_chance',   type: 'float', step: '0.1',  accent: '#fb923c', group: 'Combat' },
-  { label: 'Speed',   sublabel: 'initial',   field: 'base_speed',         type: 'float', step: '0.5',  accent: '#34d399', group: 'Movement' },
+  { label: 'Attack',  sublabel: 'initial',   field: 'base_attack_damage', type: 'int',   step: '1',    group: 'Combat' },
+  { label: 'Attack',  sublabel: 'per level', field: 'damage_per_level',   type: 'int',   step: '1',    group: 'Combat' },
+  { label: 'Crit',    sublabel: 'initial',   field: 'base_crit_chance',   type: 'float', step: '0.1',  group: 'Combat' },
+  { label: 'Speed',   sublabel: 'initial',   field: 'base_speed',         type: 'float', step: '0.5',  group: 'Movement' },
 ];
-
-const GROUP_COLORS: Record<string, string> = {
-  Health:   '#ef4444',
-  Mana:     '#818cf8',
-  Combat:   '#f59e0b',
-  Movement: '#34d399',
-};
 
 /* ─── Stat Row Component ───────────────────────────────────────────── */
 function StatRow({
-  label, sublabel, field, value, step, accent,
+  label, sublabel, field, value, step,
   onChange,
 }: {
   label: string; sublabel: string; field: string;
-  value: number; step: string; accent: string;
+  value: number; step: string;
   onChange: (field: string, val: number) => void;
 }) {
   return (
@@ -72,7 +64,7 @@ function StatRow({
       border: '1px solid rgba(255,255,255,0.04)',
     }}>
       {/* accent bar */}
-      <div style={{ width: 3, height: 26, borderRadius: 2, background: accent, flexShrink: 0 }} />
+      <div style={{ width: 3, height: 26, borderRadius: 2, background: 'var(--text-muted)', flexShrink: 0 }} />
       {/* label */}
       <div style={{ minWidth: 90 }}>
         <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
@@ -93,7 +85,7 @@ function StatRow({
           flex: 1, padding: '4px 8px', fontSize: '0.82rem', fontWeight: 700,
           height: 28, textAlign: 'right',
           background: 'var(--bg-input)', border: '1px solid var(--border-light)',
-          borderRadius: 4, color: accent,
+          borderRadius: 4, color: 'var(--text-main)',
         }}
       />
     </div>
@@ -154,18 +146,18 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
           </span>
         </div>
 
-        {/* display_name editable inline */}
+        {/* display_name readOnly */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingLeft: 12, borderLeft: '1px solid var(--border-light)' }}>
           <label style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
-            Display Name
+            Display Name (Read-Only)
           </label>
           <input
             className="input-field"
             type="text"
+            readOnly
             value={stats.display_name || ''}
             placeholder={classId.replace(/_/g, ' ')}
-            onChange={e => setStats((p: any) => ({ ...p, display_name: e.target.value }))}
-            style={{ height: 26, fontSize: '0.8rem', fontWeight: 700, padding: '2px 7px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4 }}
+            style={{ height: 26, fontSize: '0.8rem', fontWeight: 700, padding: '2px 7px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)', opacity: 0.7 }}
           />
         </div>
 
@@ -212,9 +204,9 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
             <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {/* group header */}
               <div style={{
-                fontSize: '0.54rem', fontWeight: 900, color: GROUP_COLORS[group],
+                fontSize: '0.54rem', fontWeight: 900, color: 'var(--text-main)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
-                borderBottom: `1px solid ${GROUP_COLORS[group]}33`,
+                borderBottom: `1px solid var(--border-light)`,
                 paddingBottom: 3, marginBottom: 1,
               }}>
                 {group}
@@ -228,7 +220,6 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
                   field={row.field}
                   value={stats[row.field] ?? 0}
                   step={row.step}
-                  accent={row.accent}
                   onChange={setStat}
                 />
               ))}
@@ -244,26 +235,15 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Skills&nbsp;<span style={{ color: 'var(--accent-primary)', fontWeight: 900 }}>{skills.length}</span>
+              Skills&nbsp;<span style={{ color: 'var(--text-main)', fontWeight: 900 }}>{skills.length}</span>
             </div>
-            <button
-              onClick={() => setSkills(prev => [...prev, { name: 'New Skill', desc: '' }])}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '3px 10px', borderRadius: 5, fontSize: '0.63rem', fontWeight: 800,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
-                color: 'var(--text-main)', cursor: 'pointer',
-              }}
-            >
-              <Plus size={11} /> Add
-            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
             {skills.map((sk, idx) => (
               <div key={idx} style={{
                 padding: '9px 11px', background: 'rgba(0,0,0,0.2)',
-                borderRadius: 8, borderLeft: '3px solid var(--accent-primary)',
+                borderRadius: 8, borderLeft: '3px solid var(--text-muted)',
                 display: 'flex', flexDirection: 'column', gap: 6,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -271,27 +251,54 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
                     className="input-field"
                     placeholder="Skill name"
                     value={sk.name}
-                    onChange={e => {
-                      const ns = [...skills]; ns[idx] = { ...ns[idx], name: e.target.value }; setSkills(ns);
-                    }}
-                    style={{ flex: 1, fontWeight: 800, fontSize: '0.76rem', height: 26, padding: '2px 7px' }}
+                    readOnly
+                    style={{ flex: 1, fontWeight: 800, fontSize: '0.76rem', height: 26, padding: '2px 7px', color: 'var(--text-main)', opacity: 0.7 }}
                   />
-                  <button
-                    onClick={() => setSkills(prev => prev.filter((_, i) => i !== idx))}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 2, display: 'flex' }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
                 </div>
                 <textarea
                   className="input-field"
                   placeholder="Description…"
                   value={sk.desc}
-                  onChange={e => {
-                    const ns = [...skills]; ns[idx] = { ...ns[idx], desc: e.target.value }; setSkills(ns);
-                  }}
-                  style={{ fontSize: '0.71rem', resize: 'none', minHeight: 42, padding: '4px 7px', lineHeight: 1.4 }}
+                  readOnly
+                  style={{ fontSize: '0.71rem', resize: 'none', minHeight: 42, padding: '4px 7px', lineHeight: 1.4, color: 'var(--text-main)', opacity: 0.7 }}
                 />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cooldown</span>
+                    <input
+                      className="input-field" type="number" step="0.5" value={sk.cooldown ?? 0}
+                      onChange={e => { const ns = [...skills]; ns[idx] = { ...ns[idx], cooldown: parseFloat(e.target.value) || 0 }; setSkills(ns); }}
+                      style={{ width: 50, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Value</span>
+                    <input
+                      className="input-field" type="number" step="1" value={sk.value ?? 0}
+                      onChange={e => { const ns = [...skills]; ns[idx] = { ...ns[idx], value: parseFloat(e.target.value) || 0 }; setSkills(ns); }}
+                      style={{ width: 50, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
+                    />
+                  </div>
+                  {/* Dynamic Extra Properties */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
+                    {sk.extra && Object.entries(sk.extra).map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          {k.replace(/_/g, ' ')}
+                        </span>
+                        <input
+                          className="input-field" type="number" step="any" value={(v as number) ?? 0}
+                          onChange={e => {
+                            const ns = [...skills];
+                            ns[idx].extra = { ...ns[idx].extra, [k]: parseFloat(e.target.value) || 0 };
+                            setSkills(ns);
+                          }}
+                          style={{ width: 45, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ))}
             {skills.length === 0 && (
