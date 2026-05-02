@@ -237,7 +237,7 @@ const PARAM_LABELS: Record<string, string[]> = {
   "Time Freeze": ["freeze dur"],
   "Rewind": ["rewind dur"],
   "Borrowed Seconds": ["cd red"],
-  "Ring of Thorns": ["duration", "dmg/s"],
+
   "Vine Snare": ["root dur"],
   "Bramble Wall": ["duration", "damage"],
   "Line Holder": ["enemy dmg"],
@@ -251,7 +251,7 @@ const PARAM_LABELS: Record<string, string[]> = {
   "Divine Aegis": ["invuln", "heal %"],
   "Holy Light": ["lifesteal %", "kill heal"],
   "Mystic Armor": ["armor", "spell res"],
-  "Ring of Thorns": ["duration", "dmg/s", "dummy"],
+  "Ring of Thorns": ["duration", "dmg/s"],
 };
 
 function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void; setStats: any; stats: any }) {
