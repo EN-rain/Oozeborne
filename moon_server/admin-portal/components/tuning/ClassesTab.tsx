@@ -64,23 +64,24 @@ function getSkillFields(sk: any): SkillField[] {
   const ex = sk.extra || {};
   const fields: SkillField[] = [];
 
-  if (sk.value != null) fields.push({
-    label: 'Val', key: 'value',
-    init: sk.value, perLvl: ex.value_per_lvl ?? 0, max: ex.value_max ?? 0,
+  // ALWAYS show Atk/Val and CD so the layout matches the wireframe even if DB data is missing
+  fields.push({
+    label: 'Atk/Val', key: 'value',
+    init: sk.value ?? 0, perLvl: ex.value_per_lvl ?? 0, max: ex.value_max ?? 0,
   });
 
-  const skipExtra = new Set(['value_per_lvl', 'value_max']);
+  fields.push({
+    label: 'CD', key: 'cooldown',
+    init: sk.cooldown ?? 0, perLvl: ex.cooldown_per_lvl ?? 0, max: ex.cooldown_max ?? 0,
+  });
+
+  const skipExtra = new Set(['value_per_lvl', 'value_max', 'cooldown_per_lvl', 'cooldown_max']);
   Object.keys(ex)
     .filter(k => !k.endsWith('_per_lvl') && !k.endsWith('_max') && !skipExtra.has(k))
     .forEach(k => fields.push({
       label: fmtKey(k), key: `extra.${k}`,
       init: ex[k], perLvl: ex[`${k}_per_lvl`] ?? 0, max: ex[`${k}_max`] ?? 0,
     }));
-
-  if (sk.cooldown != null) fields.push({
-    label: 'CD', key: 'cooldown',
-    init: sk.cooldown, perLvl: ex.cooldown_per_lvl ?? 0, max: ex.cooldown_max ?? 0,
-  });
 
   return fields;
 }
@@ -94,8 +95,8 @@ function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: 
       style={{
         width: 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
         textAlign: 'center', padding: '0 3px',
-        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.13)',
-        borderRadius: 4, color: 'var(--text-main)', outline: 'none',
+        background: 'rgba(255,255,255,0.8)', border: 'none',
+        borderRadius: 2, color: '#000', outline: 'none',
       }}
     />
   );
@@ -106,20 +107,20 @@ function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
   label: string; init: number; perLvl: number; max: number; step?: string;
   onInit: (v: number) => void; onPerLvl: (v: number) => void; onMax: (v: number) => void;
 }) {
-  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
+  const sub = { fontSize: '0.5rem', color: 'rgba(255,255,255,0.7)', fontWeight: 500 };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
         {label}
       </span>
-      <div style={{ display: 'flex', gap: 3 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={sub}>min</span><Tiny value={init} onChange={onInit} step={step} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={sub}>per lvl</span><Tiny value={perLvl} onChange={onPerLvl} step={step} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={sub}>max</span><Tiny value={max} onChange={onMax} step={step} />
         </div>
       </div>
@@ -153,24 +154,25 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
   }
 
   function updateSkillField(idx: number, key: string, sub: 'init' | 'perLvl' | 'max', val: number) {
-    const ns = skills.map((sk, i) => i !== idx ? sk : (() => {
-      const s = { ...sk, extra: { ...(sk.extra || {}) } };
-      if (key === 'cooldown') {
-        if (sub === 'init') s.cooldown = val;
-        else if (sub === 'perLvl') s.extra.cooldown_per_lvl = val;
-        else s.extra.cooldown_max = val;
-      } else if (key === 'value') {
-        if (sub === 'init') s.value = val;
-        else if (sub === 'perLvl') s.extra.value_per_lvl = val;
-        else s.extra.value_max = val;
-      } else if (key.startsWith('extra.')) {
-        const bk = key.slice(6);
-        if (sub === 'init') s.extra[bk] = val;
-        else if (sub === 'perLvl') s.extra[`${bk}_per_lvl`] = val;
-        else s.extra[`${bk}_max`] = val;
-      }
-      return s;
-    })());
+    const ns = [...skills];
+    const s = { ...ns[idx], extra: { ...(ns[idx].extra || {}) } };
+    
+    if (key === 'cooldown') {
+      if (sub === 'init') s.cooldown = val;
+      else if (sub === 'perLvl') s.extra.cooldown_per_lvl = val;
+      else s.extra.cooldown_max = val;
+    } else if (key === 'value') {
+      if (sub === 'init') s.value = val;
+      else if (sub === 'perLvl') s.extra.value_per_lvl = val;
+      else s.extra.value_max = val;
+    } else if (key.startsWith('extra.')) {
+      const bk = key.slice(6);
+      if (sub === 'init') s.extra[bk] = val;
+      else if (sub === 'perLvl') s.extra[`${bk}_per_lvl`] = val;
+      else s.extra[`${bk}_max`] = val;
+    }
+    
+    ns[idx] = s;
     setSkills(ns);
   }
 
@@ -212,7 +214,7 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
           {visibleStats.length === 0 && (
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No stats in DB yet.</div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
             {visibleStats.map(def => (
               <Triplet
                 key={def.label}
@@ -230,45 +232,43 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
         </div>
 
         {/* RIGHT — Skills */}
-        <div style={{ padding: '16px', overflowY: 'auto' }}>
-          <div style={panelHdr}>
-            Skills — {skills.length} abilities seeded from DB
+        <div style={{ padding: '16px', overflowY: 'auto', background: '#333' }}>
+          <div style={{...panelHdr, color: '#fff', fontSize: '1rem', textTransform: 'none', textAlign: 'center', marginBottom: 20 }}>
+            Skills
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
             {skills.map((sk, idx) => {
               const fields = getSkillFields(sk);
               return (
-                <div key={idx} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.22)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div key={idx} style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.15)', borderRadius: 2, width: '100%', maxWidth: 450, color: '#fff' }}>
                   {/* Name */}
-                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: 2 }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: 4 }}>
                     {sk.name}
                   </div>
                   {/* Description */}
-                  <div style={{ fontSize: '0.63rem', color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>
                     {sk.desc}
                   </div>
                   {/* Numeric triplets */}
-                  {fields.length > 0 && (
-                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                      {fields.map(f => (
-                        <Triplet
-                          key={f.key}
-                          label={f.label}
-                          init={f.init}
-                          perLvl={f.perLvl}
-                          max={f.max}
-                          onInit={v => updateSkillField(idx, f.key, 'init', v)}
-                          onPerLvl={v => updateSkillField(idx, f.key, 'perLvl', v)}
-                          onMax={v => updateSkillField(idx, f.key, 'max', v)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {fields.map(f => (
+                      <Triplet
+                        key={f.key}
+                        label={f.label}
+                        init={f.init}
+                        perLvl={f.perLvl}
+                        max={f.max}
+                        onInit={v => updateSkillField(idx, f.key, 'init', v)}
+                        onPerLvl={v => updateSkillField(idx, f.key, 'perLvl', v)}
+                        onMax={v => updateSkillField(idx, f.key, 'max', v)}
+                      />
+                    ))}
+                  </div>
                 </div>
               );
             })}
             {skills.length === 0 && (
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No skills seeded for this class yet.</div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>No skills found.</div>
             )}
           </div>
         </div>
