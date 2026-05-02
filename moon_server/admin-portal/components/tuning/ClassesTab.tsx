@@ -246,58 +246,48 @@ const PARAM_LABELS: Record<string, string[]> = {
   "Hex Bolt": ["duration"],
   "Malice Chain": ["spread chance"],
   "Static Field": ["duration", "dmg return"],
+  // Missing skills found in DB
+  "Allied Ward": ["per ally %", "max %"],
+  "Divine Aegis": ["invuln", "heal %"],
+  "Holy Light": ["lifesteal %", "kill heal"],
+  "Mystic Armor": ["armor", "spell res"],
+  "Ring of Thorns": ["duration", "dmg/s", "dummy"],
 };
 
 function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void; setStats: any; stats: any }) {
   const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const, marginBottom: 2 };
-  const miniLabel = { fontSize: '0.4rem', color: 'var(--accent-primary)', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const, maxWidth: 36 };
+  const paramNameStyle = { fontSize: '0.5rem', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.05em', textAlign: 'center' as const, marginBottom: 4, whiteSpace: 'nowrap' as const };
   
-  const hasMultiple = group.params.length > 1;
   const labels = PARAM_LABELS[sk.name] || [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>min</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
-            {group.params.map((p: any, i: number) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                {hasMultiple && <span style={miniLabel}>{labels[i] || 'val'}</span>}
-                <Tiny value={p.init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+      {group.params.map((p: any, i: number) => {
+        const init = p.init ?? 0;
+        const perLvl = p.per_lvl ?? 0;
+        const maxVal = p.max ?? 0;
+        const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
+        const label = labels[i] || `p${i + 1}`;
+        return (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 6px', background: 'rgba(255,255,255,0.03)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <span style={paramNameStyle}>{label}</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <span style={sub}>min</span>
+                <Tiny value={init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
               </div>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>per lvl</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
-            {group.params.map((p: any, i: number) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                {hasMultiple && <span style={miniLabel}>&nbsp;</span>}
-                <Tiny value={p.per_lvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <span style={sub}>per lvl</span>
+                <Tiny value={perLvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
               </div>
-            ))}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <span style={sub}>max</span>
+                <Tiny value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
+              </div>
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <span style={sub}>max</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
-            {group.params.map((p: any, i: number) => {
-              const init = p.init || 0;
-              const perLvl = p.per_lvl || 0;
-              const maxVal = p.max || 0;
-              const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
-              return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  {hasMultiple && <span style={miniLabel}>&nbsp;</span>}
-                  <Tiny value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
