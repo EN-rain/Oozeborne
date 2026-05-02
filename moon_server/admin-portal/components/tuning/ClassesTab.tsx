@@ -88,10 +88,26 @@ function getSkillFields(sk: any): SkillField[] {
 
 /* ── Tiny number input ─────────────────────────────────────────────── */
 function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: number) => void; step?: string }) {
+  const [focusVal, setFocusVal] = React.useState<string | null>(null);
+
   return (
     <input
-      type="number" step={step} value={value}
-      onChange={e => onChange(parseFloat(e.target.value) || 0)}
+      type="number" step={step} 
+      value={focusVal !== null ? focusVal : value}
+      onFocus={() => setFocusVal(String(value))}
+      onChange={e => {
+        const str = e.target.value;
+        setFocusVal(str);
+        if (str === '' || str === '-') {
+          onChange(0);
+        } else {
+          const parsed = parseFloat(str);
+          if (!isNaN(parsed)) onChange(parsed);
+        }
+      }}
+      onBlur={() => {
+        setFocusVal(null);
+      }}
       style={{
         width: 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
         textAlign: 'center', padding: '0 3px',
@@ -126,43 +142,107 @@ function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
       </div>
     </div>
   );
-}
+const CUSTOM_LABELS: Record<string, string> = {
+  "Static Build": "+[[0]]% lightning damage on CC'd targets up to +[[1]]%",
+  "Thunder Clap": "Slam ground sending shockwave in 6m radius, stunning for [[0]]s",
+  "Shockwave": "Chain of 2 shockwaves (8m range) dealing [[0]] damage + [[1]]% slow for 1s",
+  "Fortify": "Gain [[0]]% damage reduction, taunt [[1]]m for [[2]]s",
+  "Shield Wall": "-[[0]]% damage, taunt [[1]]m for [[2]]s",
+  "Blood Rage": "+[[0]]% atk spd, +[[1]]% dmg for [[2]]s",
+  "Divine Shield": "Invulnerable [[0]]s, heal [[1]]% max HP",
+  "Burst Window": "+[[0]]% attack, +[[1]]% crit for [[2]]s",
+  "Shadow Step": "Teleport, +[[0]]% crit next hit for [[1]]s",
+  "Trap Network": "Place [[0]] trap: [[1]] dmg + [[2]]s slow",
+  "Meteor Storm": "[[0]] dmg over [[1]]s in large area",
+  "Iaijutsu": "[[0]]x dmg after [[1]]s charge",
+  "Field Aid": "Restore [[0]] HP over [[1]]s, +[[2]]% defense",
+  "Divine Blessing": "Holy zone: [[0]] HP/s, +[[1]]% defense, [[2]]s",
+  "Symphony of War": "Allies +[[0]]% dmg, +[[1]]% atk spd for [[2]]s",
+  "Plague Flask": "Poison cloud: [[0]] dmg over [[1]]s",
+  "Grave Swarm": "[[0]] dmg/s for [[1]]s",
+  "Adaptive Stance": "+[[0]]% all stats for [[1]]s",
+  "Elemental Infusion": "+[[0]]% elemental dmg for [[1]]s",
+  "Dark Pact": "Sacrifice [[0]]% HP, deal [[1]] dmg, heal [[2]]%",
+  "Seven-Point Strike": "5 strikes, [[0]] dmg each, final crit + stun [[1]]s",
+  "Control Field": "6m zone: [[0]]% slow, [[1]]% enemy dmg, [[2]]s",
+  "Time Fracture": "[[0]]% slow enemies, +[[1]]% haste exit, [[2]]s",
+  "Bastion Ring": "Ring [[0]]s: [[1]]% slow, root first target",
+  "Severing Hex": "Cone: [[0]]% enemy dmg, +[[1]]% ability dmg taken for [[2]]s",
+  "Tempest Pulse": "[[0]] dmg, knockback [[1]]m, [[2]]s slow",
+};
 
-/* ── MultiTriplet: dynamic grouped stats ───────────────────────────── */
-function MultiTriplet({ group, onUpdate }: { group: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void }) {
-  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
+function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void; setStats: any; stats: any }) {
+  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const, marginBottom: 2 };
+  const miniLabel = { fontSize: '0.4rem', color: 'var(--accent-primary)', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const, maxWidth: 36 };
+  
+  const hasMultiple = group.params.length > 1;
+
+  // The raw label string from the DB, or the custom hardcoded map, or the description
+  const rawLabel = sk.paramLabel || CUSTOM_LABELS[sk.name] || sk.desc;
+
+  // Create the visually rendered version (replaces [[0]] with the actual value)
+  const renderedLabelParts = rawLabel.split(/(\[\[\d+\]\])/).map((segment: string, i: number) => {
+    const match = segment.match(/\[\[(\d+)\]\]/);
+    if (match) {
+      const pIdx = parseInt(match[1], 10);
+      const val = group.params[pIdx]?.init ?? 0;
+      return <span key={i} style={{ color: '#fff' }}>{val}</span>;
+    }
+    return <span key={i}>{segment}</span>;
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-main)' }}>
-        {group.label}
-      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 4 }}>
+        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+          {renderedLabelParts}
+        </span>
+        <input 
+          value={sk.paramLabel ?? ''}
+          onChange={(e) => {
+            const newSkills = stats.skills.map((s: any) => s.name === sk.name ? { ...s, paramLabel: e.target.value } : s);
+            setStats({ ...stats, skills: newSkills });
+          }}
+          placeholder="Override label manually (use [[0]], [[1]] for params)"
+          style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', fontSize: '0.55rem', padding: '2px 4px', borderRadius: 2, width: '100%', outline: 'none' }}
+        />
+      </div>
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>min</span>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
             {group.params.map((p: any, i: number) => (
-              <Tiny key={i} value={p.init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                {hasMultiple && <span style={miniLabel}>p{i+1}</span>}
+                <Tiny value={p.init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
+              </div>
             ))}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>per lvl</span>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
             {group.params.map((p: any, i: number) => (
-              <Tiny key={i} value={p.per_lvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                {hasMultiple && <span style={miniLabel}>&nbsp;</span>}
+                <Tiny value={p.per_lvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
+              </div>
             ))}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>max</span>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
             {group.params.map((p: any, i: number) => {
               const init = p.init || 0;
               const perLvl = p.per_lvl || 0;
               const maxVal = p.max || 0;
               const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
               return (
-                <Tiny key={i} value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  {hasMultiple && <span style={miniLabel}>&nbsp;</span>}
+                  <Tiny value={calculatedMax} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
+                </div>
               );
             })}
           </div>
@@ -173,36 +253,16 @@ function MultiTriplet({ group, onUpdate }: { group: any; onUpdate: (idx: number,
 }
 
 function getSkillGroups(sk: any) {
-  const parts = (sk.desc || '').split(/[,\.]\s*/).filter((p: string) => p.trim() !== '');
-  let paramIdx = 0;
-  const groups = [];
-  
-  // If params are completely missing from DB, we create a fallback array
+  // Completely remove dynamic text splitting. We only rely on what's explicitly in the DB.
   const hasParams = sk.params && sk.params.length > 0;
-  const sourceParams = hasParams ? sk.params : [];
+  if (!hasParams) return [];
   
-  for (const part of parts) {
-    const matches = part.match(/[0-9.-]+/g);
-    if (!matches) continue;
-    const count = matches.length;
-    const groupParams = [];
-    
-    for (let i = 0; i < count; i++) {
-      if (hasParams && paramIdx < sourceParams.length) {
-        groupParams.push(sourceParams[paramIdx]);
-      } else {
-        // Fallback parameter if missing in DB
-        groupParams.push({ init: parseFloat(matches[i]) || 0, per_lvl: 0, max: 0 });
-      }
-      paramIdx++;
-    }
-    
-    const label = part.replace(/[0-9.-]+/g, 'nth');
-    if (groupParams.length > 0) {
-      groups.push({ label, params: groupParams, startIdx: paramIdx - count });
-    }
-  }
-  return groups;
+  return [{
+    label: sk.paramLabel || sk.desc,
+    params: sk.params,
+    startIdx: 0,
+    shortLabels: sk.params.map((_: any, i: number) => `p${i+1}`)
+  }];
 }
 
 /* ── Class Detail Modal ────────────────────────────────────────────── */
@@ -261,7 +321,7 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
   const panelHdr = { fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 14 };
 
   const sortedSkills = [...skills].sort((a, b) => {
-    const order: Record<string, number> = { 'Special': 1, 'Ability': 2, 'Stat': 3, 'Passive': 4 };
+    const order: Record<string, number> = { 'Special': 1, 'Ability': 2, 'Passive': 3, 'Stat': 4 };
     return (order[a.type] || 99) - (order[b.type] || 99);
   });
 
