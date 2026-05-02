@@ -4,7 +4,7 @@ COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
 RUN go mod tidy
-RUN go build -o moon-game-server ./main.go
+RUN go build -o moon-game-server .
 
 FROM alpine:3.21
 WORKDIR /app
