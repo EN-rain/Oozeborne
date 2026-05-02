@@ -39,10 +39,11 @@ router.get('/players/:user_id', async (req, res, next) => {
   try {
     const uid = req.params.user_id;
     const [player, bans, results, logs] = await Promise.all([
-      db.query(`SELECT p.*, pr.display_name, r.role_level
+      db.query(`SELECT p.*, pr.display_name, r.role_level, pg.level, pg.xp, pg.coins
                 FROM players p
                 JOIN profiles pr ON pr.user_id = p.user_id
                 JOIN user_roles r ON r.user_id = p.user_id
+                LEFT JOIN progression pg ON pg.user_id = p.user_id
                 WHERE p.user_id = $1`, [uid]),
       db.query(`SELECT * FROM bans WHERE user_id = $1 ORDER BY created_at DESC`, [uid]),
       db.query(`SELECT mr.*, ms.wave_reached, ms.started_at
@@ -148,8 +149,7 @@ router.post('/players/:user_id/wipe', async (req, res, next) => {
 router.get('/mobs/:mob_type', async (req, res, next) => {
   try {
     const { rows } = await db.query(
-      `SELECT health, speed, damage, xp_reward, gold_reward, attributes 
-       FROM mob_configs WHERE mob_type = $1`,
+      `SELECT * FROM mob_configs WHERE mob_type = $1`,
       [req.params.mob_type]
     );
     res.json({ mob: rows[0] || null });
@@ -159,7 +159,7 @@ router.get('/mobs/:mob_type', async (req, res, next) => {
 // ─── PATCH /admin/mobs/:mob_type — Live mob stat tuning ──────────────────
 router.patch('/mobs/:mob_type', async (req, res, next) => {
   try {
-    const { health, speed, damage, xp_reward, gold_reward, attributes } = req.body;
+    const { health, speed, damage, xp_reward, gold_reward, attributes, category, skills } = req.body;
     await db.query(
       `UPDATE mob_configs SET
          health      = COALESCE($1, health),
@@ -168,14 +168,22 @@ router.patch('/mobs/:mob_type', async (req, res, next) => {
          xp_reward   = COALESCE($4, xp_reward),
          gold_reward = COALESCE($5, gold_reward),
          attributes  = COALESCE($6, attributes),
+         category    = COALESCE($7, category),
+         skills      = COALESCE($8, skills),
          updated_at  = NOW()
-       WHERE mob_type = $7`,
-      [health, speed, damage, xp_reward, gold_reward, attributes ? JSON.stringify(attributes) : null, req.params.mob_type]
+       WHERE mob_type = $9`,
+      [
+        health, speed, damage, xp_reward, gold_reward, 
+        attributes ? JSON.stringify(attributes) : null, 
+        category,
+        skills ? JSON.stringify(skills) : null,
+        req.params.mob_type
+      ]
     );
     // Broadcast live stat update to all game-server instances
     await redis.publish('config_updates', JSON.stringify({
       type: 'mob_config', mob_type: req.params.mob_type,
-      health, speed, damage, xp_reward, gold_reward, attributes
+      health, speed, damage, xp_reward, gold_reward, attributes, category, skills
     }));
     await logAction(db, req.user.user_id, 'mob_tune', null, { mob_type: req.params.mob_type, health, speed, damage });
     res.json({ ok: true });
