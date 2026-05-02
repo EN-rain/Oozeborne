@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Check, Plus, Trash2, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { api } from '../../lib/api';
 
 const CLASS_TREE: Record<string, string[]> = {
@@ -11,90 +11,125 @@ const CLASS_TREE: Record<string, string[]> = {
   controller: ['chronomancer', 'warden', 'hexbinder', 'stormcaller'],
 };
 
-/*
-  All fields from Go ClassConfig struct (config.go):
-    class_id            — read-only identifier
-    display_name        — editable text
-    base_max_health     — INT
-    base_speed          — FLOAT
-    base_attack_damage  — INT
-    base_crit_chance    — FLOAT  (%)
-    base_max_mana       — INT
-    health_per_level    — INT
-    damage_per_level    — INT
-    skills              — JSONB []Skill{name, desc}
-*/
+/* ── Stat definitions ─────────────────────────────────────────────────
+   initField / perLvlField / maxField:
+     plain key  → stats[key]   (fixed DB column)
+     'attr:key' → stats.attributes[key]  (attributes JSONB)
+   A stat is ONLY shown if its init value is non-zero.
+─────────────────────────────────────────────────────────────────────── */
+interface StatDef { label: string; initField: string; perLvlField?: string; maxField?: string; step: string; }
 
-// Stat rows: each has label, sublabel, field key, type, and group color
-const STAT_ROWS: {
-  label: string;
-  sublabel: string;
-  field: string;
-  type: 'int' | 'float';
-  step: string;
-  group: string;
-}[] = [
-  // ── Health ──────────────────────────────────────────────
-  { label: 'HP',      sublabel: 'initial',   field: 'base_max_health',    type: 'int',   step: '1',    group: 'Health' },
-  { label: 'HP',      sublabel: 'per level', field: 'health_per_level',   type: 'int',   step: '1',    group: 'Health' },
-  // ── Mana ─────────────────────────────────────────────────
-  { label: 'Mana',    sublabel: 'initial',   field: 'base_max_mana',      type: 'int',   step: '1',    group: 'Mana'   },
-  // ── Combat ───────────────────────────────────────────────
-  { label: 'Attack',  sublabel: 'initial',   field: 'base_attack_damage', type: 'int',   step: '1',    group: 'Combat' },
-  { label: 'Attack',  sublabel: 'per level', field: 'damage_per_level',   type: 'int',   step: '1',    group: 'Combat' },
-  { label: 'Crit',    sublabel: 'initial',   field: 'base_crit_chance',   type: 'float', step: '0.1',  group: 'Combat' },
-  { label: 'Speed',   sublabel: 'initial',   field: 'base_speed',         type: 'float', step: '0.5',  group: 'Movement' },
+const STAT_DEFS: StatDef[] = [
+  { label: 'HP',       initField: 'base_max_health',    perLvlField: 'health_per_level',     maxField: 'attr:hp_max',          step: '1'   },
+  { label: 'Atk',      initField: 'base_attack_damage', perLvlField: 'damage_per_level',     maxField: 'attr:atk_max',         step: '1'   },
+  { label: 'Def',      initField: 'attr:base_defense',  perLvlField: 'attr:def_per_level',   maxField: 'attr:def_max',         step: '1'   },
+  { label: 'Mana',     initField: 'base_max_mana',      perLvlField: 'attr:mana_per_level',  maxField: 'attr:mana_max',        step: '1'   },
+  { label: 'Speed',    initField: 'base_speed',         perLvlField: 'attr:spd_per_level',   maxField: 'attr:spd_max',         step: '0.5' },
+  { label: 'Atk Spd',  initField: 'attr:base_atk_spd', perLvlField: 'attr:atk_spd_per_lvl', maxField: 'attr:atk_spd_max',    step: '0.01'},
+  { label: 'Crit Dmg', initField: 'attr:base_crit_dmg', perLvlField: 'attr:crit_dmg_per_lvl',maxField: 'attr:crit_dmg_max',   step: '1'   },
+  { label: 'Crit',     initField: 'base_crit_chance',   perLvlField: 'attr:crit_per_level',  maxField: 'attr:crit_max',        step: '0.1' },
 ];
 
-/* ─── Stat Row Component ───────────────────────────────────────────── */
-function StatRow({
-  label, sublabel, field, value, step,
-  onChange,
-}: {
-  label: string; sublabel: string; field: string;
-  value: number; step: string;
-  onChange: (field: string, val: number) => void;
-}) {
+function getVal(stats: any, field: string): number {
+  if (!field) return 0;
+  if (field.startsWith('attr:')) return stats.attributes?.[field.slice(5)] ?? 0;
+  return stats[field] ?? 0;
+}
+
+function setVal(stats: any, field: string, val: number, setStats: (fn: any) => void) {
+  if (field.startsWith('attr:')) {
+    const k = field.slice(5);
+    setStats((p: any) => ({ ...p, attributes: { ...(p.attributes || {}), [k]: val } }));
+  } else {
+    setStats((p: any) => ({ ...p, [field]: val }));
+  }
+}
+
+/* ── Skill field extraction ────────────────────────────────────────────
+   Groups extra keys by base name, stripping _per_lvl and _max suffixes.
+   Shows cooldown, value, then each extra base key — each as a triplet.
+─────────────────────────────────────────────────────────────────────── */
+interface SkillField { label: string; key: string; init: number; perLvl: number; max: number; }
+
+const LABEL_MAP: Record<string, string> = {
+  cooldown: 'CD', value: 'Val', radius: 'Radius', duration: 'Duration',
+  damage: 'Dmg', heal: 'Heal', speed: 'Spd', range: 'Range',
+  hp_threshold: 'HP%', max_allies: 'Allies', distance: 'Dist',
+};
+function fmtKey(k: string) {
+  return LABEL_MAP[k] || k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getSkillFields(sk: any): SkillField[] {
+  const ex = sk.extra || {};
+  const fields: SkillField[] = [];
+
+  if (sk.value != null) fields.push({
+    label: 'Val', key: 'value',
+    init: sk.value, perLvl: ex.value_per_lvl ?? 0, max: ex.value_max ?? 0,
+  });
+
+  const skipExtra = new Set(['value_per_lvl', 'value_max']);
+  Object.keys(ex)
+    .filter(k => !k.endsWith('_per_lvl') && !k.endsWith('_max') && !skipExtra.has(k))
+    .forEach(k => fields.push({
+      label: fmtKey(k), key: `extra.${k}`,
+      init: ex[k], perLvl: ex[`${k}_per_lvl`] ?? 0, max: ex[`${k}_max`] ?? 0,
+    }));
+
+  if (sk.cooldown != null) fields.push({
+    label: 'CD', key: 'cooldown',
+    init: sk.cooldown, perLvl: ex.cooldown_per_lvl ?? 0, max: ex.cooldown_max ?? 0,
+  });
+
+  return fields;
+}
+
+/* ── Tiny number input ─────────────────────────────────────────────── */
+function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: number) => void; step?: string }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '5px 10px',
-      borderRadius: 6,
-      background: 'rgba(0,0,0,0.18)',
-      border: '1px solid rgba(255,255,255,0.04)',
-    }}>
-      {/* accent bar */}
-      <div style={{ width: 3, height: 26, borderRadius: 2, background: 'var(--text-muted)', flexShrink: 0 }} />
-      {/* label */}
-      <div style={{ minWidth: 90 }}>
-        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
-          {label}
+    <input
+      type="number" step={step} value={value}
+      onChange={e => onChange(parseFloat(e.target.value) || 0)}
+      style={{
+        width: 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
+        textAlign: 'center', padding: '0 3px',
+        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.13)',
+        borderRadius: 4, color: 'var(--text-main)', outline: 'none',
+      }}
+    />
+  );
+}
+
+/* ── Triplet: label + [min] [per lvl] [max] ────────────────────────── */
+function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
+  label: string; init: number; perLvl: number; max: number; step?: string;
+  onInit: (v: number) => void; onPerLvl: (v: number) => void; onMax: (v: number) => void;
+}) {
+  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', gap: 3 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>min</span><Tiny value={init} onChange={onInit} step={step} />
         </div>
-        <div style={{ fontSize: '0.57rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {sublabel}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>per lvl</span><Tiny value={perLvl} onChange={onPerLvl} step={step} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>max</span><Tiny value={max} onChange={onMax} step={step} />
         </div>
       </div>
-      {/* input */}
-      <input
-        className="input-field"
-        type="number"
-        step={step}
-        value={value ?? 0}
-        onChange={e => onChange(field, parseFloat(e.target.value) || 0)}
-        style={{
-          flex: 1, padding: '4px 8px', fontSize: '0.82rem', fontWeight: 700,
-          height: 28, textAlign: 'right',
-          background: 'var(--bg-input)', border: '1px solid var(--border-light)',
-          borderRadius: 4, color: 'var(--text-main)',
-        }}
-      />
     </div>
   );
 }
 
-/* ─── Modal Detail ─────────────────────────────────────────────────── */
+/* ── Class Detail Modal ────────────────────────────────────────────── */
 function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () => void }) {
-  const [stats, setStats]   = useState<any>({});
+  const [stats, setStats]   = useState<any>({ attributes: {} });
   const [skills, setSkills] = useState<any[]>([]);
   const [msg, setMsg]       = useState('');
   const [saving, setSaving] = useState(false);
@@ -103,224 +138,153 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
     api.getClass(classId).then(res => {
       if (res.class) {
         const { skills: s, ...rest } = res.class;
-        setStats(rest);
+        setStats({ ...rest, attributes: rest.attributes || {} });
         setSkills(s || []);
       }
     });
   }, [classId]);
 
-  const setStat = (field: string, val: number) =>
-    setStats((prev: any) => ({ ...prev, [field]: val }));
-
   async function save() {
     setSaving(true);
-    try {
-      await api.updateClass(classId, { ...stats, skills });
-      setMsg('Saved ✓');
-    } catch { setMsg('Error'); }
+    try { await api.updateClass(classId, { ...stats, skills }); setMsg('Saved ✓'); }
+    catch { setMsg('Error'); }
     setSaving(false);
     setTimeout(() => setMsg(''), 2500);
   }
 
-  const isMain = Object.keys(CLASS_TREE).includes(classId);
+  function updateSkillField(idx: number, key: string, sub: 'init' | 'perLvl' | 'max', val: number) {
+    const ns = skills.map((sk, i) => i !== idx ? sk : (() => {
+      const s = { ...sk, extra: { ...(sk.extra || {}) } };
+      if (key === 'cooldown') {
+        if (sub === 'init') s.cooldown = val;
+        else if (sub === 'perLvl') s.extra.cooldown_per_lvl = val;
+        else s.extra.cooldown_max = val;
+      } else if (key === 'value') {
+        if (sub === 'init') s.value = val;
+        else if (sub === 'perLvl') s.extra.value_per_lvl = val;
+        else s.extra.value_max = val;
+      } else if (key.startsWith('extra.')) {
+        const bk = key.slice(6);
+        if (sub === 'init') s.extra[bk] = val;
+        else if (sub === 'perLvl') s.extra[`${bk}_per_lvl`] = val;
+        else s.extra[`${bk}_max`] = val;
+      }
+      return s;
+    })());
+    setSkills(ns);
+  }
 
-  // Group stat rows
-  const groups = Array.from(new Set(STAT_ROWS.map(r => r.group)));
+  const isMain     = Object.keys(CLASS_TREE).includes(classId);
+  const visibleStats = STAT_DEFS.filter(d => getVal(stats, d.initField) !== 0);
+
+  const panelHdr = { fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 14 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-main)' }}>
 
-      {/* ── HEADER ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 18px',
-        borderBottom: '1px solid var(--border-light)',
-        flexShrink: 0,
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, textTransform: 'capitalize', color: 'var(--text-main)', letterSpacing: '0.02em' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--border-light)', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 900, textTransform: 'capitalize', color: 'var(--text-main)' }}>
             {classId.replace(/_/g, ' ')}
-          </h2>
-          <span style={{ fontSize: '0.58rem', textTransform: 'uppercase', fontWeight: 700, color: isMain ? 'var(--accent-primary)' : 'var(--text-muted)', letterSpacing: '0.06em' }}>
+          </div>
+          <div style={{ fontSize: '0.54rem', fontWeight: 700, color: isMain ? 'var(--accent-primary)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {isMain ? '● Main Class' : '○ Subclass'}
-          </span>
+          </div>
         </div>
-
-        {/* display_name readOnly */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingLeft: 12, borderLeft: '1px solid var(--border-light)' }}>
-          <label style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
-            Display Name (Read-Only)
-          </label>
-          <input
-            className="input-field"
-            type="text"
-            readOnly
-            value={stats.display_name || ''}
-            placeholder={classId.replace(/_/g, ' ')}
-            style={{ height: 26, fontSize: '0.8rem', fontWeight: 700, padding: '2px 7px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)', opacity: 0.7 }}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {msg && <span style={{ fontSize: '0.68rem', fontWeight: 700, color: msg.includes('Error') ? 'var(--danger)' : 'var(--success)' }}>{msg}</span>}
+          <button onClick={save} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 14px', borderRadius: 5, fontSize: '0.7rem', fontWeight: 800, background: 'var(--accent-primary)', color: '#000', border: 'none', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <Check size={12} /> Save
+          </button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
+            <X size={16} />
+          </button>
         </div>
-
-        {msg && (
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: msg.includes('Error') ? 'var(--danger)' : 'var(--success)', whiteSpace: 'nowrap' }}>
-            {msg}
-          </span>
-        )}
-        <button
-          onClick={save}
-          disabled={saving}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            padding: '6px 14px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 800,
-            background: 'var(--accent-primary)', color: '#000', border: 'none', cursor: 'pointer',
-            opacity: saving ? 0.6 : 1, flexShrink: 0,
-          }}
-        >
-          <Check size={13} /> Save
-        </button>
-        <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 3, display: 'flex', flexShrink: 0 }}>
-          <X size={17} />
-        </button>
       </div>
 
-      {/* ── BODY ── */}
-      <div style={{
-        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr',
-        minHeight: 0,
-      }}>
+      {/* Body: 2-column split */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: 0 }}>
 
         {/* LEFT — Stats */}
-        <div style={{
-          padding: '12px 14px',
-          display: 'flex', flexDirection: 'column', gap: 10,
-          borderRight: '1px solid var(--border-light)',
-          overflowY: 'auto',
-        }}>
-          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Base Stats &nbsp;<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>— all editable</span>
+        <div style={{ padding: '16px 14px', overflowY: 'auto', borderRight: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.18)' }}>
+          <div style={panelHdr}>In Stats</div>
+          {visibleStats.length === 0 && (
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No stats in DB yet.</div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            {visibleStats.map(def => (
+              <Triplet
+                key={def.label}
+                label={def.label}
+                step={def.step}
+                init={getVal(stats, def.initField)}
+                perLvl={def.perLvlField ? getVal(stats, def.perLvlField) : 0}
+                max={def.maxField ? getVal(stats, def.maxField) : 0}
+                onInit={v => setVal(stats, def.initField, v, setStats)}
+                onPerLvl={v => def.perLvlField && setVal(stats, def.perLvlField, v, setStats)}
+                onMax={v => def.maxField && setVal(stats, def.maxField, v, setStats)}
+              />
+            ))}
           </div>
-
-          {groups.map(group => (
-            <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {/* group header */}
-              <div style={{
-                fontSize: '0.54rem', fontWeight: 900, color: 'var(--text-main)',
-                textTransform: 'uppercase', letterSpacing: '0.1em',
-                borderBottom: `1px solid var(--border-light)`,
-                paddingBottom: 3, marginBottom: 1,
-              }}>
-                {group}
-              </div>
-              {/* rows for this group */}
-              {STAT_ROWS.filter(r => r.group === group).map(row => (
-                <StatRow
-                  key={row.field}
-                  label={row.label}
-                  sublabel={row.sublabel}
-                  field={row.field}
-                  value={stats[row.field] ?? 0}
-                  step={row.step}
-                  onChange={setStat}
-                />
-              ))}
-            </div>
-          ))}
         </div>
 
         {/* RIGHT — Skills */}
-        <div style={{
-          padding: '12px 14px',
-          display: 'flex', flexDirection: 'column', gap: 10,
-          overflowY: 'auto',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-            <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Skills&nbsp;<span style={{ color: 'var(--text-main)', fontWeight: 900 }}>{skills.length}</span>
-            </div>
+        <div style={{ padding: '16px', overflowY: 'auto' }}>
+          <div style={panelHdr}>
+            Skills — {skills.length} abilities seeded from DB
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-            {skills.map((sk, idx) => (
-              <div key={idx} style={{
-                padding: '9px 11px', background: 'rgba(0,0,0,0.2)',
-                borderRadius: 8, borderLeft: '3px solid var(--text-muted)',
-                display: 'flex', flexDirection: 'column', gap: 6,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input
-                    className="input-field"
-                    placeholder="Skill name"
-                    value={sk.name}
-                    readOnly
-                    style={{ flex: 1, fontWeight: 800, fontSize: '0.76rem', height: 26, padding: '2px 7px', color: 'var(--text-main)', opacity: 0.7 }}
-                  />
-                </div>
-                <textarea
-                  className="input-field"
-                  placeholder="Description…"
-                  value={sk.desc}
-                  readOnly
-                  style={{ fontSize: '0.71rem', resize: 'none', minHeight: 42, padding: '4px 7px', lineHeight: 1.4, color: 'var(--text-main)', opacity: 0.7 }}
-                />
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cooldown</span>
-                    <input
-                      className="input-field" type="number" step="0.5" value={sk.cooldown ?? 0}
-                      onChange={e => { const ns = [...skills]; ns[idx] = { ...ns[idx], cooldown: parseFloat(e.target.value) || 0 }; setSkills(ns); }}
-                      style={{ width: 50, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
-                    />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {skills.map((sk, idx) => {
+              const fields = getSkillFields(sk);
+              return (
+                <div key={idx} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.22)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {/* Name */}
+                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: 2 }}>
+                    {sk.name}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Value</span>
-                    <input
-                      className="input-field" type="number" step="1" value={sk.value ?? 0}
-                      onChange={e => { const ns = [...skills]; ns[idx] = { ...ns[idx], value: parseFloat(e.target.value) || 0 }; setSkills(ns); }}
-                      style={{ width: 50, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
-                    />
+                  {/* Description */}
+                  <div style={{ fontSize: '0.63rem', color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.45 }}>
+                    {sk.desc}
                   </div>
-                  {/* Dynamic Extra Properties */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
-                    {sk.extra && Object.entries(sk.extra).map(([k, v]) => (
-                      <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                          {k.replace(/_/g, ' ')}
-                        </span>
-                        <input
-                          className="input-field" type="number" step="any" value={(v as number) ?? 0}
-                          onChange={e => {
-                            const ns = [...skills];
-                            ns[idx].extra = { ...ns[idx].extra, [k]: parseFloat(e.target.value) || 0 };
-                            setSkills(ns);
-                          }}
-                          style={{ width: 45, height: 22, fontSize: '0.7rem', padding: '2px 4px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4, color: 'var(--text-main)' }}
+                  {/* Numeric triplets */}
+                  {fields.length > 0 && (
+                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                      {fields.map(f => (
+                        <Triplet
+                          key={f.key}
+                          label={f.label}
+                          init={f.init}
+                          perLvl={f.perLvl}
+                          max={f.max}
+                          onInit={v => updateSkillField(idx, f.key, 'init', v)}
+                          onPerLvl={v => updateSkillField(idx, f.key, 'perLvl', v)}
+                          onMax={v => updateSkillField(idx, f.key, 'max', v)}
                         />
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {skills.length === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', padding: '2rem 0', opacity: 0.55 }}>
-                No skills — click Add to create one.
-              </div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.5 }}>No skills seeded for this class yet.</div>
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
 }
 
-/* ─── Main Export ──────────────────────────────────────────────────── */
+/* ── Class grid (main export) ──────────────────────────────────────── */
 export default function ClassesTab({ search }: { search: string }) {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
-  const mains = Object.keys(CLASS_TREE);
-  const subs  = Array.from(new Set(Object.values(CLASS_TREE).flat())).filter(s => !mains.includes(s));
-  const all   = [...mains, ...subs];
-
+  const mains    = Object.keys(CLASS_TREE);
+  const subs     = Array.from(new Set(Object.values(CLASS_TREE).flat())).filter(s => !mains.includes(s));
+  const all      = [...mains, ...subs];
   const filtered = all.filter(c => c.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -329,10 +293,7 @@ export default function ClassesTab({ search }: { search: string }) {
         {filtered.map(clsId => {
           const isMain = mains.includes(clsId);
           return (
-            <button
-              key={clsId}
-              onClick={() => setSelectedClass(clsId)}
-              className="glass-card"
+            <button key={clsId} onClick={() => setSelectedClass(clsId)} className="glass-card"
               style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', border: 'none', background: 'rgba(0,0,0,0.2)', transition: 'all 0.2s' }}
               onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
               onMouseOut={e  => { e.currentTarget.style.background = 'rgba(0,0,0,0.2)'; }}
@@ -347,32 +308,17 @@ export default function ClassesTab({ search }: { search: string }) {
           );
         })}
         {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
-            No classes found.
-          </div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>No classes found.</div>
         )}
       </div>
 
       {selectedClass && (
         <div
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(5px)',
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            zIndex: 1000, padding: '1.5rem',
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1.5rem' }}
           onClick={() => setSelectedClass(null)}
         >
           <div
-            style={{
-              width: '100%', maxWidth: 860,
-              height: 'calc(100vh - 3rem)',
-              background: 'var(--bg-main)',
-              border: '1px solid var(--border-light)',
-              borderRadius: 14, overflow: 'hidden',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-              display: 'flex', flexDirection: 'column',
-            }}
+            style={{ width: '100%', maxWidth: 900, height: 'calc(100vh - 3rem)', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <ClassDetailPage classId={selectedClass} onClose={() => setSelectedClass(null)} />

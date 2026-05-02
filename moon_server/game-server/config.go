@@ -48,16 +48,17 @@ type Skill struct {
 }
 
 type ClassConfig struct {
-	ClassID          string  `json:"class_id"`
-	DisplayName      string  `json:"display_name"`
-	BaseMaxHealth    int     `json:"base_max_health"`
-	BaseSpeed        float64 `json:"base_speed"`
-	BaseAttackDamage int     `json:"base_attack_damage"`
-	BaseCritChance   float64 `json:"base_crit_chance"`
-	BaseMaxMana      int     `json:"base_max_mana"`
-	HealthPerLevel   int     `json:"health_per_level"`
-	DamagePerLevel   int     `json:"damage_per_level"`
-	Skills           []Skill `json:"skills"`
+	ClassID          string                 `json:"class_id"`
+	DisplayName      string                 `json:"display_name"`
+	BaseMaxHealth    int                    `json:"base_max_health"`
+	BaseSpeed        float64                `json:"base_speed"`
+	BaseAttackDamage int                    `json:"base_attack_damage"`
+	BaseCritChance   float64                `json:"base_crit_chance"`
+	BaseMaxMana      int                    `json:"base_max_mana"`
+	HealthPerLevel   int                    `json:"health_per_level"`
+	DamagePerLevel   int                    `json:"damage_per_level"`
+	Attributes       map[string]interface{} `json:"attributes"`
+	Skills           []Skill                `json:"skills"`
 }
 
 func fetchInitialConfig() {
