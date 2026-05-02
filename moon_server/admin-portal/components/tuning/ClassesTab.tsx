@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Edit3, Check } from 'lucide-react';
+import { Check, Plus, Trash2, X } from 'lucide-react';
 import { api } from '../../lib/api';
 
 const CLASS_TREE: Record<string, string[]> = {
@@ -11,12 +11,101 @@ const CLASS_TREE: Record<string, string[]> = {
   controller: ['chronomancer', 'warden', 'hexbinder', 'stormcaller'],
 };
 
-function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; mainClassId: string; onBack: () => void }) {
-  const statFields = ['base_max_health','base_speed','base_attack_damage','base_crit_chance','base_max_mana','health_per_level','damage_per_level'];
-  const [stats, setStats] = useState<any>({});
+/*
+  All fields from Go ClassConfig struct (config.go):
+    class_id            — read-only identifier
+    display_name        — editable text
+    base_max_health     — INT
+    base_speed          — FLOAT
+    base_attack_damage  — INT
+    base_crit_chance    — FLOAT  (%)
+    base_max_mana       — INT
+    health_per_level    — INT
+    damage_per_level    — INT
+    skills              — JSONB []Skill{name, desc}
+*/
+
+// Stat rows: each has label, sublabel, field key, type, and group color
+const STAT_ROWS: {
+  label: string;
+  sublabel: string;
+  field: string;
+  type: 'int' | 'float';
+  step: string;
+  accent: string;
+  group: string;
+}[] = [
+  // ── Health ──────────────────────────────────────────────
+  { label: 'HP',      sublabel: 'initial',   field: 'base_max_health',    type: 'int',   step: '1',    accent: '#ef4444', group: 'Health' },
+  { label: 'HP',      sublabel: 'per level', field: 'health_per_level',   type: 'int',   step: '1',    accent: '#f87171', group: 'Health' },
+  // ── Mana ─────────────────────────────────────────────────
+  { label: 'Mana',    sublabel: 'initial',   field: 'base_max_mana',      type: 'int',   step: '1',    accent: '#818cf8', group: 'Mana'   },
+  // ── Combat ───────────────────────────────────────────────
+  { label: 'Attack',  sublabel: 'initial',   field: 'base_attack_damage', type: 'int',   step: '1',    accent: '#f59e0b', group: 'Combat' },
+  { label: 'Attack',  sublabel: 'per level', field: 'damage_per_level',   type: 'int',   step: '1',    accent: '#fbbf24', group: 'Combat' },
+  { label: 'Crit',    sublabel: 'initial',   field: 'base_crit_chance',   type: 'float', step: '0.1',  accent: '#fb923c', group: 'Combat' },
+  { label: 'Speed',   sublabel: 'initial',   field: 'base_speed',         type: 'float', step: '0.5',  accent: '#34d399', group: 'Movement' },
+];
+
+const GROUP_COLORS: Record<string, string> = {
+  Health:   '#ef4444',
+  Mana:     '#818cf8',
+  Combat:   '#f59e0b',
+  Movement: '#34d399',
+};
+
+/* ─── Stat Row Component ───────────────────────────────────────────── */
+function StatRow({
+  label, sublabel, field, value, step, accent,
+  onChange,
+}: {
+  label: string; sublabel: string; field: string;
+  value: number; step: string; accent: string;
+  onChange: (field: string, val: number) => void;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '5px 10px',
+      borderRadius: 6,
+      background: 'rgba(0,0,0,0.18)',
+      border: '1px solid rgba(255,255,255,0.04)',
+    }}>
+      {/* accent bar */}
+      <div style={{ width: 3, height: 26, borderRadius: 2, background: accent, flexShrink: 0 }} />
+      {/* label */}
+      <div style={{ minWidth: 90 }}>
+        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: '0.57rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {sublabel}
+        </div>
+      </div>
+      {/* input */}
+      <input
+        className="input-field"
+        type="number"
+        step={step}
+        value={value ?? 0}
+        onChange={e => onChange(field, parseFloat(e.target.value) || 0)}
+        style={{
+          flex: 1, padding: '4px 8px', fontSize: '0.82rem', fontWeight: 700,
+          height: 28, textAlign: 'right',
+          background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+          borderRadius: 4, color: accent,
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─── Modal Detail ─────────────────────────────────────────────────── */
+function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () => void }) {
+  const [stats, setStats]   = useState<any>({});
   const [skills, setSkills] = useState<any[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg]       = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api.getClass(classId).then(res => {
@@ -28,64 +117,188 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
     });
   }, [classId]);
 
+  const setStat = (field: string, val: number) =>
+    setStats((prev: any) => ({ ...prev, [field]: val }));
+
   async function save() {
+    setSaving(true);
     try {
       await api.updateClass(classId, { ...stats, skills });
-      setMsg('Saved');
+      setMsg('Saved ✓');
     } catch { setMsg('Error'); }
-    setTimeout(() => setMsg(''), 2000);
+    setSaving(false);
+    setTimeout(() => setMsg(''), 2500);
   }
 
+  const isMain = Object.keys(CLASS_TREE).includes(classId);
+
+  // Group stat rows
+  const groups = Array.from(new Set(STAT_ROWS.map(r => r.group)));
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
-        <button onClick={onBack} className="btn-outline" style={{ padding: '6px 12px' }}>← Back</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'capitalize', margin: 0, color: 'var(--text-main)' }}>{classId.replace('_',' ')}</h2>
-          {msg && <span style={{ fontSize: '0.8rem', color: msg === 'Error' ? 'var(--danger)' : 'var(--success)', marginLeft: 10 }}>{msg}</span>}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* ── HEADER ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 18px',
+        borderBottom: '1px solid var(--border-light)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, textTransform: 'capitalize', color: 'var(--text-main)', letterSpacing: '0.02em' }}>
+            {classId.replace(/_/g, ' ')}
+          </h2>
+          <span style={{ fontSize: '0.58rem', textTransform: 'uppercase', fontWeight: 700, color: isMain ? 'var(--accent-primary)' : 'var(--text-muted)', letterSpacing: '0.06em' }}>
+            {isMain ? '● Main Class' : '○ Subclass'}
+          </span>
         </div>
-        <div style={{ flex: 1 }} />
-        <button className="btn-outline" onClick={() => { if (isEditing) save(); setIsEditing(!isEditing); }}
-          style={{ background: isEditing ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'var(--text-main)', border: isEditing ? '1px solid var(--text-main)' : '1px solid var(--border-light)', padding: '10px' }}
-          title={isEditing ? 'Confirm' : 'Edit Stats'}>
-          {isEditing ? <Check size={18} /> : <Edit3 size={18} />}
+
+        {/* display_name editable inline */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingLeft: 12, borderLeft: '1px solid var(--border-light)' }}>
+          <label style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+            Display Name
+          </label>
+          <input
+            className="input-field"
+            type="text"
+            value={stats.display_name || ''}
+            placeholder={classId.replace(/_/g, ' ')}
+            onChange={e => setStats((p: any) => ({ ...p, display_name: e.target.value }))}
+            style={{ height: 26, fontSize: '0.8rem', fontWeight: 700, padding: '2px 7px', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: 4 }}
+          />
+        </div>
+
+        {msg && (
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: msg.includes('Error') ? 'var(--danger)' : 'var(--success)', whiteSpace: 'nowrap' }}>
+            {msg}
+          </span>
+        )}
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '6px 14px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 800,
+            background: 'var(--accent-primary)', color: '#000', border: 'none', cursor: 'pointer',
+            opacity: saving ? 0.6 : 1, flexShrink: 0,
+          }}
+        >
+          <Check size={13} /> Save
+        </button>
+        <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 3, display: 'flex', flexShrink: 0 }}>
+          <X size={17} />
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="glass-card">
-          <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9 }}>Base Stats</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {statFields.map(f => (
-              <div key={f}>
-                <label style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2, textTransform: 'uppercase', fontWeight: 700 }}>
-                  {f === 'damage' || f === 'base_attack_damage' ? 'Attack' : f.replace('base_','').replace(/_/g,' ')}
-                </label>
-                <input className="input-field" type="number" disabled={!isEditing}
-                  style={{ padding: '4px 8px', fontSize: '0.8rem', height: '30px', background: isEditing ? 'var(--bg-input)' : 'transparent', borderColor: isEditing ? 'var(--border-light)' : 'transparent' }}
-                  value={stats[f] || 0} onChange={e => setStats({...stats, [f]: +e.target.value})} />
-              </div>
-            ))}
+      {/* ── BODY ── */}
+      <div style={{
+        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr',
+        minHeight: 0,
+      }}>
+
+        {/* LEFT — Stats */}
+        <div style={{
+          padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 10,
+          borderRight: '1px solid var(--border-light)',
+          overflowY: 'auto',
+        }}>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Base Stats &nbsp;<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>— all editable</span>
           </div>
+
+          {groups.map(group => (
+            <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {/* group header */}
+              <div style={{
+                fontSize: '0.54rem', fontWeight: 900, color: GROUP_COLORS[group],
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+                borderBottom: `1px solid ${GROUP_COLORS[group]}33`,
+                paddingBottom: 3, marginBottom: 1,
+              }}>
+                {group}
+              </div>
+              {/* rows for this group */}
+              {STAT_ROWS.filter(r => r.group === group).map(row => (
+                <StatRow
+                  key={row.field}
+                  label={row.label}
+                  sublabel={row.sublabel}
+                  field={row.field}
+                  value={stats[row.field] ?? 0}
+                  step={row.step}
+                  accent={row.accent}
+                  onChange={setStat}
+                />
+              ))}
+            </div>
+          ))}
         </div>
 
-        <div className="glass-card">
-          <div className="glass-header" style={{ color: 'var(--text-main)', opacity: 0.9 }}>Skills</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* RIGHT — Skills */}
+        <div style={{
+          padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 10,
+          overflowY: 'auto',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Skills&nbsp;<span style={{ color: 'var(--accent-primary)', fontWeight: 900 }}>{skills.length}</span>
+            </div>
+            <button
+              onClick={() => setSkills(prev => [...prev, { name: 'New Skill', desc: '' }])}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '3px 10px', borderRadius: 5, fontSize: '0.63rem', fontWeight: 800,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
+                color: 'var(--text-main)', cursor: 'pointer',
+              }}
+            >
+              <Plus size={11} /> Add
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
             {skills.map((sk, idx) => (
-              <div key={idx} style={{ padding: '0.6rem', background: 'rgba(0,0,0,0.2)', borderRadius: 8, borderLeft: `3px solid var(--border-light)` }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 3 }}>{sk.name}</div>
-                {isEditing
-                  ? <input className="input-field" value={sk.desc} style={{ fontSize: '0.75rem', padding: '3px 6px', height: '28px' }} 
-                      onChange={e => {
-                        const newSkills = [...skills];
-                        newSkills[idx].desc = e.target.value;
-                        setSkills(newSkills);
-                      }} />
-                  : <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{sk.desc}</div>
-                }
+              <div key={idx} style={{
+                padding: '9px 11px', background: 'rgba(0,0,0,0.2)',
+                borderRadius: 8, borderLeft: '3px solid var(--accent-primary)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    className="input-field"
+                    placeholder="Skill name"
+                    value={sk.name}
+                    onChange={e => {
+                      const ns = [...skills]; ns[idx] = { ...ns[idx], name: e.target.value }; setSkills(ns);
+                    }}
+                    style={{ flex: 1, fontWeight: 800, fontSize: '0.76rem', height: 26, padding: '2px 7px' }}
+                  />
+                  <button
+                    onClick={() => setSkills(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 2, display: 'flex' }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+                <textarea
+                  className="input-field"
+                  placeholder="Description…"
+                  value={sk.desc}
+                  onChange={e => {
+                    const ns = [...skills]; ns[idx] = { ...ns[idx], desc: e.target.value }; setSkills(ns);
+                  }}
+                  style={{ fontSize: '0.71rem', resize: 'none', minHeight: 42, padding: '4px 7px', lineHeight: 1.4 }}
+                />
               </div>
             ))}
+            {skills.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', padding: '2rem 0', opacity: 0.55 }}>
+                No skills — click Add to create one.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -93,16 +306,15 @@ function ClassDetailPage({ classId, mainClassId, onBack }: { classId: string; ma
   );
 }
 
+/* ─── Main Export ──────────────────────────────────────────────────── */
 export default function ClassesTab({ search }: { search: string }) {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
   const mains = Object.keys(CLASS_TREE);
-  const subs = Array.from(new Set(Object.values(CLASS_TREE).flat())).filter(s => !mains.includes(s));
-  const allAvailableClasses = [...mains, ...subs];
+  const subs  = Array.from(new Set(Object.values(CLASS_TREE).flat())).filter(s => !mains.includes(s));
+  const all   = [...mains, ...subs];
 
-  const filtered = allAvailableClasses.filter(c => 
-    c.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = all.filter(c => c.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div style={{ position: 'relative' }}>
@@ -110,13 +322,17 @@ export default function ClassesTab({ search }: { search: string }) {
         {filtered.map(clsId => {
           const isMain = mains.includes(clsId);
           return (
-            <button key={clsId} onClick={() => setSelectedClass(clsId)} className="glass-card"
-              style={{ 
-                padding: '1rem', textAlign: 'center', cursor: 'pointer',
-                border: 'none',
-                background: 'rgba(0,0,0,0.2)', transition: 'all 0.2s', position: 'relative'
-              }}>
-              <h4 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, textTransform: 'capitalize', color: 'var(--text-main)', opacity: 0.9 }}>{clsId.replace('_', ' ')}</h4>
+            <button
+              key={clsId}
+              onClick={() => setSelectedClass(clsId)}
+              className="glass-card"
+              style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', border: 'none', background: 'rgba(0,0,0,0.2)', transition: 'all 0.2s' }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(0,0,0,0.2)'; }}
+            >
+              <h4 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, textTransform: 'capitalize', color: 'var(--text-main)', opacity: 0.9 }}>
+                {clsId.replace(/_/g, ' ')}
+              </h4>
               <div style={{ fontSize: '0.6rem', color: isMain ? 'var(--accent-primary)' : 'var(--text-muted)', marginTop: 4, fontWeight: 700, textTransform: 'uppercase' }}>
                 {isMain ? 'Main Class' : 'Subclass'}
               </div>
@@ -131,22 +347,28 @@ export default function ClassesTab({ search }: { search: string }) {
       </div>
 
       {selectedClass && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
-          padding: '2rem'
-        }} onClick={() => setSelectedClass(null)}>
-          <div style={{ 
-            width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto',
-            background: 'var(--bg-main)', border: '1px solid var(--border-light)',
-            borderRadius: 12, padding: '2rem', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
-          }} onClick={e => e.stopPropagation()}>
-            <ClassDetailPage 
-              classId={selectedClass} 
-              mainClassId={selectedClass} 
-              onBack={() => setSelectedClass(null)} 
-            />
+        <div
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(5px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            zIndex: 1000, padding: '1.5rem',
+          }}
+          onClick={() => setSelectedClass(null)}
+        >
+          <div
+            style={{
+              width: '100%', maxWidth: 860,
+              height: 'calc(100vh - 3rem)',
+              background: 'var(--bg-main)',
+              border: '1px solid var(--border-light)',
+              borderRadius: 14, overflow: 'hidden',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+              display: 'flex', flexDirection: 'column',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <ClassDetailPage classId={selectedClass} onClose={() => setSelectedClass(null)} />
           </div>
         </div>
       )}
