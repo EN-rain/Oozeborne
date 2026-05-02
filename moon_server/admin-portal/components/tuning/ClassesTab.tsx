@@ -261,7 +261,7 @@ function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk
   const labels = PARAM_LABELS[sk.name] || [];
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
       {group.params.map((p: any, i: number) => {
         const init = p.init ?? 0;
         const perLvl = p.per_lvl ?? 0;
@@ -269,7 +269,7 @@ function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk
         const calculatedMax = maxVal !== 0 ? maxVal : Math.round(init + (perLvl * 100));
         const label = labels[i] || `p${i + 1}`;
         return (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 6px', background: 'rgba(255,255,255,0.03)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <span style={paramNameStyle}>{label}</span>
             <div style={{ display: 'flex', gap: 4 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
