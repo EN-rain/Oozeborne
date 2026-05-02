@@ -144,33 +144,108 @@ function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
   );
 }
 
-const CUSTOM_LABELS: Record<string, string> = {
-  "Static Build": "+[[0]]% lightning damage on CC'd targets up to +[[1]]%",
-  "Thunder Clap": "Slam ground sending shockwave in 6m radius, stunning for [[0]]s",
-  "Shockwave": "Chain of 2 shockwaves (8m range) dealing [[0]] damage + [[1]]% slow for 1s",
-  "Fortify": "Gain [[0]]% damage reduction, taunt [[1]]m for [[2]]s",
-  "Shield Wall": "-[[0]]% damage, taunt [[1]]m for [[2]]s",
-  "Blood Rage": "+[[0]]% atk spd, +[[1]]% dmg for [[2]]s",
-  "Divine Shield": "Invulnerable [[0]]s, heal [[1]]% max HP",
-  "Burst Window": "+[[0]]% attack, +[[1]]% crit for [[2]]s",
-  "Shadow Step": "Teleport, +[[0]]% crit next hit for [[1]]s",
-  "Trap Network": "Place [[0]] trap: [[1]] dmg + [[2]]s slow",
-  "Meteor Storm": "[[0]] dmg over [[1]]s in large area",
-  "Iaijutsu": "[[0]]x dmg after [[1]]s charge",
-  "Field Aid": "Restore [[0]] HP over [[1]]s, +[[2]]% defense",
-  "Divine Blessing": "Holy zone: [[0]] HP/s, +[[1]]% defense, [[2]]s",
-  "Symphony of War": "Allies +[[0]]% dmg, +[[1]]% atk spd for [[2]]s",
-  "Plague Flask": "Poison cloud: [[0]] dmg over [[1]]s",
-  "Grave Swarm": "[[0]] dmg/s for [[1]]s",
-  "Adaptive Stance": "+[[0]]% all stats for [[1]]s",
-  "Elemental Infusion": "+[[0]]% elemental dmg for [[1]]s",
-  "Dark Pact": "Sacrifice [[0]]% HP, deal [[1]] dmg, heal [[2]]%",
-  "Seven-Point Strike": "5 strikes, [[0]] dmg each, final crit + stun [[1]]s",
-  "Control Field": "6m zone: [[0]]% slow, [[1]]% enemy dmg, [[2]]s",
-  "Time Fracture": "[[0]]% slow enemies, +[[1]]% haste exit, [[2]]s",
-  "Bastion Ring": "Ring [[0]]s: [[1]]% slow, root first target",
-  "Severing Hex": "Cone: [[0]]% enemy dmg, +[[1]]% ability dmg taken for [[2]]s",
-  "Tempest Pulse": "[[0]] dmg, knockback [[1]]m, [[2]]s slow",
+const PARAM_LABELS: Record<string, string[]> = {
+  "Static Build": ["dmg boost", "max boost"],
+  "Thunder Clap": ["stun dur"],
+  "Shockwave": ["damage", "slow %"],
+  "Fortify": ["dmg red", "taunt rad", "duration"],
+  "Shield Wall": ["dmg red", "taunt rad", "duration"],
+  "Blood Rage": ["atk spd", "dmg boost", "duration"],
+  "Divine Shield": ["invuln", "heal %"],
+  "Burst Window": ["atk boost", "crit boost", "duration"],
+  "Shadow Step": ["crit boost", "duration"],
+  "Trap Network": ["traps", "damage", "slow dur"],
+  "Meteor Storm": ["damage", "duration"],
+  "Iaijutsu": ["dmg mult", "charge dur"],
+  "Field Aid": ["heal", "duration", "def boost"],
+  "Divine Blessing": ["heal/s", "duration", "def boost"],
+  "Symphony of War": ["dmg boost", "atk spd", "duration"],
+  "Plague Flask": ["damage", "duration"],
+  "Grave Swarm": ["dmg/s", "duration"],
+  "Adaptive Stance": ["stat boost", "duration"],
+  "Elemental Infusion": ["elem dmg", "duration"],
+  "Dark Pact": ["hp cost", "damage", "heal %"],
+  "Seven-Point Strike": ["damage", "stun dur"],
+  "Control Field": ["slow %", "enemy dmg", "duration"],
+  "Time Fracture": ["slow %", "haste %", "duration"],
+  "Bastion Ring": ["duration", "slow %"],
+  "Severing Hex": ["enemy dmg", "vuln %", "duration"],
+  "Tempest Pulse": ["damage", "knockback", "slow dur"],
+  "Taunt": ["duration"],
+  "Unbreakable": ["dmg red"],
+  "Aegis Slam": ["damage"],
+  "Bulwark Cry": ["duration"],
+  "Frenzy": ["duration"],
+  "Leap Smash": ["damage"],
+  "War Cry": ["def drop", "duration"],
+  "Adrenaline": ["dmg boost", "max boost"],
+  "Holy Strike": ["damage", "slow dur"],
+  "Consecrate": ["dmg/s", "duration"],
+  "Surge": ["duration"],
+  "Executioner": ["dmg boost"],
+  "Shadow Teleport": ["crit chance"],
+  "Smoke Bomb": ["duration"],
+  "Blade Storm": ["damage"],
+  "Backstab": ["dmg boost"],
+  "Trap Master": ["traps", "damage"],
+  "Volley": ["arrows", "damage"],
+  "Hawk Strike": ["damage", "stun dur"],
+  "Hunter's Mark": ["duration", "dmg vuln"],
+  "Meteor Shower": ["damage", "duration"],
+  "Frost Nova": ["damage", "freeze dur"],
+  "Chain Lightning": ["targets", "damage"],
+  "Mana Shield": ["conversion"],
+  "Quick-Draw Strike": ["dmg mult"],
+  "Whirlwind Slash": ["damage"],
+  "Death Mark": ["dmg mult", "def ignore"],
+  "Way of the Warrior": ["dmg boost", "max boost"],
+  "Revitalize": ["heal", "def boost", "duration"],
+  "Steady Hands": ["cd red", "regen boost"],
+  "Holy Ground": ["heal/s", "def boost", "duration"],
+  "Resurrection Pulse": ["heal"],
+  "Shield of Faith": ["hits", "duration"],
+  "Healing Aura": ["heal/s", "heal amp"],
+  "Battle Hymn": ["duration", "dmg boost", "atk spd"],
+  "Dissonance": ["stun dur"],
+  "Rallying Tune": ["debuffs", "resist", "duration"],
+  "Inspiring Presence": ["dmg boost", "dmg reduction"],
+  "Healing Flask": ["heal"],
+  "Acid Splash": ["damage", "armor drop", "duration"],
+  "Healing Brew": ["heal"],
+  "Transmutation": ["potion amp", "poison chance"],
+  "Summon Undead": ["skeletons", "hp", "damage"],
+  "Bone Spike": ["damage"],
+  "Death Shroud": ["duration", "dmg return"],
+  "Soul Harvest": ["heal"],
+  "Elemental Strike": ["damage"],
+  "Versatility": ["cost red", "mana return"],
+  "Blade Burst": ["damage"],
+  "Arcane Dash": ["dmg/s", "duration"],
+  "Spell Parry": ["damage", "duration"],
+  "Arcane Strike": ["dmg boost"],
+  "Void Strike": ["damage", "heal %"],
+  "Shadow Burst": ["damage", "slow %", "duration"],
+  "Soul Rend": ["damage", "heal"],
+  "Vampiric Embrace": ["lifesteal amp", "heal amp"],
+  "Flurry": ["hits", "stun dur"],
+  "Pressure Point": ["stun dur", "damage"],
+  "Wind Step": ["damage"],
+  "Flow State": ["atk spd", "dodge boost"],
+  "Displace": ["distance"],
+  "Tempo Lock": ["dmg red"],
+  "Slow Field": ["slow %", "duration"],
+  "Time Freeze": ["freeze dur"],
+  "Rewind": ["rewind dur"],
+  "Borrowed Seconds": ["cd red"],
+  "Ring of Thorns": ["duration", "dmg/s"],
+  "Vine Snare": ["root dur"],
+  "Bramble Wall": ["duration", "damage"],
+  "Line Holder": ["enemy dmg"],
+  "Hex Cone": ["enemy dmg", "vuln %"],
+  "Cursed Ground": ["duration", "stat drop"],
+  "Hex Bolt": ["duration"],
+  "Malice Chain": ["spread chance"],
+  "Static Field": ["duration", "dmg return"],
 };
 
 function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void; setStats: any; stats: any }) {
@@ -178,44 +253,17 @@ function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk
   const miniLabel = { fontSize: '0.4rem', color: 'var(--accent-primary)', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const, maxWidth: 36 };
   
   const hasMultiple = group.params.length > 1;
-
-  // The raw label string from the DB, or the custom hardcoded map, or the description
-  const rawLabel = sk.paramLabel || CUSTOM_LABELS[sk.name] || sk.desc;
-
-  // Create the visually rendered version (replaces [[0]] with the actual value)
-  const renderedLabelParts = rawLabel.split(/(\[\[\d+\]\])/).map((segment: string, i: number) => {
-    const match = segment.match(/\[\[(\d+)\]\]/);
-    if (match) {
-      const pIdx = parseInt(match[1], 10);
-      const val = group.params[pIdx]?.init ?? 0;
-      return <span key={i} style={{ color: '#fff' }}>{val}</span>;
-    }
-    return <span key={i}>{segment}</span>;
-  });
+  const labels = PARAM_LABELS[sk.name] || [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 4 }}>
-        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-          {renderedLabelParts}
-        </span>
-        <input 
-          value={sk.paramLabel ?? ''}
-          onChange={(e) => {
-            const newSkills = stats.skills.map((s: any) => s.name === sk.name ? { ...s, paramLabel: e.target.value } : s);
-            setStats({ ...stats, skills: newSkills });
-          }}
-          placeholder="Override label manually (use [[0]], [[1]] for params)"
-          style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', fontSize: '0.55rem', padding: '2px 4px', borderRadius: 2, width: '100%', outline: 'none' }}
-        />
-      </div>
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>min</span>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'center' }}>
             {group.params.map((p: any, i: number) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                {hasMultiple && <span style={miniLabel}>p{i+1}</span>}
+                {hasMultiple && <span style={miniLabel}>{labels[i] || 'val'}</span>}
                 <Tiny value={p.init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
               </div>
             ))}
@@ -255,9 +303,16 @@ function MultiTriplet({ group, sk, onUpdate, setStats, stats }: { group: any; sk
 }
 
 function getSkillGroups(sk: any) {
-  // Completely remove dynamic text splitting. We only rely on what's explicitly in the DB.
   const hasParams = sk.params && sk.params.length > 0;
-  if (!hasParams) return [];
+  if (!hasParams) {
+    // Fallback: If no params in DB, provide 1 default triplet group so they can edit values
+    return [{
+      label: sk.paramLabel || sk.desc,
+      params: [{ init: 0, per_lvl: 0, max: 0 }],
+      startIdx: 0,
+      shortLabels: ['p1']
+    }];
+  }
   
   return [{
     label: sk.paramLabel || sk.desc,

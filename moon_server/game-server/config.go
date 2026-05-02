@@ -85,7 +85,7 @@ func fetchInitialConfig() {
 
 	configMu.Lock()
 	for _, m := range data.Mobs { 
-		if m.MaxHealth < 0 { m.MaxHealth = 0 }
+		if m.Health < 0 { m.Health = 0 }
 		if m.Speed < 0 { m.Speed = 0 }
 		if m.Damage < 0 { m.Damage = 0 }
 		mobConfigs[m.MobType] = m 
