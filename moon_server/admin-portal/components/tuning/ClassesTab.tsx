@@ -88,7 +88,7 @@ function getSkillFields(sk: any): SkillField[] {
 
 /* ── Tiny number input ─────────────────────────────────────────────── */
 function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: number) => void; step?: string }) {
-  const [focusVal, setFocusVal] = React.useState<string | null>(null);
+  const [focusVal, setFocusVal] = useState<string | null>(null);
 
   return (
     <input
