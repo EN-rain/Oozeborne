@@ -142,6 +142,8 @@ function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
       </div>
     </div>
   );
+}
+
 const CUSTOM_LABELS: Record<string, string> = {
   "Static Build": "+[[0]]% lightning damage on CC'd targets up to +[[1]]%",
   "Thunder Clap": "Slam ground sending shockwave in 6m radius, stunning for [[0]]s",
@@ -408,6 +410,9 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
                       <MultiTriplet 
                         key={gIdx} 
                         group={grp} 
+                        sk={sk}
+                        stats={stats}
+                        setStats={setStats}
                         onUpdate={(paramIdx, sub, val) => updateSkillParam(idx, paramIdx, sub, val)} 
                       />
                     ))}
