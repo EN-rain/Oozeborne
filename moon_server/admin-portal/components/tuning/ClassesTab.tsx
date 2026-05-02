@@ -95,37 +95,100 @@ function Tiny({ value, onChange, step = 'any' }: { value: number; onChange: (v: 
       style={{
         width: 40, height: 24, fontSize: '0.68rem', fontWeight: 700,
         textAlign: 'center', padding: '0 3px',
-        background: 'rgba(255,255,255,0.8)', border: 'none',
-        borderRadius: 2, color: '#000', outline: 'none',
+        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.13)',
+        borderRadius: 4, color: 'var(--text-main)', outline: 'none',
       }}
     />
   );
 }
 
-/* ── Triplet: label + [min] [per lvl] [max] ────────────────────────── */
+/* ── Triplet: single stat ──────────────────────────────────────────── */
 function Triplet({ label, init, perLvl, max, step, onInit, onPerLvl, onMax }: {
   label: string; init: number; perLvl: number; max: number; step?: string;
   onInit: (v: number) => void; onPerLvl: (v: number) => void; onMax: (v: number) => void;
 }) {
-  const sub = { fontSize: '0.5rem', color: 'rgba(255,255,255,0.7)', fontWeight: 500 };
+  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </span>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ display: 'flex', gap: 3 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>min</span><Tiny value={init} onChange={onInit} step={step} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>per lvl</span><Tiny value={perLvl} onChange={onPerLvl} step={step} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <span style={sub}>max</span><Tiny value={max} onChange={onMax} step={step} />
         </div>
       </div>
     </div>
   );
+}
+
+/* ── MultiTriplet: dynamic grouped stats ───────────────────────────── */
+function MultiTriplet({ group, onUpdate }: { group: any; onUpdate: (idx: number, sub: 'init'|'perLvl'|'max', val: number) => void }) {
+  const sub = { fontSize: '0.42rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.03em', textAlign: 'center' as const };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-main)' }}>
+        {group.label}
+      </span>
+      <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>min</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {group.params.map((p: any, i: number) => (
+              <Tiny key={i} value={p.init} onChange={v => onUpdate(group.startIdx + i, 'init', v)} />
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>per lvl</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {group.params.map((p: any, i: number) => (
+              <Tiny key={i} value={p.per_lvl} onChange={v => onUpdate(group.startIdx + i, 'perLvl', v)} />
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <span style={sub}>max</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {group.params.map((p: any, i: number) => (
+              <Tiny key={i} value={p.max} onChange={v => onUpdate(group.startIdx + i, 'max', v)} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getSkillGroups(sk: any) {
+  if (!sk.params || sk.params.length === 0) return [];
+  const parts = sk.desc.split(/[,\.]\s*/).filter((p: string) => p.trim() !== '');
+  let paramIdx = 0;
+  const groups = [];
+  
+  for (const part of parts) {
+    const matches = part.match(/[0-9.-]+/g);
+    if (!matches) continue;
+    const count = matches.length;
+    const groupParams = [];
+    for (let i = 0; i < count; i++) {
+      if (paramIdx < sk.params.length) {
+        groupParams.push(sk.params[paramIdx]);
+        paramIdx++;
+      }
+    }
+    const label = part.replace(/[0-9.-]+/g, 'nth');
+    if (groupParams.length > 0) {
+      groups.push({ label, params: groupParams, startIdx: paramIdx - count });
+    }
+  }
+  return groups;
 }
 
 /* ── Class Detail Modal ────────────────────────────────────────────── */
@@ -153,26 +216,17 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
     setTimeout(() => setMsg(''), 2500);
   }
 
-  function updateSkillField(idx: number, key: string, sub: 'init' | 'perLvl' | 'max', val: number) {
+  function updateSkillParam(skillIdx: number, paramIdx: number, sub: 'init'|'perLvl'|'max', val: number) {
     const ns = [...skills];
-    const s = { ...ns[idx], extra: { ...(ns[idx].extra || {}) } };
+    const sk = { ...ns[skillIdx], params: [...(ns[skillIdx].params || [])] };
+    if (!sk.params[paramIdx]) sk.params[paramIdx] = { init: 0, per_lvl: 0, max: 0 };
+    sk.params[paramIdx] = { ...sk.params[paramIdx] };
     
-    if (key === 'cooldown') {
-      if (sub === 'init') s.cooldown = val;
-      else if (sub === 'perLvl') s.extra.cooldown_per_lvl = val;
-      else s.extra.cooldown_max = val;
-    } else if (key === 'value') {
-      if (sub === 'init') s.value = val;
-      else if (sub === 'perLvl') s.extra.value_per_lvl = val;
-      else s.extra.value_max = val;
-    } else if (key.startsWith('extra.')) {
-      const bk = key.slice(6);
-      if (sub === 'init') s.extra[bk] = val;
-      else if (sub === 'perLvl') s.extra[`${bk}_per_lvl`] = val;
-      else s.extra[`${bk}_max`] = val;
-    }
+    if (sub === 'init') sk.params[paramIdx].init = val;
+    else if (sub === 'perLvl') sk.params[paramIdx].per_lvl = val;
+    else sk.params[paramIdx].max = val;
     
-    ns[idx] = s;
+    ns[skillIdx] = sk;
     setSkills(ns);
   }
 
@@ -232,35 +286,31 @@ function ClassDetailPage({ classId, onClose }: { classId: string; onClose: () =>
         </div>
 
         {/* RIGHT — Skills */}
-        <div style={{ padding: '16px', overflowY: 'auto', background: '#333' }}>
-          <div style={{...panelHdr, color: '#fff', fontSize: '1rem', textTransform: 'none', textAlign: 'center', marginBottom: 20 }}>
-            Skills
+        <div style={{ padding: '16px', overflowY: 'auto' }}>
+          <div style={panelHdr}>
+            Skills — {skills.length} abilities seeded from DB
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {skills.map((sk, idx) => {
-              const fields = getSkillFields(sk);
+              const groups = getSkillGroups(sk);
               return (
-                <div key={idx} style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.15)', borderRadius: 2, width: '100%', maxWidth: 450, color: '#fff' }}>
+                <div key={idx} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.22)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
                   {/* Name */}
-                  <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: 4 }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: 2 }}>
                     {sk.name}
                   </div>
                   {/* Description */}
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>
+                  <div style={{ fontSize: '0.63rem', color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.45 }}>
                     {sk.desc}
                   </div>
-                  {/* Numeric triplets */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {fields.map(f => (
-                      <Triplet
-                        key={f.key}
-                        label={f.label}
-                        init={f.init}
-                        perLvl={f.perLvl}
-                        max={f.max}
-                        onInit={v => updateSkillField(idx, f.key, 'init', v)}
-                        onPerLvl={v => updateSkillField(idx, f.key, 'perLvl', v)}
-                        onMax={v => updateSkillField(idx, f.key, 'max', v)}
+                  
+                  {/* Dynamic Param Groups */}
+                  <div>
+                    {groups.map((grp, gIdx) => (
+                      <MultiTriplet 
+                        key={gIdx} 
+                        group={grp} 
+                        onUpdate={(paramIdx, sub, val) => updateSkillParam(idx, paramIdx, sub, val)} 
                       />
                     ))}
                   </div>
