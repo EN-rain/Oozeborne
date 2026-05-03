@@ -203,9 +203,54 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	if room.HostID == "" {
 		room.HostID = claims.UserID
 	}
+	// Build existing player snapshot for the newly joined client.
+	type joinSnapshot struct {
+		UserID string `json:"user_id"`
+		IGN    string `json:"ign"`
+		IsHost bool   `json:"is_host"`
+		Pos    Vec2   `json:"pos"`
+	}
+	existingPlayers := make([]joinSnapshot, 0, len(room.Players))
+	for existingID, existingPlayer := range room.Players {
+		if existingID == claims.UserID || existingPlayer == nil {
+			continue
+		}
+		existingPlayers = append(existingPlayers, joinSnapshot{
+			UserID: existingID,
+			IGN:    "Player",
+			IsHost: existingID == room.HostID,
+			Pos:    existingPlayer.Pos,
+		})
+	}
+	joinedIsHost := claims.UserID == room.HostID
 	room.mu.Unlock()
 
-	joinMsg, _ := json.Marshal(map[string]any{"op": OP_PLAYER_JOIN, "user_id": claims.UserID})
+	// Send existing players to the newly joined client so they can spawn everyone already in room.
+	for _, existing := range existingPlayers {
+		syncMsg, _ := json.Marshal(map[string]any{
+			"op":      OP_PLAYER_JOIN,
+			"user_id": existing.UserID,
+			"ign":     existing.IGN,
+			"is_host": existing.IsHost,
+			"pos": map[string]any{
+				"x": existing.Pos.X,
+				"y": existing.Pos.Y,
+			},
+		})
+		_ = conn.SetWriteDeadline(time.Now().Add(WriteTimeout))
+		_ = conn.WriteMessage(websocket.TextMessage, syncMsg)
+	}
+
+	joinMsg, _ := json.Marshal(map[string]any{
+		"op":      OP_PLAYER_JOIN,
+		"user_id": claims.UserID,
+		"ign":     claims.Username,
+		"is_host": joinedIsHost,
+		"pos": map[string]any{
+			"x": player.Pos.X,
+			"y": player.Pos.Y,
+		},
+	})
 	room.mu.RLock()
 	room.broadcast(joinMsg)
 	room.mu.RUnlock()

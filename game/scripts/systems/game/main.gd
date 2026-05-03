@@ -21,6 +21,7 @@ var kill_count: int = 0
 var _network_mob_seq: int = 0
 var _network_mobs: Dictionary = {}  # mob_id -> WeakRef/Node
 var _authoritative_host_user_id: String = ""
+var _cached_player_scenes: Dictionary = {}  # variant -> PackedScene
 
 const LOCAL_PLAYER_SPAWN_FADE_TIME := 0.35
 const SOLO_CLASS_SELECTION_NODE_PATH := "SoloClassSelection"
@@ -315,11 +316,11 @@ func _apply_remote_variant_visuals(remote_player: Node, variant: String, _remote
 	# The class's player_scene may point to a different variant than what the player chose in the lobby
 	var scene_to_use: PackedScene = null
 	if not variant.is_empty():
-		scene_to_use = MultiplayerManager._cached_player_scenes.get(variant) as PackedScene
+		scene_to_use = _cached_player_scenes.get(variant) as PackedScene
 		if scene_to_use == null:
 			scene_to_use = load(SlimePaletteRegistry.get_scene_path(variant)) as PackedScene
 			if scene_to_use != null:
-				MultiplayerManager._cached_player_scenes[variant] = scene_to_use
+				_cached_player_scenes[variant] = scene_to_use
 	if scene_to_use == null:
 		return
 	
