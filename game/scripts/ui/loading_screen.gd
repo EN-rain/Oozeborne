@@ -64,7 +64,7 @@ func _setup_player_display() -> void:
 				player_display.sprite_frames = sprite.sprite_frames.duplicate()
 				if player_display.sprite_frames.has_animation("idle"):
 					player_display.play("idle")
-			player_display.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			player_display.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		instance.queue_free()
 	
 	# Position local player at bottom center
@@ -133,7 +133,7 @@ func _setup_remote_player_displays() -> void:
 					r_sprite.material = source_sprite.material.duplicate()
 				r_sprite.sprite_frames = source_sprite.sprite_frames.duplicate()
 				r_sprite.scale = player_display.scale
-				r_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+				r_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				if r_sprite.sprite_frames.has_animation("idle"):
 					r_sprite.play("idle")
 				r_sprite.position = Vector2(spacing * (i + 1), get_viewport_rect().size.y - 100)
@@ -205,7 +205,7 @@ func _are_all_players_loaded() -> bool:
 
 
 func _broadcast_loaded() -> void:
-	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
+	if not MultiplayerManager.match_id.is_empty():
 		MultiplayerManager.send_match_state({
 			"type": "player_loaded",
 			"user_id": MultiplayerManager.user_id if MultiplayerManager.is_authenticated() else "local"

@@ -298,15 +298,13 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 		p.mu.Unlock()
 
 	case OP_START_GAME:
-		room.mu.Lock()
-		if p.UserID == room.HostID && room.State == StateLobby {
-			room.State = StatePreWave
-			startMsg, _ := json.Marshal(map[string]any{"op": OP_WAVE_START, "wave_num": 1})
-			room.broadcast(startMsg)
-			room.State = StateInWave
-			room.WaveNum = 1
+		room.mu.RLock()
+		isHost := p.UserID == room.HostID
+		inLobby := room.State == StateLobby
+		room.mu.RUnlock()
+		if isHost && inLobby {
+			startWave(room, 1)
 		}
-		room.mu.Unlock()
 
 	case OP_MESSAGE:
 		// Relay generic lobby/gameplay messages (chat, player_info, class_selected, etc.).
@@ -325,11 +323,10 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 		room.ReadySet[p.UserID] = true
 		if len(room.ReadySet) == len(room.Players) && room.State == StateUpgradePhase {
 			room.ReadySet = make(map[string]bool)
-			room.State = StatePreWave
-			nextWave, _ := json.Marshal(map[string]any{"op": OP_WAVE_START, "wave_num": room.WaveNum + 1})
-			room.broadcast(nextWave)
-			room.WaveNum++
-			room.State = StateInWave
+			nextWaveNum := room.WaveNum + 1
+			room.mu.Unlock()
+			startWave(room, nextWaveNum)
+			return
 		}
 		room.mu.Unlock()
 
@@ -412,6 +409,33 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 			}
 		}
 	}
+}
+
+func startWave(room *Room, waveNum int) {
+	room.mu.Lock()
+	room.State = StateInWave
+	room.WaveNum = waveNum
+	room.ReadySet = make(map[string]bool)
+	room.mu.Unlock()
+
+	// Spawn authoritative mobs for this wave.
+	spawnCount := 8 + (waveNum-1)*4
+	for i := 0; i < spawnCount; i++ {
+		mobType := "slime"
+		if waveNum > 1 && i%5 == 0 {
+			if i%10 == 0 {
+				mobType = "archer"
+			} else {
+				mobType = "lancer"
+			}
+		}
+		room.SpawnMob(mobType)
+	}
+
+	startMsg, _ := json.Marshal(map[string]any{"op": OP_WAVE_START, "wave_num": waveNum})
+	room.mu.RLock()
+	room.broadcast(startMsg)
+	room.mu.RUnlock()
 }
 
 func activateSkill(r *Room, p *Player, skillIdx int) {

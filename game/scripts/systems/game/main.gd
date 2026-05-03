@@ -79,8 +79,8 @@ func _ready():
 	mob_spawner.elite_mob_lancer_scene = elite_lancer_scene
 	mob_spawner.elite_mob_archer_scene = elite_archer_scene
 	mob_spawner.warden_mob_scene = warden_mob_scene
-	# Only the host should generate random mob spawns. Clients receive spawns via match messages.
-	mob_spawner.set_network_spawn_enabled(not MultiplayerManager.is_host)
+	# In moon_server mode, all multiplayer clients consume server-driven wave/mob state.
+	mob_spawner.set_network_spawn_enabled(MultiplayerManager.is_socket_open())
 	mob_spawner.initialize(self, player)
 	mob_spawner.set_round_manager(round_manager)
 	mob_spawner.mob_spawned.connect(_on_mob_spawned)
@@ -118,7 +118,8 @@ func _ready():
 	if _should_show_solo_class_selection():
 		_show_solo_class_selection_overlay()
 	else:
-		call_deferred("_start_round", round_manager.current_round, false)
+		if not MultiplayerManager.is_socket_open():
+			call_deferred("_start_round", round_manager.current_round, false)
 	call_deferred("_ensure_solo_class_selection_visible")
 
 	if not LevelSystem.level_up.is_connected(_on_level_up):
@@ -793,7 +794,7 @@ func _refresh_authoritative_host_role() -> void:
 	# Keep legacy boolean in sync for code that still checks it.
 	MultiplayerManager.is_host = is_auth_host
 	if mob_spawner != null:
-		mob_spawner.set_network_spawn_enabled(not is_auth_host)
+		mob_spawner.set_network_spawn_enabled(MultiplayerManager.is_socket_open())
 
 
 func _is_authoritative_host() -> bool:

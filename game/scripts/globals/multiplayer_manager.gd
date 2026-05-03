@@ -45,6 +45,7 @@ var debug_network_logs: bool = false
 var _debug_log_last_msec: Dictionary = {}
 var _pending_outbox: Array[Dictionary] = []
 var _last_socket_state: int = WebSocketPeer.STATE_CLOSED
+var _input_backpressure_until_msec: int = 0
 
 # Signals
 signal player_joined(user_id: String, ign: String, is_host_flag: bool)
@@ -328,8 +329,15 @@ func send_match_state(data: Dictionary):
 
 
 func send_match_state_op(op_code: int, data: Dictionary) -> void:
+	# High-frequency input packets should be dropped during active backpressure.
+	if op_code == NetworkMessaging.OP_INPUT:
+		var now_msec := Time.get_ticks_msec()
+		if now_msec < _input_backpressure_until_msec:
+			return
 	if socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
-		_queue_outbound(op_code, data)
+		# Do not queue OP_INPUT while disconnected; stale inputs are useless.
+		if op_code != NetworkMessaging.OP_INPUT:
+			_queue_outbound(op_code, data)
 		_debug_log_limited("send_queue:%d:%s" % [op_code, str(data.get("type", ""))], "[Net] queue op=%d type=%s reason=socket_not_open state=%d" % [op_code, str(data.get("type", "")), socket.get_ready_state()], 1200)
 		return
 	_send_payload(op_code, data)
@@ -338,7 +346,20 @@ func send_match_state_op(op_code: int, data: Dictionary) -> void:
 func _send_payload(op_code: int, data: Dictionary) -> void:
 	var payload := data.duplicate()
 	payload["op"] = op_code
-	socket.send_text(JSON.stringify(payload))
+	var err := socket.send_text(JSON.stringify(payload))
+	if err == ERR_OUT_OF_MEMORY:
+		# WebSocket outbound buffer is full. Drop/slow only OP_INPUT; keep gameplay/control events.
+		if op_code == NetworkMessaging.OP_INPUT:
+			_input_backpressure_until_msec = Time.get_ticks_msec() + 300
+			_debug_log_limited("input_backpressure", "[Net] input backpressure active (300ms)", 800)
+			return
+		# Retry important messages later.
+		_queue_outbound(op_code, data)
+		_debug_log_limited("send_backpressure:%d" % op_code, "[Net] backpressure queued op=%d type=%s" % [op_code, str(data.get("type", ""))], 800)
+		return
+	if err != OK:
+		_debug_log_limited("send_err:%d" % op_code, "[Net] send failed err=%d op=%d type=%s" % [err, op_code, str(data.get("type", ""))], 1000)
+		return
 	_debug_log_limited("send:%d:%s" % [op_code, str(data.get("type", ""))], "[Net] send op=%d type=%s room=%s keys=%s" % [op_code, str(data.get("type", "")), room_code, str(data.keys())], 1500)
 
 

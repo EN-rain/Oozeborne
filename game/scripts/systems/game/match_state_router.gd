@@ -37,6 +37,10 @@ func on_match_state(match_state) -> void:
 	if op_code == NetworkMessaging.OP_START_GAME:
 		_main._debug_log("Received start_game signal while already in game")
 		return
+	if op_code == NetworkMessaging.OP_WAVE_START:
+		var wave_num := int(data.get("wave_num", 1)) if data != null else 1
+		_handle_round_start({"round": wave_num})
+		return
 
 	if op_code == NetworkMessaging.OP_PLAYER_HIT:
 		var target_id = data.get("target_id", "")
@@ -225,6 +229,8 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 	if data == null:
 		return
 
+	_sync_mobs_from_snapshot(data.get("mobs", []))
+
 	var phase = str(data.get("phase", MultiplayerManager.match_phase))
 	if phase != MultiplayerManager.match_phase:
 		MultiplayerManager.match_phase = phase
@@ -236,9 +242,12 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 			continue
 
 		var pos_data = player_data.get("pos", {})
-		var new_pos = Vector2(pos_data.get("x", 0), pos_data.get("y", 0))
+		var new_pos = Vector2(
+			float(player_data.get("pos_x", pos_data.get("x", 0.0))),
+			float(player_data.get("pos_y", pos_data.get("y", 0.0)))
+		)
 		var vel_data = player_data.get("vel", {})
-		var velocity = Vector2(vel_data.get("x", 0), vel_data.get("y", 0))
+		var velocity = Vector2(float(vel_data.get("x", 0.0)), float(vel_data.get("y", 0.0)))
 		var server_seq = player_data.get("input_seq", 0)
 		var facing = player_data.get("facing", 1)
 		var is_attacking = player_data.get("is_attacking", false)
@@ -246,11 +255,15 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 		var attack_rotation = player_data.get("attack_rotation", 0.0)
 		var attack_seq = int(player_data.get("attack_seq", 0))
 		var dash_seq = int(player_data.get("dash_seq", 0))
-		var ign = player_data.get("ign", "Unknown")
-		var is_host_flag = player_data.get("is_host", false)
+		var ign = str(player_data.get("ign", ""))
+		var is_host_flag = bool(player_data.get("is_host", false))
 		var snapshot_variant = str(player_data.get("slime_variant", ""))
 
-		var existing_info = MultiplayerManager.players.get(user_id, {})
+		var existing_info = MultiplayerManager.players.get(user_id, {}) if MultiplayerManager.players.get(user_id) is Dictionary else {}
+		if ign.is_empty():
+			ign = str(existing_info.get("ign", "Player"))
+		if not player_data.has("is_host"):
+			is_host_flag = bool(existing_info.get("is_host", false))
 		var resolved_variant = snapshot_variant if not snapshot_variant.is_empty() else str(existing_info.get("slime_variant", "blue"))
 		MultiplayerManager.players[user_id] = {
 			"ign": ign,
@@ -318,6 +331,64 @@ func _handle_server_snapshot(data: Dictionary) -> void:
 					tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
 
 
+func _sync_mobs_from_snapshot(mobs_snapshot: Variant) -> void:
+	if _mob_spawner == null:
+		return
+	if not (mobs_snapshot is Array):
+		return
+
+	var alive_ids: Dictionary = {}
+	for entry in mobs_snapshot:
+		if not entry is Dictionary:
+			continue
+		var mob_data: Dictionary = entry
+		var mob_id := str(mob_data.get("mob_id", ""))
+		if mob_id.is_empty():
+			continue
+		alive_ids[mob_id] = true
+
+		var world_pos := Vector2(float(mob_data.get("pos_x", 0.0)), float(mob_data.get("pos_y", 0.0)))
+		if _main._network_mobs.has(mob_id):
+			var existing_ref = _main._network_mobs[mob_id]
+			var existing_node: Node2D = null
+			if existing_ref is WeakRef:
+				existing_node = existing_ref.get_ref() as Node2D
+			elif existing_ref is Node2D:
+				existing_node = existing_ref as Node2D
+			if is_instance_valid(existing_node):
+				existing_node.global_position = world_pos
+				continue
+
+		var mob_type := str(mob_data.get("mob_type", "slime")).to_lower().strip_edges()
+		var spawned: Node2D = null
+		if mob_type in ["common", "slime"]:
+			spawned = _mob_spawner.spawn_common_mob_at(world_pos)
+		elif mob_type in ["lancer", "archer"]:
+			spawned = _mob_spawner.spawn_elite_mob_at(mob_type, world_pos)
+		else:
+			spawned = _mob_spawner.spawn_mob_by_name_at(mob_type, world_pos)
+		if spawned != null:
+			spawned.set_meta("network_mob_id", mob_id)
+			_main._network_mobs[mob_id] = weakref(spawned)
+
+	var stale_ids: Array = []
+	for known_mob_id in _main._network_mobs.keys():
+		if alive_ids.has(known_mob_id):
+			continue
+		stale_ids.append(known_mob_id)
+
+	for stale_id in stale_ids:
+		var stale_ref = _main._network_mobs.get(stale_id)
+		var stale_node: Node2D = null
+		if stale_ref is WeakRef:
+			stale_node = stale_ref.get_ref() as Node2D
+		elif stale_ref is Node2D:
+			stale_node = stale_ref as Node2D
+		if is_instance_valid(stale_node):
+			stale_node.queue_free()
+		_main._network_mobs.erase(stale_id)
+
+
 func _handle_player_join(data: Dictionary) -> void:
 	if data == null:
 		return
@@ -363,4 +434,3 @@ func _handle_player_leave(data: Dictionary) -> void:
 			node.queue_free()
 		MultiplayerUtils.unregister_remote_player(user_id)
 		_main._remove_player_minimap_indicator(user_id)
-
