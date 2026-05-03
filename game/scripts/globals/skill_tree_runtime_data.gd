@@ -1,7 +1,7 @@
 extends RefCounted
 class_name SkillTreeRuntimeData
 
-var STAT_RULES := {
+static var STAT_RULES := {
 	"controller_chronomancer_decay_stat": {"kind": "meta_multi", "entries": [{"kind": "meta_flat", "target": "control_dot_bonus", "value": 5.0}, {"kind": "meta_flat", "target": "mana_regen", "value": 0.5}]},
 	"controller_chronomancer_time_warp_stat": {"kind": "property_percent", "target": "speed", "value": 0.03},
 	"controller_hexbinder_affliction_stat": {"kind": "meta_percent", "target": "curse_debuff_strength_bonus", "value": 0.03},
@@ -50,7 +50,7 @@ var STAT_RULES := {
 	"tank_paladin_holy_might_stat": {"kind": "meta_percent", "target": "holy_damage_bonus", "value": 0.05},
 }
 
-var PASSIVE_RULES := {
+static var PASSIVE_RULES := {
 	"controller_chronomancer_borrowed_seconds_passive": {"target": "control_burst_cdr_bonus", "kind": "meta_percent", "value": 0.06},
 	"controller_hexbinder_malice_chain_passive": {"target": "curse_spread_chance", "kind": "meta_percent", "value": 0.1},
 	"controller_main_tempo_lock_passive": {"target": "control_zone_enemy_damage_reduction", "kind": "meta_percent", "value": 0.03},
@@ -76,7 +76,7 @@ var PASSIVE_RULES := {
 	"tank_paladin_holy_light_passive": {"target": "damage_to_healing_ratio", "kind": "meta_percent", "value": 0.01},
 }
 
-var ABILITY_COOLDOWNS := {
+static var ABILITY_COOLDOWNS := {
 	"controller_chronomancer_rewind_ability": 35.0,
 	"controller_chronomancer_slow_field_ability": 20.0,
 	"controller_chronomancer_time_fracture_special": 16.0,
@@ -133,7 +133,7 @@ var ABILITY_COOLDOWNS := {
 	"tank_paladin_divine_shield_special": 25.0,
 }
 
-var ABILITY_DURATIONS := {
+static var ABILITY_DURATIONS := {
 	"tank_main_taunt_ability": 2.0,
 	"tank_main_frenzy_ability": 4.0,
 	"tank_main_fortify_special": 3.0,
@@ -173,4 +173,3 @@ static func update_from_server(classes_data: Array) -> void:
 				for key in PASSIVE_RULES.keys():
 					if skill_name in key and PASSIVE_RULES[key].has("value"):
 						PASSIVE_RULES[key]["value"] = float(skill.value)
-

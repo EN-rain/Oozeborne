@@ -44,6 +44,8 @@ func enter_lobby() -> void:
 		MultiplayerManager.player_left.connect(_on_player_left_signal)
 	if not MultiplayerManager.match_phase_changed.is_connected(_on_match_phase_changed):
 		MultiplayerManager.match_phase_changed.connect(_on_match_phase_changed)
+	if not MultiplayerManager.socket_opened.is_connected(_on_socket_opened):
+		MultiplayerManager.socket_opened.connect(_on_socket_opened)
 
 	if MultiplayerManager.socket:
 		if not MultiplayerManager.received_match_state.is_connected(_on_match_state):
@@ -66,6 +68,8 @@ func cleanup() -> void:
 		MultiplayerManager.player_left.disconnect(_on_player_left_signal)
 	if MultiplayerManager.match_phase_changed.is_connected(_on_match_phase_changed):
 		MultiplayerManager.match_phase_changed.disconnect(_on_match_phase_changed)
+	if MultiplayerManager.socket_opened.is_connected(_on_socket_opened):
+		MultiplayerManager.socket_opened.disconnect(_on_socket_opened)
 	if MultiplayerManager.socket and MultiplayerManager.received_match_state.is_connected(_on_match_state):
 		MultiplayerManager.received_match_state.disconnect(_on_match_state)
 
@@ -101,12 +105,7 @@ func on_start_pressed() -> void:
 		return
 	if MultiplayerManager.is_socket_open() and not MultiplayerManager.match_id.is_empty():
 		print("[Lobby] Sending OP_START_GAME to server...")
-		await MultiplayerManager.socket.send_match_state_async(
-			MultiplayerManager.match_id,
-			MultiplayerUtils.OP_START_GAME,
-			JSON.stringify({"type": "start_game"}),
-			null
-		)
+		MultiplayerManager.send_match_state_op(MultiplayerUtils.OP_START_GAME, {"type": "start_game"})
 		print("[Lobby] OP_START_GAME sent successfully")
 		if is_instance_valid(_start_button):
 			_start_button.disabled = true
@@ -150,10 +149,26 @@ func _on_player_left_signal(user_id: String) -> void:
 	_party_controller.remove_player_entry(user_id)
 
 
+func _on_socket_opened() -> void:
+	MultiplayerManager.send_match_state({
+		"type": "player_info",
+		"user_id": MultiplayerManager.user_id,
+		"ign": MultiplayerManager.player_ign,
+		"is_host": MultiplayerManager.is_host,
+		"slime_variant": MultiplayerManager.player_slime_variant
+	})
+	if MultiplayerManager.is_host and _title_controller != null and _title_controller.has_method("broadcast_lobby_name"):
+		_title_controller.broadcast_lobby_name()
+
+
 func _on_match_state(match_state) -> void:
 	if match_state.op_code == MultiplayerUtils.OP_START_GAME:
 		print("[Lobby] Received OP_START_GAME from server, transitioning...")
 		_transition_to_game_scene("op_code_5")
+		return
+	if match_state.op_code == NetworkMessaging.OP_WAVE_START:
+		print("[Lobby] Received OP_WAVE_START from server, transitioning...")
+		_transition_to_game_scene("op_code_7")
 		return
 
 	if match_state.op_code == MultiplayerUtils.OP_STATE:

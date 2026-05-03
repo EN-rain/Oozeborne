@@ -311,13 +311,7 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false, facing
 		_pending_inputs.pop_front()
 	
 	# Send with op code 1 (OP_INPUT) directly to server
-	var json = JSON.stringify(input_data)
-	MultiplayerManager.socket.send_match_state_async(
-		MultiplayerManager.match_id, 
-		OP_INPUT, 
-		json, 
-		null  # null = send to server only
-	)
+	MultiplayerManager.send_match_state_op(OP_INPUT, input_data)
 
 
 ## Start input update loop - sends input at 20Hz to match server tickrate

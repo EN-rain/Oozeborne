@@ -9,6 +9,7 @@ const OP_STATE = 2        ## Server -> Client: state snapshot
 const OP_PLAYER_JOIN = 3  ## Server -> Client: player joined
 const OP_PLAYER_LEAVE = 4 ## Server -> Client: player left
 const OP_START_GAME = 5   ## Host -> Server -> Clients: start game
+const OP_WAVE_START = 7   ## Server -> Client: wave start (moon_server start signal)
 const OP_BUY_ITEM = 19
 const OP_PLAYER_HIT = 20
 const OP_LEVEL_UP = 21
@@ -72,24 +73,12 @@ func send_input(move_x: float, move_y: float, is_attacking: bool = false,
 	# Input stored locally for reconciliation if needed
 	
 	# Send with op code 1
-	var json = JSON.stringify(input_data)
-	MultiplayerManager.socket.send_match_state_async(
-		MultiplayerManager.match_id, 
-		OP_INPUT, 
-		json, 
-		null
-	)
+	MultiplayerManager.send_match_state_op(OP_INPUT, input_data)
 
 func send_message(op_code: int, data: Dictionary) -> void:
 	if not MultiplayerManager.is_socket_open() or MultiplayerManager.match_id.is_empty():
 		return
-	var json = JSON.stringify(data)
-	MultiplayerManager.socket.send_match_state_async(
-		MultiplayerManager.match_id, 
-		op_code, 
-		json, 
-		null
-	)
+	MultiplayerManager.send_match_state_op(op_code, data)
 
 
 ## Send attack event to server for validation and broadcast

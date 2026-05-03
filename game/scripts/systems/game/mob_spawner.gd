@@ -212,6 +212,20 @@ func _on_elite_mob_died(_elite: Node) -> void:
 	_check_round_clear()
 
 
+func _on_common_mob_died(_mob: Node) -> void:
+	_round_active_mobs = max(_round_active_mobs - 1, 0)
+	var score_value: int = 1
+	var xp: int = 10
+	if _mob != null:
+		if _mob.has_method("get") or "xp_value" in _mob:
+			xp = int(_mob.xp_value)
+		if _mob.has_method("get") or "score_value" in _mob:
+			score_value = int(_mob.score_value)
+	mob_died.emit(_mob, score_value, xp)
+	_emit_active_count()
+	_check_round_clear()
+
+
 func get_round_total_mobs(round_number: int) -> int:
 	return initial_slime_mob_count + initial_elite_mob_count + max(round_number - 1, 0) * additional_mobs_per_round
 

@@ -232,6 +232,18 @@ func handleMessage(room *Room, p *Player, op int, msg map[string]any) {
 		}
 		room.mu.Unlock()
 
+	case OP_MESSAGE:
+		// Relay generic lobby/gameplay messages (chat, player_info, class_selected, etc.).
+		msg["op"] = OP_MESSAGE
+		msg["user_id"] = p.UserID
+		relay, err := json.Marshal(msg)
+		if err != nil {
+			return
+		}
+		room.mu.RLock()
+		room.broadcast(relay)
+		room.mu.RUnlock()
+
 	case OP_PLAYER_READY:
 		room.mu.Lock()
 		room.ReadySet[p.UserID] = true

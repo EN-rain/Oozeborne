@@ -30,20 +30,31 @@ var player_class: PlayerClass = null
 var player_subclass: PlayerClass = null
 var subclass_choice_made: bool = false
 var player_level: int = 1
-var match_phase: String = "lobby"
+var match_phase: String = "lobby":
+	set(value):
+		if match_phase == value:
+			return
+		match_phase = value
+		match_phase_changed.emit(match_phase)
 
 # Configuration
 const SERVER_CONFIG_FILE = "server_config.cfg"
 const TOKEN_SAVE_PATH = "user://auth_session.json"
 var _base_url: String = "http://35.247.150.45:3000"
+var debug_network_logs: bool = true
+var _debug_log_last_msec: Dictionary = {}
+var _pending_outbox: Array[Dictionary] = []
+var _last_socket_state: int = WebSocketPeer.STATE_CLOSED
 
 # Signals
 signal player_joined(user_id: String, ign: String, is_host_flag: bool)
 signal player_left(user_id: String)
 signal match_joined()
+signal match_phase_changed(new_phase: String)
 signal auth_state_changed(is_authenticated: bool, username: String, email: String)
 signal connection_lost()
 signal received_match_state(match_state)
+signal socket_opened()
 
 func _ready():
 	_load_config()
@@ -60,7 +71,11 @@ func _load_config():
 func _process(_delta):
 	socket.poll()
 	var state = socket.get_ready_state()
+	if state != _last_socket_state:
+		_on_socket_state_changed(_last_socket_state, state)
+		_last_socket_state = state
 	if state == WebSocketPeer.STATE_OPEN:
+		_flush_pending_outbox()
 		while socket.get_available_packet_count() > 0:
 			var packet = socket.get_packet()
 			_on_data_received(packet.get_string_from_utf8())
@@ -171,6 +186,7 @@ func logout():
 
 func disconnect_server():
 	socket.close()
+	_pending_outbox.clear()
 	match_id = ""
 	room_code = ""
 	is_host = false
@@ -251,32 +267,112 @@ func _connect_to_game_server(url: String):
 	if not auth_token.is_empty():
 		ws_url += "&token=" + auth_token
 	socket.connect_to_url(ws_url)
+	_debug_log_limited("connect", "[Net] ws connect url=%s room=%s" % [ws_url, room_code], 1500)
 	match_joined.emit()
 
 func _on_data_received(data_str: String):
-	var data = JSON.parse_string(data_str)
-	if data == null: return
-	
-	# Emit raw match state for compatibility
+	var envelope = JSON.parse_string(data_str)
+	if envelope == null:
+		return
+
+	var payload: Variant = envelope
+	if envelope is Dictionary and envelope.has("data"):
+		var raw_payload: Variant = envelope.get("data")
+		if raw_payload is String:
+			var parsed_payload = JSON.parse_string(raw_payload)
+			if parsed_payload != null:
+				payload = parsed_payload
+		elif raw_payload is Dictionary:
+			payload = raw_payload
+
+	var payload_dict: Dictionary = payload if payload is Dictionary else {}
+	# moon_server uses "op" at top-level; keep "op_code" fallback for compatibility.
+	var op_code: int = int(envelope.get("op", envelope.get("op_code", NetworkMessaging.OP_MESSAGE)))
+	var msg_type := str(payload_dict.get("type", ""))
+	_debug_log_limited("recv:%d:%s" % [op_code, msg_type], "[Net] recv op=%d type=%s sender=%s keys=%s" % [op_code, msg_type, str(envelope.get("user_id", payload_dict.get("user_id", ""))), str(payload_dict.keys())], 1500)
+
+	# Emit normalized match state for compatibility with existing handlers.
 	var ms = MatchState.new()
-	ms.data = data_str
-	ms.op_code = data.get("op_code", 0)
-	if data.has("user_id"):
+	ms.data = JSON.stringify(payload_dict)
+	ms.op_code = op_code
+
+	var sender_id := str(envelope.get("user_id", ""))
+	if sender_id.is_empty():
+		sender_id = str(payload_dict.get("user_id", ""))
+	if not sender_id.is_empty():
 		ms.presence = Presence.new()
-		ms.presence.user_id = data.get("user_id", "")
+		ms.presence.user_id = sender_id
 	received_match_state.emit(ms)
 
-	match data.get("type"):
-		"player_joined":
-			var pid = data.user_id
-			players[pid] = {"ign": data.ign, "is_host": data.is_host}
-			player_joined.emit(pid, data.ign, data.is_host)
-		"player_left":
-			players.erase(data.user_id)
-			player_left.emit(data.user_id)
-		"chat":
-			pass
+	if op_code == NetworkMessaging.OP_PLAYER_JOIN or msg_type == "player_joined":
+		var pid := str(payload_dict.get("user_id", ""))
+		if not pid.is_empty():
+			var ign := str(payload_dict.get("ign", "Unknown"))
+			var joined_is_host := bool(payload_dict.get("is_host", false))
+			players[pid] = {
+				"ign": ign,
+				"is_host": joined_is_host,
+				"slime_variant": str(payload_dict.get("slime_variant", "blue"))
+			}
+			player_joined.emit(pid, ign, joined_is_host)
+	elif op_code == NetworkMessaging.OP_PLAYER_LEAVE or msg_type == "player_left":
+		var left_id := str(payload_dict.get("user_id", ""))
+		if not left_id.is_empty():
+			players.erase(left_id)
+			player_left.emit(left_id)
 
 func send_match_state(data: Dictionary):
-	if socket.get_ready_state() == WebSocketPeer.STATE_OPEN:
-		socket.send_text(JSON.stringify(data))
+	send_match_state_op(NetworkMessaging.OP_MESSAGE, data)
+
+
+func send_match_state_op(op_code: int, data: Dictionary) -> void:
+	if socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		_queue_outbound(op_code, data)
+		_debug_log_limited("send_queue:%d:%s" % [op_code, str(data.get("type", ""))], "[Net] queue op=%d type=%s reason=socket_not_open state=%d" % [op_code, str(data.get("type", "")), socket.get_ready_state()], 1200)
+		return
+	_send_payload(op_code, data)
+
+
+func _send_payload(op_code: int, data: Dictionary) -> void:
+	var payload := data.duplicate()
+	payload["op"] = op_code
+	socket.send_text(JSON.stringify(payload))
+	_debug_log_limited("send:%d:%s" % [op_code, str(data.get("type", ""))], "[Net] send op=%d type=%s room=%s keys=%s" % [op_code, str(data.get("type", "")), room_code, str(data.keys())], 1500)
+
+
+func _queue_outbound(op_code: int, data: Dictionary) -> void:
+	_pending_outbox.append({
+		"op_code": op_code,
+		"data": data.duplicate(true)
+	})
+	if _pending_outbox.size() > 64:
+		_pending_outbox.pop_front()
+
+
+func _flush_pending_outbox() -> void:
+	if _pending_outbox.is_empty():
+		return
+	_debug_log_limited("flush", "[Net] flush queued messages count=%d" % _pending_outbox.size(), 500)
+	var batch: Array[Dictionary] = _pending_outbox.duplicate(true)
+	_pending_outbox.clear()
+	for entry in batch:
+		_send_payload(int(entry.get("op_code", NetworkMessaging.OP_MESSAGE)), entry.get("data", {}))
+
+
+func _on_socket_state_changed(previous_state: int, current_state: int) -> void:
+	_debug_log_limited("state_change", "[Net] socket state %d -> %d" % [previous_state, current_state], 200)
+	if current_state == WebSocketPeer.STATE_OPEN:
+		socket_opened.emit()
+	elif previous_state == WebSocketPeer.STATE_OPEN and current_state == WebSocketPeer.STATE_CLOSED:
+		connection_lost.emit()
+
+
+func _debug_log_limited(key: String, message: String, min_interval_ms: int = 1000) -> void:
+	if not debug_network_logs:
+		return
+	var now := Time.get_ticks_msec()
+	var last := int(_debug_log_last_msec.get(key, 0))
+	if now - last < min_interval_ms:
+		return
+	_debug_log_last_msec[key] = now
+	print(message)
