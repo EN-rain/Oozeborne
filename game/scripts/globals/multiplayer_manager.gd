@@ -266,8 +266,10 @@ func _connect_to_game_server(url: String):
 	var ws_url = url
 	if not auth_token.is_empty():
 		ws_url += "&token=" + auth_token
-	socket.connect_to_url(ws_url)
+	var err := socket.connect_to_url(ws_url)
 	_debug_log_limited("connect", "[Net] ws connect url=%s room=%s" % [ws_url, room_code], 1500)
+	if err != OK:
+		_debug_log_limited("connect_err", "[Net] ws connect_to_url error=%d" % err, 100)
 	match_joined.emit()
 
 func _on_data_received(data_str: String):
@@ -365,6 +367,14 @@ func _on_socket_state_changed(previous_state: int, current_state: int) -> void:
 		socket_opened.emit()
 	elif previous_state == WebSocketPeer.STATE_OPEN and current_state == WebSocketPeer.STATE_CLOSED:
 		connection_lost.emit()
+	elif current_state == WebSocketPeer.STATE_CLOSED:
+		var close_code := socket.get_close_code()
+		var close_reason := socket.get_close_reason()
+		_debug_log_limited(
+			"closed_reason",
+			"[Net] socket closed code=%d reason=%s was_open=%s" % [close_code, close_reason, str(previous_state == WebSocketPeer.STATE_OPEN)],
+			200
+		)
 
 
 func _debug_log_limited(key: String, message: String, min_interval_ms: int = 1000) -> void:

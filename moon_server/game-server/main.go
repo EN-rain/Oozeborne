@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -50,18 +51,45 @@ var allowedOrigins = func() map[string]bool {
 	return origins
 }()
 
+func isAllowedOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" || origin == "null" {
+		return true
+	}
+
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	originHost := strings.Split(parsed.Host, ":")[0]
+	if originHost == "" {
+		return false
+	}
+
+	// Explicit allowlist
+	if allowedOrigins[originHost] {
+		return true
+	}
+
+	// Allow same-host origin automatically (important for cloud IP/domain deployments)
+	reqHost := strings.Split(r.Host, ":")[0]
+	if reqHost != "" && strings.EqualFold(originHost, reqHost) {
+		return true
+	}
+
+	return false
+}
+
 var upgrader = websocket.Upgrader{
 	HandshakeTimeout: WSHandshakeTimeout,
 	ReadBufferSize:   MaxMessageBytes,
 	WriteBufferSize:  4 * 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		if origin == "" {
-			return true
+		ok := isAllowedOrigin(r)
+		if !ok {
+			log.Printf("[WS] origin rejected origin=%q host=%q ua=%q", r.Header.Get("Origin"), r.Host, r.UserAgent())
 		}
-		origin = strings.TrimPrefix(strings.TrimPrefix(origin, "https://"), "http://")
-		host := strings.Split(origin, ":")[0]
-		return allowedOrigins[host]
+		return ok
 	},
 }
 
@@ -80,6 +108,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, err := validateJWT(tokenStr)
 	if err != nil {
+		log.Printf("[WS] auth reject room_id=%q room_code=%q token_present=%t err=%v", q.Get("room_id"), q.Get("room_code"), tokenStr != "", err)
 		decConn()
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -88,6 +117,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	roomID := q.Get("room_id")
 	roomCode := q.Get("room_code")
 	if roomID == "" || len(roomID) > MaxRoomIDLen {
+		log.Printf("[WS] bad room_id room_id=%q room_code=%q user=%q", roomID, roomCode, claims.UserID)
 		decConn()
 		http.Error(w, "invalid room_id", http.StatusBadRequest)
 		return
@@ -102,6 +132,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadLimit(MaxMessageBytes)
 
 	room := roomManager.GetOrCreate(roomID, roomCode)
+	log.Printf("[WS] connected user=%s room_id=%s room_code=%s remote=%s origin=%q", claims.UserID, roomID, roomCode, r.RemoteAddr, r.Header.Get("Origin"))
 
 	room.mu.Lock()
 	if len(room.Players) >= MaxPlayersPerRoom {
